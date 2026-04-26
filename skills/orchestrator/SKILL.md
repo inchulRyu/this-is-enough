@@ -167,11 +167,17 @@ b. **Plan** — dispatch `tie:planner` subagent. Pass it: phase path,
    `planned`.
 
 c. **Decompose** — dispatch `tie:generator` with mode `decompose`. It writes
-   `tasks.md`. Update status: `decomposing` → `decomposed`.
+   `tasks.md`. Read it before advancing. If it mostly restates `plan.md`,
+   creates one task per Plan bullet, or embeds schemas/test matrices/command
+   transcripts instead of concrete work and evidence, dispatch again asking for
+   a proportionate task rewrite. Update status: `decomposing` → `decomposed`.
 
 d. **Optional pre-validation** — if the Phase touches data flow across
    multiple systems, security, payment, deletion, or has weak existing tests,
-   dispatch `tie:evaluator` with mode `intent`. It writes `validation_intent.md`.
+   dispatch `tie:evaluator` with mode `intent`. It writes
+   `validation_intent.md`. Read it before advancing. If it is an exhaustive
+   EV-ID matrix instead of preflight guidance, dispatch again asking for
+   representative risk areas and success oracles only.
 
 e. **Implement** — dispatch `tie:generator` with mode `implement`. It works
    through tasks, modifies code, updates `tasks.md` statuses, and appends to
@@ -179,6 +185,9 @@ e. **Implement** — dispatch `tie:generator` with mode `implement`. It works
 
 f. **Self-check** — set phase status `self_checking`, then dispatch
    `tie:generator` with mode `self-check`. It writes `generator_self_check.md`.
+   Read it before advancing. If it duplicates `validation_plan.md` or
+   pre-judges every EV-ID, dispatch again asking for readiness, primary
+   evidence, limitations, and evaluator focus areas only.
    If `Ready for evaluation: no`, loop back to (e) with whatever `Risks` it
    flagged.
 
@@ -186,7 +195,11 @@ g. **Evaluate** — set phase status `validation_planning`, then dispatch
    `tie:evaluator` with mode `full`. It chooses a validation level (L0–L5) and
    writes `validation_plan.md`. Set status `evaluating`. The evaluator runs the
    checks, writes `evaluation_report.md`, and appends a short snapshot to
-   `evaluation_history.md`.
+   `evaluation_history.md`. Read these before advancing. If the validation plan
+   creates tiny EV-IDs for every assertion/source line, or if the report/history
+   duplicate routine pass evidence instead of focusing detail on failures,
+   blockers, surprising results, and high-risk checks, dispatch again for a
+   grouped validation rewrite.
 
 h. **Branch on verdict:**
 
@@ -281,7 +294,11 @@ When dispatching, pass the subagent:
 - For fix/recheck: the specific EV-IDs that failed
 
 After the subagent returns, **always** read the files it claims to have written
-to verify they exist and are non-empty before advancing.
+to verify they exist and are non-empty before advancing. Also verify the
+artifact fits its role. A non-empty artifact can still be wrong if it mostly
+duplicates another file, embeds code diffs or command transcripts, or moves
+implementation/evaluation detail into the wrong owner. In that case, dispatch
+the same role again with a rewrite instruction before advancing state.
 
 ## Safety rules
 

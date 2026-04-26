@@ -58,7 +58,7 @@ Planner는 짧거나 불완전한 사용자 요구사항을 제품적으로 충�
 - high-level technical design과 integration direction을 제시한다.
 - 각 Plan 항목이 어떤 Requirement를 반영하는지 명시한다.
 
-Planner는 full product spec에 가까운 수준으로 요구사항을 확장해야 한다. 다만 이것은 무제한적인 scope expansion을 의미하지 않는다.
+Planner는 요구사항을 제품적으로 충분히 풍부한 product-level spec으로 확장해야 한다. 다만 이것은 무제한적인 scope expansion이나 implementation detail expansion을 의미하지 않는다. Plan은 Generator가 under-scope하지 않게 만드는 제품/행동 기준이지, 구현 설계서, task list, test matrix, 감사 로그가 아니다.
 
 Planner의 확장은 다음 범위 안에서 이루어져야 한다.
 
@@ -75,6 +75,8 @@ Planner는 다음을 피해야 한다.
 
 - 사용자가 원하지 않은 별도 제품으로 키우기
 - unrelated feature를 추가해 plan을 부풀리기
+- requirements, decisions, code에 이미 canonical하게 있는 세부사항을 줄 단위로 복제하기
+- schema, route table, test case, command transcript를 Plan 안에 장황하게 열거하기
 - repo를 보지 않고 low-level architecture를 단정하기
 - 구현 라이브러리, 함수 구조, DB schema, 파일 구조를 너무 일찍 고정하기
 - Generator가 repo 맥락에서 판단해야 할 implementation path를 빼앗기
@@ -164,7 +166,35 @@ Evaluator의 핵심 역할은 “마지막에 눌러보는 사람”이 아니�
 - Known critical issue 없음
 - 현재 상태 파일 갱신 완료
 
-### 1.8 Stop only when necessary
+### 1.8 Workflow documents are navigation aids
+
+`agents_workspace/` 문서는 재개와 판단을 위한 source of truth이지만, 코드 diff,
+전체 테스트 출력, 구현 설계서, 검증 감사 로그를 복제하는 장소가 아니다.
+
+각 파일은 자신의 역할 안에서 필요한 정보만 담아야 한다.
+
+- `plan.md`는 제품 수준의 의도와 완료 기준을 담는다. 구현 상세, task list,
+  test matrix는 담지 않는다.
+- `tasks.md`는 구현 작업을 추적한다. Plan의 세부 문장을 반복하지 않는다.
+- `implementation_log.md`는 변경 요약과 검증 요약을 남긴다. diff, 코드 블록,
+  command transcript를 붙이지 않는다.
+- `generator_self_check.md`는 평가 준비 상태를 요약한다. Evaluator의 EV-ID별
+  판정을 미리 복제하지 않는다.
+- `validation_intent.md`는 preflight guidance다. exhaustive EV-ID matrix가
+  아니라 검증 수준, 주요 위험, 대표 체크를 담는다.
+- `validation_plan.md`는 실제 검증 계획이다. 관련 assertion은 risk area별
+  grouped EV-ID 아래에 묶는다.
+- `evaluation_report.md`는 최신 공식 판정이다. 통과한 일반 체크는 compact하게,
+  실패/blocked/고위험/놀라운 결과는 자세히 쓴다.
+- `evaluation_history.md`는 full report 복사본이 아니라 각 평가 run의 짧은
+  snapshot이다.
+
+핵심 원칙은 다음과 같다.
+
+> Write enough for the next agent to decide and resume; do not duplicate the
+> repo, the diff, or another workflow file.
+
+### 1.9 Stop only when necessary
 
 기본 원칙은 Roadmap의 모든 Phase가 완료될 때까지 계속 진행하는 것이다.
 
@@ -225,6 +255,11 @@ Plan은 저수준 구현을 불필요하게 고정하지 않는다.
 Generator가 Plan을 실제 구현 가능한 작업 단위로 나눈 것이다.
 
 Task는 Plan section과 Requirement ID를 참조해야 한다.
+
+Task는 Plan을 복제하지 않는다. Generator는 관련 behavior와 acceptance intent를
+구현하기 쉬운 작업 단위로 묶고, 각 task에는 concrete work와 completion
+evidence만 기록한다. Plan의 모든 bullet마다 task를 만들거나, Plan의 schema /
+test / route detail을 task마다 다시 붙이면 안 된다.
 
 ### Validation Intent
 
@@ -356,7 +391,7 @@ Evaluator
 - `current_state.md`와 `run_state.json`은 오케스트레이터만 최종 갱신한다.
 - `decisions.md`, `changelog.md`, `blockers.md`, `evaluation_history.md`는 append-only에 가깝게 운용한다.
 - `evaluation_report.md`는 최신 평가 결과로 덮어쓴다.
-- `evaluation_history.md`에는 모든 평가 결과를 누적한다.
+- `evaluation_history.md`에는 모든 평가 run의 짧은 snapshot을 누적한다. full report를 복제하지 않는다.
 
 ---
 
@@ -639,17 +674,19 @@ Planner는 `requirements.md`, `roadmap.md`, `current_state.md`, 현재 Phase의 
 
 Planner의 목표는 raw requirement를 Generator가 바로 구현하기 쉬운 단순 task로 줄이는 것이 아니다.
 
-Planner의 목표는 raw requirement를 제품적으로 충분히 풍부한 spec으로 확장하여, Generator가 작업 범위를 너무 작게 잡거나 incomplete product experience를 만들지 않도록 하는 것이다.
+Planner의 목표는 raw requirement를 제품적으로 충분히 풍부한 spec으로 확장하여, Generator가 작업 범위를 너무 작게 잡거나 incomplete product experience를 만들지 않도록 하는 것이다. 동시에 Plan은 product-level and proportionate해야 한다. 필요한 만큼 쓰되, requirements / decisions / code / 다른 workflow 파일이 이미 맡고 있는 세부사항을 반복하지 않는다.
 
 Planner는 다음을 반드시 지킨다.
 
-- full product spec에 가까운 수준으로 요구사항을 확장한다.
+- 요구사항을 product-level spec으로 확장한다.
 - 단, 제품 전체를 무리하게 재설계하지 않는다.
 - product context와 user-facing behavior를 중심에 둔다.
 - main interaction flow를 명확히 한다.
 - 사용자가 기대할 만한 complete experience를 정의한다.
 - empty state, error state, edge condition, consistency expectation을 필요에 따라 포함한다.
 - high-level technical design은 작성하되, low-level implementation detail은 불필요하게 고정하지 않는다.
+- schema, route table, test matrix, command transcript, task list를 Plan 안에 장황하게 열거하지 않는다.
+- 이미 canonical한 요구사항/결정/코드 세부사항은 참조하고, 줄 단위로 복제하지 않는다.
 - Plan이 어떤 Requirement를 반영하는지 명확히 기록한다.
 - Generator가 구현 판단을 할 여지를 남긴다.
 
@@ -658,9 +695,13 @@ Planner는 다음을 반드시 지킨다.
 ```md
 # Plan
 
+<!-- Keep this product-level and proportionate. Do not paste schemas, route
+tables, test matrices, or task lists when they can be referenced from
+requirements/decisions/code. -->
+
 ## Requirement coverage
 
-- RQ-001: <how this plan reflects it>
+- RQ-001: <briefly describe how this plan reflects it>
 - RQ-002: <how this plan reflects it>
 
 ## Feature summary
@@ -673,7 +714,8 @@ Planner는 다음을 반드시 지킨다.
 
 ## Why this should not be under-scoped
 
-<what would likely be missed if Generator implemented only the raw request>
+<the most important things that would likely be missed if Generator implemented
+only the raw request>
 
 ## Expanded product spec
 
@@ -689,7 +731,8 @@ Planner는 다음을 반드시 지킨다.
 
 ### Functional depth
 
-- ...
+- <behavioral depth and user-visible/system guarantees; avoid enumerating every
+  field/function/test>
 
 ### Edge cases / empty states / failure states
 
@@ -701,7 +744,8 @@ Planner는 다음을 반드시 지킨다.
 
 ## High-level technical design
 
-- ...
+- <direction and integration points only; leave exact file/function boundaries
+  to Generator unless fixed by requirements or decisions>
 
 ## Implementation freedom left for Generator
 
@@ -741,6 +785,9 @@ Task는 Plan section과 Requirement ID를 참조해야 한다.
 ```md
 # Tasks
 
+<!-- Keep tasks compact and proportionate to the Phase. Do not copy Plan details
+into each task; reference plan sections and state the concrete work. -->
+
 ## Task G-001: <task title>
 
 Status: pending
@@ -752,14 +799,13 @@ Related plan sections:
 - Main interaction flow
 
 Description:
-- ...
+- <brief concrete work, not a copied spec>
 
 Implementation notes:
-- Use existing repo patterns where possible.
-- Do not introduce unnecessary abstractions.
+- <only task-specific constraints; omit generic reminders>
 
 Expected evidence of completion:
-- ...
+- <files/tests/commands or observable behavior that prove completion>
 
 ## Task G-002: <task title>
 
@@ -782,6 +828,11 @@ Description:
 
 이 단계는 항상 필수는 아니다.
 
+`validation_intent.md`는 preflight guidance다. 이 단계에서는 exhaustive EV-ID
+matrix를 만들지 않는다. 구현 전에 Generator가 알아야 할 검증 수준, 주요 위험,
+대표 체크, success oracle만 기록한다. 실제 EV-ID는 구현 결과를 본 뒤
+`validation_plan.md`에서 grouped check로 정의한다.
+
 사용 조건:
 
 - 여러 시스템이 함께 바뀌는 경우
@@ -796,6 +847,9 @@ Description:
 ```md
 # Validation Intent
 
+<!-- Preflight guidance only. Do not assign an exhaustive EV-ID matrix here;
+save concrete EV-IDs for validation_plan.md. -->
+
 ## Phase
 
 <phase name>
@@ -808,9 +862,9 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 - ...
 
-## Likely validation checks
+## Representative validation checks
 
-- ...
+- <risk area>: <method and expected confidence>
 
 ## Areas Generator should be careful about
 
@@ -840,11 +894,16 @@ Generator는 task를 하나씩 처리한다.
 - Requirement와 Plan에 없는 기능을 임의로 크게 추가하지 않는다.
 - 필요한 경우 자율적으로 구현 결정을 내리되, 장기적으로 영향이 큰 결정은 `decisions.md`에 기록한다.
 - 실패한 접근은 `implementation_log.md` 또는 `changelog.md`에 기록한다.
+- `implementation_log.md`에는 diff, 전체 코드 블록, command transcript를 붙이지 않는다. 완료한 task, 변경한 파일/파일그룹의 목적, 검증 요약, 남은 risk만 남긴다.
 
 ### implementation_log.md template
 
 ```md
 # Implementation Log
+
+<!-- Summary log, not a diff. For each entry: completed task IDs, changed file
+groups with one purpose sentence each, verification summary, risks. Do not paste
+code blocks, full command output, or line-by-line changes. -->
 
 ## <date/time>
 
@@ -855,7 +914,7 @@ Generator는 task를 하나씩 처리한다.
 
 ### Files changed
 
-- ...
+- <path or file group> — <one concise purpose sentence>
 
 ### Decisions made
 
@@ -866,6 +925,10 @@ Generator는 task를 하나씩 처리한다.
 - Tried: ...
 - Why it failed: ...
 - Do not repeat: ...
+
+### Verification summary
+
+- <command or manual check>: pass | fail | not run — <one-line note>
 
 ### Known risks
 
@@ -880,10 +943,16 @@ Generator는 Evaluator에게 넘기기 전에 반드시 self-check를 수행한�
 
 Self-check는 완벽한 평가가 아니라, 명백한 문제를 Evaluator에게 넘기지 않기 위한 최소 품질 게이트다.
 
+Self-check는 evaluation report가 아니다. Generator는 요구사항/acceptance coverage를
+grouped evidence 중심으로 확인하고, EV-ID별 판정표를 만들지 않는다.
+
 ### generator_self_check.md template
 
 ```md
 # Generator Self Check
+
+<!-- Readiness summary, not an evaluation report. Do not create an EV-ID matrix;
+group related acceptance checks and point to primary evidence. -->
 
 ## Summary
 
@@ -891,8 +960,12 @@ Self-check는 완벽한 평가가 아니라, 명백한 문제를 Evaluator에게
 
 ## Requirements addressed
 
-- RQ-001: ...
+- RQ-001: <primary evidence only: task/file/test/manual check>
 - RQ-002: ...
+
+## Acceptance coverage
+
+- <grouped acceptance intent>: met | partial | not met — <evidence>
 
 ## Tasks completed
 
@@ -903,7 +976,7 @@ Self-check는 완벽한 평가가 아니라, 명백한 문제를 Evaluator에게
 
 - Command: <command>
   Result: pass | fail | not_applicable
-  Notes: ...
+  Notes: <one-line summary, not full output>
 
 ## Manual checks performed
 
@@ -931,6 +1004,10 @@ Generator는 known failing test나 known broken behavior를 숨기면 안 된다
 Evaluator는 `requirements.md`, `phase.md`, `plan.md`, `tasks.md`, `implementation_log.md`, `generator_self_check.md`를 읽고 `validation_plan.md`를 작성한다.
 
 Evaluator는 검증 강도를 선택해야 한다.
+
+검증은 엄격해야 하지만, 검증 문서는 navigation 가능한 상태를 유지해야 한다.
+Evaluator는 decision-making에 실제로 필요한 check를 risk area별 grouped EV-ID로
+작성한다. 모든 field, route, assertion, source line을 별도 EV-ID로 만들면 안 된다.
 
 ### Validation level guide
 
@@ -1002,6 +1079,10 @@ reference implementation, benchmark, quantitative threshold, regression suite를
 ```md
 # Validation Plan
 
+<!-- Concrete validation plan. Prefer grouped EV-IDs by risk area. Put related
+sub-assertions under one EV-ID instead of making a new EV-ID for every field,
+route, or source line. -->
+
 ## Scope
 
 Evaluate Phase <n>: <phase name>
@@ -1034,19 +1115,20 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 ## Validation checks
 
-### EV-001: Requirement coverage
+### EV-001: Requirement and acceptance coverage
 Method: static review
 Related requirements:
 - RQ-001
 Expected:
-- ...
+- <all must-have requirements and acceptance intent are covered>
 
-### EV-002: Product behavior
+### EV-002: Product behavior / runtime scenario
 Method: runtime | test | code review | e2e | benchmark
 Related plan sections:
 - ...
 Expected:
-- ...
+- <observable behavior; include related sub-assertions here if they share the
+  same method/risk>
 
 ### EV-003: Integration quality
 Method: code review / integration test
@@ -1063,12 +1145,17 @@ Expected:
 
 ## 7.10 Evaluation report
 
-Evaluator는 검증 수행 후 `evaluation_report.md`를 작성하고, 같은 내용을 `evaluation_history.md`에 append한다.
+Evaluator는 검증 수행 후 최신 공식 판정인 `evaluation_report.md`를 작성하고,
+`evaluation_history.md`에는 짧은 snapshot만 append한다. `evaluation_history.md`에
+full report를 복제하지 않는다.
 
 ### evaluation_report.md template
 
 ```md
 # Evaluation Report
+
+<!-- Latest verdict. Keep passed evidence compact; write detail for failures,
+blockers, surprising results, and high-risk checks only. -->
 
 Verdict: pass | fail | blocked
 Validation level used: L0 | L1 | L2 | L3 | L4 | L5
@@ -1079,8 +1166,12 @@ Validation level used: L0 | L1 | L2 | L3 | L4 | L5
 
 ## Passed checks
 
-- EV-001: ...
+- EV-001: <one-line evidence>
 - EV-002: ...
+
+## Notable evidence
+
+- <only high-risk or non-obvious pass evidence; omit routine command output>
 
 ## Failed checks
 
@@ -1193,6 +1284,36 @@ A Phase is complete only when:
 - `current_state.md` points to the next Phase or project completion
 - `run_state.json` is updated
 - `changelog.md` includes a summary of completion
+
+---
+
+## 7.13 Artifact quality gates
+
+After every Planner / Generator / Evaluator dispatch, Orchestrator reads the
+files the subagent claims to have written before advancing state.
+
+The check is not only "file exists and is non-empty." Orchestrator should
+reject and rerun the responsible role when an artifact violates its role:
+
+- `plan.md` is thin, or bloated with task lists, test matrices, command
+  transcripts, schemas, route tables, or low-level implementation detail.
+- `tasks.md` mostly restates `plan.md`, creates one task per Plan bullet, or
+  embeds spec/test detail instead of concrete work and completion evidence.
+- `validation_intent.md` is an exhaustive EV-ID matrix instead of preflight
+  guidance.
+- `implementation_log.md` contains diffs, full code blocks, or command
+  transcripts instead of summary-level implementation evidence.
+- `generator_self_check.md` duplicates `validation_plan.md` or pre-judges every
+  EV-ID instead of summarizing readiness and primary evidence.
+- `validation_plan.md` creates tiny EV-IDs for every assertion/source line
+  instead of grouped checks by risk area.
+- `evaluation_report.md` or `evaluation_history.md` duplicate routine pass
+  evidence instead of keeping detail focused on failures, blockers, surprising
+  results, and high-risk checks.
+
+When rejecting an artifact, Orchestrator should dispatch the same role again
+with a concrete rewrite instruction and should not advance the state machine
+until the artifact is both substantive and role-appropriate.
 
 ---
 
@@ -1635,6 +1756,8 @@ The Orchestrator must:
 - prevent infinite loops
 - mark blockers clearly
 - ensure every Phase maps back to Requirements
+- reject and rerun workflow artifacts that are bloated, duplicate another
+  artifact, or contain content owned by another role
 
 The Orchestrator must not:
 
@@ -1648,12 +1771,14 @@ The Orchestrator must not:
 The Planner must:
 
 - read Requirements, Roadmap, Current State, and Phase file
-- expand the raw requirement into a rich product-level spec
+- expand the raw requirement into a product-level, proportionate spec
 - prevent Generator under-scoping
 - focus on product context, user-facing behavior, interaction flow, functional depth, and high-level technical design
 - identify what a complete product experience should feel like
 - include edge cases, empty states, failure states, and consistency expectations when relevant
 - avoid premature granular implementation detail
+- avoid copying schemas, route tables, test matrices, command transcripts, or
+  task lists into the Plan
 - record Requirement coverage
 - define acceptance intent
 - avoid unrelated feature invention
@@ -1673,11 +1798,11 @@ The Planner must not:
 The Generator must:
 
 - read Requirements, Plan, Tasks, Current State, and latest Evaluation Report if present
-- decompose Plan into Tasks
+- decompose Plan into proportionate Tasks without copying the Plan into each task
 - implement complete behavior, not isolated fragments
 - preserve existing architecture and conventions
-- update tasks and implementation logs
-- self-check before evaluation
+- update tasks and implementation logs at summary level
+- self-check before evaluation without producing an Evaluator-style EV matrix
 - honestly record limitations and risks
 
 The Generator must not:
@@ -1696,18 +1821,20 @@ The Evaluator must:
 - read Requirements, Plan, Tasks, Implementation Log, and Self Check
 - evaluate against the expanded Plan, not only the raw request
 - choose appropriate validation level
-- create Validation Plan
+- create a grouped Validation Plan
 - verify product-level correctness
 - distinguish critical, major, and minor issues
 - return pass/fail/blocked
 - provide concrete next actions
-- append results to Evaluation History
+- append short snapshots to Evaluation History
 
 The Evaluator must not:
 
 - rely only on Generator summary
 - pass partially working core behavior
 - pass an implementation that satisfies the literal request but misses important Planner-defined acceptance intent
+- create exhaustive EV-ID matrices when grouped checks would give the same confidence
+- duplicate the full Evaluation Report into Evaluation History
 - require Playwright or E2E when unnecessary
 - ignore code quality issues
 - be vague or flattering without evidence
@@ -1794,4 +1921,3 @@ Evaluator must evaluate against Requirement + Plan acceptance intent, not only s
 No Phase is complete until Evaluator passes it.
 No project is complete until every Phase is passed or explicitly resolved.
 ```
-
