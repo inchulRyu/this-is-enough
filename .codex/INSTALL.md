@@ -1,14 +1,52 @@
 # Installing ThisIsEnough (`tie`) for Codex CLI
 
-Codex discovers skills natively from `~/.agents/skills/`. Install by cloning the repo
-and creating a symlink — no plugin manager needed.
+Codex CLI 0.125+ has a built-in plugin marketplace and accepts our
+`.claude-plugin/marketplace.json` directly — that's the easiest path. Older
+Codex builds only support `~/.agents/skills/` discovery; Options B and C
+handle that.
 
 ## Prerequisites
 
+- Codex CLI (0.125+ for Option A; any version for B/C)
 - Git
-- Codex CLI
 
-## Installation
+## Option A — Codex plugin marketplace (recommended, 0.125+)
+
+```bash
+codex plugin marketplace add inchulRyu/this-is-enough
+```
+
+This writes a `[marketplaces.thisisenough]` entry to `~/.codex/config.toml`
+and clones the marketplace into `~/.codex/.tmp/marketplaces/thisisenough`.
+
+Launch `codex`, open the plugin picker, and enable **tie@thisisenough**. The
+`tie:*` skills become available in your sessions.
+
+To update later:
+
+```bash
+codex plugin marketplace upgrade thisisenough
+```
+
+To remove:
+
+```bash
+codex plugin marketplace remove thisisenough
+```
+
+## Option B — Skill symlink one-liner (older Codex, or no marketplace)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/inchulRyu/this-is-enough/main/install-codex.sh | bash
+```
+
+The script clones to `~/.codex/thisisenough` and symlinks
+`~/.agents/skills/tie`. Re-run it any time to update — it's idempotent. Then
+restart Codex.
+
+## Option C — Manual clone + symlink
+
+Use this on Windows, or when you want to see every step.
 
 1. **Clone the repo:**
    ```bash
@@ -31,14 +69,17 @@ and creating a symlink — no plugin manager needed.
 
 ## Verify
 
+Inside Codex, type `$tie:` and you should see `tie:orchestrator`,
+`tie:planner`, `tie:generator`, `tie:evaluator`, `tie:resume`, `tie:status`.
+
+For Options B/C you can also confirm the symlink directly:
+
 ```bash
 ls -la ~/.agents/skills/tie
 ```
 
-You should see a symlink (or junction on Windows) into the cloned `skills/` directory.
-
-Inside Codex, type `/skills` or `$tie:` — you should see `tie:orchestrator`,
-`tie:planner`, `tie:generator`, `tie:evaluator`, `tie:resume`, `tie:status`.
+You should see a symlink (or junction on Windows) into the cloned `skills/`
+directory.
 
 ## Usage
 
@@ -48,9 +89,9 @@ In a Codex session, kick off the workflow once:
 $tie:orchestrator I want to build <your requirement here>
 ```
 
-The orchestrator handles everything from there. It will only stop on a real blocker
-(critical decision needed, environment broken, repeated unrecoverable failure) or
-when the project is complete. To resume after a session ends:
+The orchestrator handles everything from there. It will only stop on a real
+blocker (critical decision needed, environment broken, repeated unrecoverable
+failure) or when the project is complete. To resume after a session ends:
 
 ```
 $tie:resume
@@ -64,14 +105,19 @@ $tie:status
 
 ## Updating
 
-```bash
-cd ~/.codex/thisisenough && git pull
-```
-
-The symlink picks up changes instantly. Restart Codex if a session is open.
+- **Option A:** `codex plugin marketplace upgrade thisisenough`
+- **Option B:** rerun the `install-codex.sh` one-liner
+- **Option C:** `cd ~/.codex/thisisenough && git pull` (the symlink picks up
+  changes instantly; restart Codex if a session is open)
 
 ## Uninstalling
 
+**Option A:**
+```bash
+codex plugin marketplace remove thisisenough
+```
+
+**Options B / C:**
 ```bash
 rm ~/.agents/skills/tie
 rm -rf ~/.codex/thisisenough   # optional, removes the clone

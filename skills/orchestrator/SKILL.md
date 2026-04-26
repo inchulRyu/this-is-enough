@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: Use when the user states a software requirement and wants it built end-to-end with minimal hand-holding. Drives the full workflow — intake → clarify → roadmap → for each phase: plan → decompose → implement → self-check → evaluate → fix-loop → next phase — and stops only on a real blocker or project completion. Always use this BEFORE doing any planning or implementation yourself when a multi-step product change is requested.
+description: "Use when the user states a software requirement and wants it built end-to-end with minimal hand-holding. Drives the full workflow — intake → clarify → roadmap → for each phase: plan → decompose → implement → self-check → evaluate → fix-loop → next phase — and stops only on a real blocker or project completion. Always use this BEFORE doing any planning or implementation yourself when a multi-step product change is requested."
 ---
 
 # tie:orchestrator — autonomous workflow runtime
