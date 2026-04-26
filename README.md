@@ -31,20 +31,59 @@ resume cleanly with `$tie:resume` or `/tie:resume`.
 
 ## Install
 
-### Claude Code
+### Claude Code — persistent install (recommended)
 
-Local development:
+The repo doubles as its own plugin marketplace (`.claude-plugin/marketplace.json`).
+You add it once and Claude Code remembers it across all sessions and projects —
+no `--plugin-dir` flag, no per-session setup.
+
+**Option A: from a local clone** (fastest if you already have the repo on disk):
+
 ```bash
 git clone https://github.com/inchulRyu/this-is-enough.git
-claude --plugin-dir ./this-is-enough
 ```
 
-Once a marketplace is published:
-```bash
-/plugin install tie@<marketplace-name>
+Then inside Claude Code:
+
+```text
+/plugin marketplace add /absolute/path/to/this-is-enough
+/plugin install tie@thisisenough
+/reload-plugins
 ```
+
+**Option B: directly from GitHub** (no clone needed):
+
+```text
+/plugin marketplace add inchulRyu/this-is-enough
+/plugin install tie@thisisenough
+/reload-plugins
+```
+
+After install you can verify with `/plugin` → **Installed** tab. The skills
+(`/tie:start`, `/tie:resume`, `/tie:status`, `/tie:next`) appear in the slash
+command picker.
+
+To pull updates later:
+
+```text
+/plugin marketplace update thisisenough
+/reload-plugins
+```
+
+### Claude Code — dev / one-off testing
+
+For iterating on the plugin itself without registering it:
+
+```bash
+claude --plugin-dir /path/to/this-is-enough
+```
+
+This loads the plugin only for the current session.
 
 ### Codex CLI
+
+Codex discovers skills natively from `~/.agents/skills/`. Install once with a
+clone + symlink and it persists across all Codex sessions:
 
 ```bash
 git clone https://github.com/inchulRyu/this-is-enough.git ~/.codex/thisisenough
@@ -57,6 +96,20 @@ Restart Codex. Full instructions in [`.codex/INSTALL.md`](./.codex/INSTALL.md).
 > Codex tip: subagent dispatch requires `multi_agent = true` in
 > `~/.codex/config.toml`. Without it, Planner/Generator/Evaluator run inline
 > in the orchestrator's context (works, but uses more tokens).
+
+### Uninstalling
+
+**Claude Code:**
+```text
+/plugin uninstall tie@thisisenough
+/plugin marketplace remove thisisenough
+```
+
+**Codex CLI:**
+```bash
+rm ~/.agents/skills/tie
+rm -rf ~/.codex/thisisenough   # optional, removes the clone
+```
 
 ## Use
 
