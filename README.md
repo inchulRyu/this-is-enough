@@ -5,7 +5,7 @@
 
 ThisIsEnough is a **file-first autonomous workflow runtime** for coding agents.
 It implements the spec in
-[`agent_orchestrator_workflow_runtime_spec_v_0_3.md`](./agent_orchestrator_workflow_runtime_spec_v_0_3.md)
+[`docs/runtime-spec-v0.3.md`](./docs/runtime-spec-v0.3.md)
 as a cross-platform plugin that works in both **Claude Code** and **Codex CLI**.
 
 ## What it does
@@ -218,7 +218,7 @@ If any of those come up, it stops with a clear blocker.
 ## Spec
 
 The full design rationale and template details live in
-[`agent_orchestrator_workflow_runtime_spec_v_0_3.md`](./agent_orchestrator_workflow_runtime_spec_v_0_3.md).
+[`docs/runtime-spec-v0.3.md`](./docs/runtime-spec-v0.3.md).
 The skills in this plugin implement that spec faithfully.
 
 ## License
