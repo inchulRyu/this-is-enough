@@ -1,0 +1,22 @@
+{
+  "name": "tie",
+  "description": "ThisIsEnough — autonomous file-first workflow runtime. Run one skill, the orchestrator drives planning, implementation, evaluation, and fix loops until project completion or a real blocker.",
+  "version": "0.1.0",
+  "author": {
+    "name": "inchulryu",
+    "email": "65108642+inchulRyu@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/inchulRyu/this-is-enough",
+  "repository": "https://github.com/inchulRyu/this-is-enough",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "orchestrator",
+    "planner",
+    "generator",
+    "evaluator",
+    "agent",
+    "autonomous",
+    "file-first"
+  ]
+}

@@ -1,0 +1,26 @@
+# Implementation Log
+
+## <date/time>
+
+### Completed
+
+- G-001: ...
+- G-002: ...
+
+### Files changed
+
+- ...
+
+### Decisions made
+
+- D-001: ...
+
+### Failed approaches
+
+- Tried: ...
+- Why it failed: ...
+- Do not repeat: ...
+
+### Known risks
+
+- ...

@@ -1,0 +1,26 @@
+# Changelog
+
+## <date/time>
+
+### Status
+
+- Current phase: ...
+- Current owner: ...
+
+### Completed
+
+- ...
+
+### Failed approaches
+
+- Tried: ...
+- Why it failed: ...
+- Do not repeat: ...
+
+### Known limitations
+
+- ...
+
+### Next action
+
+- ...

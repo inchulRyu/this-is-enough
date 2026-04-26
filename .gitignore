@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Node / JS (in case anyone consumes the plugin from a node toolchain)
+node_modules/
+
+# Python (in case scripts/ grow)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# By default, agents_workspace/ IS committed because it's the resume substrate
+# for ThisIsEnough. Uncomment the next line if you don't want it in version
+# control for a particular project that uses the plugin.
+# agents_workspace/
