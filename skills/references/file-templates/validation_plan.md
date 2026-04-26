@@ -1,5 +1,9 @@
 # Validation Plan
 
+<!-- Concrete validation plan. Prefer grouped EV-IDs by risk area. Put related
+sub-assertions under one EV-ID instead of making a new EV-ID for every field,
+route, or source line. -->
+
 ## Scope
 
 Evaluate Phase <n>: <phase name>
@@ -32,19 +36,20 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 ## Validation checks
 
-### EV-001: Requirement coverage
+### EV-001: Requirement and acceptance coverage
 Method: static review
 Related requirements:
 - RQ-001
 Expected:
-- ...
+- <all must-have requirements and acceptance intent are covered>
 
-### EV-002: Product behavior
+### EV-002: Product behavior / runtime scenario
 Method: runtime | test | code review | e2e | benchmark
 Related plan sections:
 - ...
 Expected:
-- ...
+- <observable behavior; include related sub-assertions here if they share the
+  same method/risk>
 
 ### EV-003: Integration quality
 Method: code review / integration test

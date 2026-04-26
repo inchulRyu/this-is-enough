@@ -160,8 +160,11 @@ a. **Init phase directory** — create `phases/NN-<slug>/` and `phase.md` from t
 
 b. **Plan** — dispatch `tie:planner` subagent. Pass it: phase path,
    `requirements.md`, `roadmap.md`, `current_state.md`. It writes `plan.md`.
-   When it returns, read `plan.md` to verify it's substantive. If thin, dispatch
-   again with a more pointed prompt. Update phase status: `planned`.
+   When it returns, read `plan.md` to verify it's substantive and bounded. If
+   thin, dispatch again with a more pointed prompt. If bloated with task lists,
+   test matrices, command transcripts, or low-level implementation detail,
+   dispatch again asking for a product-level rewrite. Update phase status:
+   `planned`.
 
 c. **Decompose** — dispatch `tie:generator` with mode `decompose`. It writes
    `tasks.md`. Update status: `decomposing` → `decomposed`.
@@ -182,7 +185,8 @@ f. **Self-check** — set phase status `self_checking`, then dispatch
 g. **Evaluate** — set phase status `validation_planning`, then dispatch
    `tie:evaluator` with mode `full`. It chooses a validation level (L0–L5) and
    writes `validation_plan.md`. Set status `evaluating`. The evaluator runs the
-   checks, writes `evaluation_report.md`, and appends to `evaluation_history.md`.
+   checks, writes `evaluation_report.md`, and appends a short snapshot to
+   `evaluation_history.md`.
 
 h. **Branch on verdict:**
 

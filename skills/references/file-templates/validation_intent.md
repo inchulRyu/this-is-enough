@@ -1,5 +1,8 @@
 # Validation Intent
 
+<!-- Preflight guidance only. Do not assign an exhaustive EV-ID matrix here;
+save concrete EV-IDs for validation_plan.md. -->
+
 ## Phase
 
 <phase name>
@@ -12,9 +15,9 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 - ...
 
-## Likely validation checks
+## Representative validation checks
 
-- ...
+- <risk area>: <method and expected confidence>
 
 ## Areas Generator should be careful about
 

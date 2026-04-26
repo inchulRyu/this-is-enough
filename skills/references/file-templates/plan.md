@@ -1,8 +1,12 @@
 # Plan
 
+<!-- Keep this product-level and proportionate. Do not paste schemas, route
+tables, test matrices, or task lists when they can be referenced from
+requirements/decisions/code. -->
+
 ## Requirement coverage
 
-- RQ-001: <how this plan reflects it>
+- RQ-001: <briefly describe how this plan reflects it>
 - RQ-002: <how this plan reflects it>
 
 ## Feature summary
@@ -15,7 +19,8 @@
 
 ## Why this should not be under-scoped
 
-<what would likely be missed if Generator implemented only the raw request>
+<the most important things that would likely be missed if Generator implemented
+only the raw request>
 
 ## Expanded product spec
 
@@ -31,7 +36,8 @@
 
 ### Functional depth
 
-- ...
+- <behavioral depth and user-visible/system guarantees; avoid enumerating every
+  field/function/test>
 
 ### Edge cases / empty states / failure states
 
@@ -43,7 +49,8 @@
 
 ## High-level technical design
 
-- ...
+- <direction and integration points only; leave exact file/function boundaries
+  to Generator unless fixed by requirements or decisions>
 
 ## Implementation freedom left for Generator
 

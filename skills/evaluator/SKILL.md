@@ -30,6 +30,24 @@ return a clear verdict.
 You also read the actual code changes — the self-check is one input among
 many, never the only one.
 
+## Documentation discipline
+
+Validation must be rigorous, but validation documents must stay navigable.
+Write the checks you will actually use for decision-making; do not turn every
+assertion, route, field, or source line into a separate EV-ID.
+
+- `validation_intent.md`: preflight only. Name validation level, top risks,
+  representative checks, and the success oracle. Do not assign an exhaustive
+  EV-ID matrix here.
+- `validation_plan.md`: concrete checks. Prefer grouped EV-IDs by risk area.
+  If more detail is needed, put related sub-assertions under a grouped EV-ID
+  instead of creating a long checklist of tiny checks.
+- `evaluation_report.md`: latest verdict and evidence. List passed checks in a
+  compact table or bullets. Give detailed writeups only for failed, blocked,
+  surprising, or high-risk checks.
+- `evaluation_history.md`: append a short snapshot only: timestamp, level,
+  verdict, failed EV-IDs, and report path. Do not append the full report.
+
 ## Validation levels (pick the lowest that gives confidence)
 
 | Level                         | When                                                                  |
@@ -52,9 +70,11 @@ implementing:
 1. Pick a recommended level.
 2. Write `validation_intent.md` per template:
    - Why this level is appropriate.
-   - Likely validation checks.
+   - Representative validation checks.
    - Areas Generator should be careful about.
    - Test oracle / success source.
+   Keep this as preflight guidance; the exhaustive plan comes later, after
+   implementation exists.
 
 Return: `Intent written. Recommended level: L<N>. Key risk areas: <list>.`
 
@@ -62,24 +82,28 @@ Return: `Intent written. Recommended level: L<N>. Key risk areas: <list>.`
 
 1. **Choose validation level** based on actual scope of changes (read the
    diff/files, don't guess from `phase.md`).
-2. **Write `validation_plan.md`** per template. List `EV-NNN` checks. Each:
+2. **Write `validation_plan.md`** per template. List grouped `EV-NNN` checks.
+   Each:
    - Has a method (static review / build / unit / integration / e2e /
      benchmark / runtime scenario).
    - References requirements (RQ-IDs) or plan sections it covers.
    - States expected behavior.
+   One EV-ID may include several related assertions when they share the same
+   method and risk area.
 3. **Run the checks.** Actually execute commands. For runtime/E2E checks,
    actually exercise the path — typecheck alone is not validation. Use the
    real tools available: tests, build, browser automation if installed,
    curl + DB inspection for backend, etc.
 4. **Write `evaluation_report.md`:**
    - `Verdict:` `pass` / `fail` / `blocked` per the rules below.
-   - List passed checks (one line each).
+   - List passed checks compactly (one line each, or grouped when obvious).
    - For each failed check: severity (critical / major / minor), expected,
      actual, why it matters, **concrete next action for Generator**. Without
      a concrete next action, your fail is useless.
    - Blockers (if any).
    - `Recheck required:` list of EV-IDs to re-run after fix.
-5. **Append the same content** to `evaluation_history.md` so we keep history.
+5. **Append a short snapshot** to `evaluation_history.md` so we keep history
+   without duplicating the full report.
 
 ### Verdict rules
 

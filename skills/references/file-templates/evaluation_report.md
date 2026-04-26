@@ -1,5 +1,8 @@
 # Evaluation Report
 
+<!-- Latest verdict. Keep passed evidence compact; write detail for failures,
+blockers, surprising results, and high-risk checks only. -->
+
 Verdict: pass | fail | blocked
 Validation level used: L0 | L1 | L2 | L3 | L4 | L5
 
@@ -9,8 +12,12 @@ Validation level used: L0 | L1 | L2 | L3 | L4 | L5
 
 ## Passed checks
 
-- EV-001: ...
+- EV-001: <one-line evidence>
 - EV-002: ...
+
+## Notable evidence
+
+- <only high-risk or non-obvious pass evidence; omit routine command output>
 
 ## Failed checks
 

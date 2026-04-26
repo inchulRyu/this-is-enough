@@ -1,8 +1,8 @@
 # Evaluation History
 
-Append-only log of every evaluation run for this Phase. Newest entries at the
-bottom. Each entry summarizes the run; the full report for the latest run lives
-in `evaluation_report.md`.
+Append-only snapshot of every evaluation run for this Phase. Newest entries at
+the bottom. Keep entries short; the full latest report lives in
+`evaluation_report.md`.
 
 ---
 
@@ -16,10 +16,11 @@ Mode: full | recheck
 - EV-003: <one-line failure summary>
 - EV-004: <one-line failure summary>
 
-### Passed checks
+### Passed check summary
 
-- EV-001
-- EV-002
+- <count or grouped list only; do not duplicate the report>
+
+Report: evaluation_report.md
 
 ### Notes
 

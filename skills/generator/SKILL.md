@@ -33,22 +33,30 @@ per invocation.
   note it in `implementation_log.md` as a "future item" — don't do it now.
 - **Don't hide failures.** If a test fails, a build breaks, a file refuses to
   save, write it down honestly. The Evaluator depends on truthful self-check.
+- **Keep workflow files compact.** They are navigation aids, not replicas of
+  the code, diff, test logs, or evaluator report. Reference files, task IDs,
+  EV-IDs, commands, and commits instead of pasting detailed outputs.
 - **Don't touch unrelated user files**, never `git reset --hard`, never push
   without orchestrator-confirmed user permission.
 
 ## Mode: `decompose`
 
-1. Read `plan.md`. For every section under "Expanded product spec" and every
-   acceptance-intent bullet, identify the units of implementation work.
+1. Read `plan.md`. Group related behavior and acceptance intent into the
+   smallest useful implementation tasks. Do not create one task per Plan bullet
+   or restate the Plan inside each task.
 2. Write `tasks.md` using the template. Each task:
    - Has ID `G-NNN`.
    - Lists `Related requirements` (RQ-IDs).
-   - Lists `Related plan sections`.
+   - Lists only the most relevant `Related plan sections`.
    - Has a focused, single-responsibility description.
-   - Has `Expected evidence of completion` you'll point at later.
+   - Has concise `Expected evidence of completion` you'll point at later.
 3. Tasks should be sized so a competent engineer could finish each in one
-   sitting. If a task feels like a whole feature, split it.
+   sitting. If a task feels like a whole feature, split it. If a task is mostly
+   a copy of a Plan subsection, shrink it.
 4. Mark all tasks `Status: pending`.
+5. Keep the task list proportionate to the Phase. Use enough tasks to make the
+   implementation tractable, but do not split work just to mirror every Plan
+   bullet or acceptance statement.
 
 Return: `tasks.md written. <N> tasks. Covers all RQ-IDs: <list>.`
 
@@ -66,6 +74,9 @@ Return: `tasks.md written. <N> tasks. Covers all RQ-IDs: <list>.`
    completed task IDs, files changed, decisions made (cross-link to
    `decisions.md` for D-NNN entries), failed approaches with "do not repeat"
    notes, known risks.
+   Keep entries summary-level: one sentence per changed file or file group,
+   no diffs, no full code blocks, no command transcripts. If a command output
+   matters, record command + pass/fail + the one relevant line.
 7. Loop to the next pending task.
 
 Stop when:
@@ -85,8 +96,10 @@ the Evaluator's work — it is to avoid handing them obvious problems.
 1. Re-read `requirements.md`, `phase.md`, `plan.md`, `tasks.md`,
    `current_state.md`, `implementation_log.md`, and `validation_intent.md` if it
    exists.
-2. For each RQ-ID this phase owns: did you actually address it? Where?
-3. For each acceptance-intent bullet in `plan.md`: did you satisfy it?
+2. For each RQ-ID this phase owns: did you actually address it? Point to the
+   primary task/file/test evidence, not every supporting line.
+3. Check acceptance intent by grouping related bullets. Do not create a
+   line-by-line EV-ID matrix; that is the Evaluator's job.
 4. Run the relevant verification commands (build, typecheck, lint, tests).
 5. For UI/UX changes, do at least one runtime exercise of the golden path
    (don't just rely on typecheck).
@@ -94,6 +107,8 @@ the Evaluator's work — it is to avoid handing them obvious problems.
    - Known limitations (the Evaluator will find these — better you flag them).
    - Areas that need evaluator focus.
    - Failed verification commands and why.
+   Keep it concise and evidence-focused. It should summarize readiness, not
+   reproduce `validation_plan.md` or pre-judge every EV-ID.
 7. Set `Ready for evaluation:` honestly. If `no`, your loop continues — return
    the gap to the orchestrator and they will dispatch you back to `implement`.
 
@@ -119,6 +134,8 @@ The Evaluator returned `fail`. The orchestrator passes you the failed EV-IDs.
    - What changed.
    - Why the previous attempt failed (the Evaluator told you).
    - Why this attempt should succeed.
+   Keep the fix log to the failed EV-IDs and touched files only. Do not
+   rewrite the full implementation history.
 5. If you cannot fix a check after one attempt, do NOT silently shrink the
    acceptance criteria. Document the obstacle and return to orchestrator —
    they'll decide whether to escalate to `blocked`.
