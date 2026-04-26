@@ -1289,11 +1289,22 @@ A Phase is complete only when:
 
 ## 7.13 Artifact quality gates
 
-After every Planner / Generator / Evaluator dispatch, Orchestrator reads the
+After every Planner / Generator / Evaluator dispatch, Orchestrator verifies the
 files the subagent claims to have written before advancing state.
 
-The check is not only "file exists and is non-empty." Orchestrator should
-reject and rerun the responsible role when an artifact violates its role:
+The check is not a full audit of every workflow file. Orchestrator checks only
+the artifact(s) newly written by the step, starting with a shallow role-fit
+check:
+
+- file exists and is non-empty
+- expected headings / status / verdict fields are present
+- task/check ID counts look plausible for the Phase
+- small targeted excerpts do not show obvious duplication, pasted diffs, or
+  command transcripts
+
+Orchestrator deep-reads only when the shallow check shows red flags.
+Orchestrator should reject and rerun the responsible role when an artifact
+violates its role:
 
 - `plan.md` is thin, or bloated with task lists, test matrices, command
   transcripts, schemas, route tables, or low-level implementation detail.
