@@ -82,42 +82,34 @@ This loads the plugin only for the current session.
 
 ### Codex CLI
 
-Codex CLI 0.125+ ships a built-in plugin marketplace that mirrors Claude Code's
-UX, and our `.claude-plugin/marketplace.json` is compatible with it. Older
-versions only see `~/.agents/skills/` — Options B/C cover that case.
-
-**Option A — Codex plugin marketplace (recommended, Codex 0.125+):**
-
-```bash
-codex plugin marketplace add inchulRyu/this-is-enough
-```
-
-Then launch `codex`, open the plugin picker, and enable **tie@thisisenough**.
-To update or remove later:
-
-```bash
-codex plugin marketplace upgrade thisisenough
-codex plugin marketplace remove  thisisenough
-```
-
-**Option B — Skill symlink one-liner** (older Codex, or if you'd rather skip
-the plugin marketplace entirely):
+Codex currently discovers skills most reliably from `~/.agents/skills/`. Install
+with the one-liner:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inchulRyu/this-is-enough/main/install-codex.sh | bash
 ```
 
-Idempotent — re-run any time to update the clone and refresh the symlink.
+The script clones to `~/.codex/thisisenough` and creates
+`~/.agents/skills/tie -> ~/.codex/thisisenough/skills`. It is idempotent: re-run
+the same command any time to update the clone and refresh the symlink.
 
-**Option C — Manual clone + symlink** (Windows, or full transparency):
+Restart Codex, then type:
 
-```bash
-git clone https://github.com/inchulRyu/this-is-enough.git ~/.codex/thisisenough
-mkdir -p ~/.agents/skills
-ln -s ~/.codex/thisisenough/skills ~/.agents/skills/tie
+```text
+$tie:
 ```
 
-Restart Codex after any option. Full reference in [`.codex/INSTALL.md`](./.codex/INSTALL.md).
+You should see `tie:orchestrator`, `tie:planner`, `tie:generator`,
+`tie:evaluator`, `tie:resume`, and `tie:status`.
+
+To uninstall:
+
+```bash
+rm ~/.agents/skills/tie
+rm -rf ~/.codex/thisisenough
+```
+
+Full reference in [`.codex/INSTALL.md`](./.codex/INSTALL.md).
 
 > Codex tip: subagent dispatch requires `multi_agent = true` in
 > `~/.codex/config.toml`. Without it, Planner/Generator/Evaluator run inline
@@ -131,12 +123,7 @@ Restart Codex after any option. Full reference in [`.codex/INSTALL.md`](./.codex
 /plugin marketplace remove thisisenough
 ```
 
-**Codex CLI** (Option A, plugin marketplace):
-```bash
-codex plugin marketplace remove thisisenough
-```
-
-**Codex CLI** (Options B/C, `~/.agents/skills/` symlink):
+**Codex CLI:**
 ```bash
 rm ~/.agents/skills/tie
 rm -rf ~/.codex/thisisenough   # optional, removes the clone

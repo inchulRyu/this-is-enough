@@ -23,7 +23,8 @@ command -v git >/dev/null 2>&1 || err "git is required but not found in PATH"
 
 if [ -d "$CLONE_DIR/.git" ]; then
   log "Updating existing clone at $CLONE_DIR"
-  git -C "$CLONE_DIR" pull --ff-only
+  git -C "$CLONE_DIR" fetch --prune origin
+  git -C "$CLONE_DIR" reset --hard origin/main
 elif [ -e "$CLONE_DIR" ]; then
   err "$CLONE_DIR exists but is not a git clone — refusing to overwrite"
 else
