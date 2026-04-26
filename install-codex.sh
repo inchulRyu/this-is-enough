@@ -3,7 +3,7 @@
 # Idempotent: re-running updates the clone and refreshes the symlink.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/inchulRyu/this-is-enough/main/install-codex.sh | bash
+#   curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/install-codex.sh | bash
 #
 # Override defaults via env vars:
 #   TIE_REPO_URL    git URL to clone (default: github.com/inchulRyu/this-is-enough)

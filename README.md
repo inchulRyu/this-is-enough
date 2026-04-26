@@ -86,7 +86,7 @@ Codex currently discovers skills most reliably from `~/.agents/skills/`. Install
 with the one-liner:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/inchulRyu/this-is-enough/main/install-codex.sh | bash
+curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/install-codex.sh | bash
 ```
 
 The script clones to `~/.codex/thisisenough` and creates

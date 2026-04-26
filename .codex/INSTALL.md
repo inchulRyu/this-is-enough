@@ -13,7 +13,7 @@ skill link.
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/inchulRyu/this-is-enough/main/install-codex.sh | bash
+curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/install-codex.sh | bash
 ```
 
 The script:
@@ -54,7 +54,7 @@ ls -la ~/.agents/skills/tie
 Re-run the same installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/inchulRyu/this-is-enough/main/install-codex.sh | bash
+curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/install-codex.sh | bash
 ```
 
 Then restart Codex if a session is already open.
