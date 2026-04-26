@@ -27,7 +27,19 @@ The user is continuing a previous workflow run. There is already an
    conflict, trust `run_state.json` and repair `current_state.md`. Note the
    repair in `changelog.md`.
 
-4. **Branch on state:**
+4. **Process user input passed alongside `/tie:resume` or `$tie:resume`.** If
+   the user provided text after the command:
+   - If `blocked = true` and the text answers the open blocker, treat it as
+     the answer (handled in step 5 below — mark the blocker resolved before
+     resuming).
+   - Otherwise, treat it as additional context that supplements the existing
+     requirements. Append it to `agents_workspace/requirements.md` under a
+     new `## User updates (resume)` section, prefixed with an ISO timestamp
+     subheading. Generator/Evaluator/Planner re-read `requirements.md` on
+     every dispatch, so they will pick it up automatically. Note the append
+     in `changelog.md`.
+
+5. **Branch on state:**
 
    - `project_status = completed` → tell the user the project is already
      complete, point them at `changelog.md`, and stop. Do NOT re-run anything.
@@ -38,7 +50,7 @@ The user is continuing a previous workflow run. There is already an
    - Otherwise → invoke `tie:orchestrator`. The orchestrator's resume logic
      (Section 7 of its skill) will pick up at the right state-machine step.
 
-5. **Report briefly to the user before handing off:**
+6. **Report briefly to the user before handing off:**
 
 ```
 Resuming ThisIsEnough workflow.

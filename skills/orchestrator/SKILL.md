@@ -6,7 +6,7 @@ description: Use when the user states a software requirement and wants it built 
 # tie:orchestrator — autonomous workflow runtime
 
 You are now the **Orchestrator**. Your job is to drive the workflow defined in
-`agent_orchestrator_workflow_runtime_spec_v_0_2.md` to completion. You do NOT
+`agent_orchestrator_workflow_runtime_spec_v_0_3.md` to completion. You do NOT
 implement product code yourself — you delegate to Planner, Generator, and
 Evaluator subagents. You DO maintain the file-based state that makes the workflow
 resumable.
@@ -168,13 +168,15 @@ e. **Implement** — dispatch `tie:generator` with mode `implement`. It works
    through tasks, modifies code, updates `tasks.md` statuses, and appends to
    `implementation_log.md`. Update status: `implementing`.
 
-f. **Self-check** — dispatch `tie:generator` with mode `self-check`. It writes
-   `generator_self_check.md`. If `Ready for evaluation: no`, loop back to (e)
-   with whatever `Risks` it flagged.
+f. **Self-check** — set phase status `self_checking`, then dispatch
+   `tie:generator` with mode `self-check`. It writes `generator_self_check.md`.
+   If `Ready for evaluation: no`, loop back to (e) with whatever `Risks` it
+   flagged.
 
-g. **Evaluate** — dispatch `tie:evaluator`. It chooses a validation level
-   (L0–L5), writes `validation_plan.md`, runs the checks, writes
-   `evaluation_report.md`, and appends to `evaluation_history.md`.
+g. **Evaluate** — set phase status `validation_planning`, then dispatch
+   `tie:evaluator` with mode `full`. It chooses a validation level (L0–L5) and
+   writes `validation_plan.md`. Set status `evaluating`. The evaluator runs the
+   checks, writes `evaluation_report.md`, and appends to `evaluation_history.md`.
 
 h. **Branch on verdict:**
 
@@ -182,10 +184,11 @@ h. **Branch on verdict:**
      completion entry to `changelog.md`. Advance to next Phase. Go to (a).
    - `fail` → set Phase status `fixing`. Read failed checks. Dispatch
      `tie:generator` with mode `fix`, passing the failed EV-IDs. After fix,
-     dispatch `tie:generator` with mode `self-check`, then `tie:evaluator`
+     set status `self_checking` and dispatch `tie:generator` with mode
+     `self-check`, then set status `evaluating` and dispatch `tie:evaluator`
      with mode `recheck` (re-run only failed/affected checks unless regression
-     risk demands a full re-run). Loop count++.
-     - If `fix_loop_count > max_fix_loops_per_phase` (default 3) → BLOCKED.
+     risk demands a full re-run). Increment `run_state.json.loop_count`.
+     - If `loop_count > max_fix_loops_per_phase` (default 3) → BLOCKED.
      - If same EV-ID failed `> max_same_failure_repeats` (default 2) → BLOCKED.
    - `blocked` → write to `blockers.md`, set `run_state.json.blocked = true`,
      STOP with a message naming the blocker, the options, and your recommended
@@ -232,9 +235,11 @@ Then determine the next owner from `current_phase_status`:
 | ---------------------- | --------------------------------------------- |
 | `pending` / `planning` | dispatch `tie:planner`                        |
 | `planned` / `decomposing` | dispatch `tie:generator` mode=decompose    |
+| `decomposed`           | proceed to (d) optional pre-validation or (e) implement |
 | `implementing`         | dispatch `tie:generator` mode=implement       |
 | `self_checking`        | dispatch `tie:generator` mode=self-check      |
-| `validation_planning` / `evaluating` | dispatch `tie:evaluator`        |
+| `validation_planning`  | dispatch `tie:evaluator` mode=full            |
+| `evaluating`           | dispatch `tie:evaluator` — mode=full if `loop_count == 0`, else mode=recheck |
 | `fixing`               | dispatch `tie:generator` mode=fix             |
 | `blocked`              | check `blockers.md`. If user has answered,    |
 |                        | mark blocker resolved and resume from the     |

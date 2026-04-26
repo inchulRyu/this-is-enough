@@ -379,6 +379,7 @@ pending
 planning
 planned
 decomposing
+decomposed
 implementing
 self_checking
 validation_planning
