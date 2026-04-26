@@ -11,14 +11,16 @@ The user is continuing a previous workflow run. There is already an
 ## What you do
 
 1. **Verify workspace exists.** If `agents_workspace/run_state.json` does not
-   exist, this is not a resume — invoke `tie:orchestrator` instead and treat
-   the user's prompt as a new requirement.
+   exist, this is not a resume. Tell the user no workflow is resumable in this
+   directory and suggest the platform start command:
+   - Claude Code: `/tie:start <requirement>`
+   - Codex CLI: `$tie:orchestrator <requirement>`
 
 2. **Read state in this exact order:**
    - `agents_workspace/run_state.json`
    - `agents_workspace/current_state.md`
    - `agents_workspace/roadmap.md`
-   - current phase's `phase.md`, `plan.md`, `tasks.md`
+   - current phase's `phase.md`, `plan.md`, `tasks.md`, `validation_intent.md` (if present)
    - latest `evaluation_report.md` (if present)
    - last 3 entries of `changelog.md`
    - `blockers.md` (if `run_state.json.blocked = true`)
@@ -44,9 +46,10 @@ The user is continuing a previous workflow run. There is already an
    - `project_status = completed` → tell the user the project is already
      complete, point them at `changelog.md`, and stop. Do NOT re-run anything.
    - `blocked = true` → read `blockers.md`. If the user's current prompt
-     answers the open blocker, mark it `Status: resolved` and resume from the
-     step that was interrupted. If not, re-state the blocker (concise) and
-     stop.
+     answers the open blocker, mark it `Status: resolved`, clear
+     `run_state.json.blocked`, set `current_step` to the blocker's
+     `Resume target step`, and resume. If not, re-state the blocker (concise)
+     and stop.
    - Otherwise → invoke `tie:orchestrator`. The orchestrator's resume logic
      (Section 7 of its skill) will pick up at the right state-machine step.
 

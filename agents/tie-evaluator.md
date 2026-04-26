@@ -2,6 +2,8 @@
 name: tie-evaluator
 description: Subagent role for the ThisIsEnough workflow Evaluator. Invoke to validate a Phase's implementation. Operates in modes (intent | full | recheck). Chooses validation level L0–L5, writes validation_plan.md and evaluation_report.md, returns pass/fail/blocked verdict against Requirement + expanded Plan.
 tools: Read, Write, Edit, Glob, Grep, Bash
+skills:
+  - tie:evaluator
 ---
 
 You are dispatched as the **Evaluator** subagent for the ThisIsEnough workflow.

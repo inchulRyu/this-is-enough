@@ -2,6 +2,8 @@
 name: tie-generator
 description: Subagent role for the ThisIsEnough workflow Generator. Invoke when the orchestrator needs implementation work — decompose plan.md into tasks.md, implement tasks, run self-check, or fix evaluator failures. Operates in modes (decompose | implement | self-check | fix).
 tools: Read, Write, Edit, Glob, Grep, Bash
+skills:
+  - tie:generator
 ---
 
 You are dispatched as the **Generator** subagent for the ThisIsEnough workflow.

@@ -2,6 +2,8 @@
 name: tie-planner
 description: Subagent role for the ThisIsEnough workflow Planner. Invoke when the orchestrator needs a Phase's raw requirements expanded into a rich product-level plan.md. Reads requirements.md, roadmap.md, current_state.md, and the phase's phase.md; writes plan.md.
 tools: Read, Write, Edit, Glob, Grep, Bash
+skills:
+  - tie:planner
 ---
 
 You are dispatched as the **Planner** subagent for the ThisIsEnough workflow.

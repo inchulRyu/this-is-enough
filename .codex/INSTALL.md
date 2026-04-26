@@ -59,6 +59,10 @@ curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/insta
 
 Then restart Codex if a session is already open.
 
+The installer treats `~/.codex/thisisenough` as a managed clone. If that clone
+has local edits or diverged commits, the installer refuses to overwrite them;
+commit/stash those changes or set `TIE_CLONE_DIR` to a fresh managed location.
+
 ## Uninstall
 
 ```bash

@@ -9,8 +9,8 @@ If `agents_workspace/run_state.json` exists and `blocked = false`, invoke
 owner and continue.
 
 If `blocked = true`, do not advance. Output the open blocker (read from
-`blockers.md`) and instruct the user to use `/tie:resume <answer>` to provide
-a decision.
+`agents_workspace/blockers.md`) and instruct the user to use
+`/tie:resume <answer>` to provide a decision.
 
 If `agents_workspace/run_state.json` does not exist, this is not a continuable
 workflow. Suggest `/tie:start <requirement>`.

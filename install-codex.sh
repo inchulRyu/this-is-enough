@@ -23,8 +23,17 @@ command -v git >/dev/null 2>&1 || err "git is required but not found in PATH"
 
 if [ -d "$CLONE_DIR/.git" ]; then
   log "Updating existing clone at $CLONE_DIR"
+  if [ -n "$(git -C "$CLONE_DIR" status --porcelain)" ]; then
+    err "$CLONE_DIR has local changes — refusing to overwrite. Commit/stash them or set TIE_CLONE_DIR to a managed clone."
+  fi
   git -C "$CLONE_DIR" fetch --prune origin
-  git -C "$CLONE_DIR" reset --hard origin/main
+  if git -C "$CLONE_DIR" merge-base --is-ancestor HEAD origin/main; then
+    git -C "$CLONE_DIR" merge --ff-only origin/main
+  elif [ "$(git -C "$CLONE_DIR" rev-parse HEAD)" = "$(git -C "$CLONE_DIR" rev-parse origin/main)" ]; then
+    log "Clone already at origin/main"
+  else
+    err "$CLONE_DIR has local commits or diverged history — refusing to reset. Use a fresh TIE_CLONE_DIR for managed installs."
+  fi
 elif [ -e "$CLONE_DIR" ]; then
   err "$CLONE_DIR exists but is not a git clone — refusing to overwrite"
 else

@@ -21,7 +21,7 @@ leaving implementation freedom for the Generator.
 
 `agents_workspace/phases/<this-phase>/plan.md`
 
-Use the template at `skills/references/file-templates/plan.md` as the structural
+Use the template at `../references/file-templates/plan.md` as the structural
 starting point.
 
 ## What to do

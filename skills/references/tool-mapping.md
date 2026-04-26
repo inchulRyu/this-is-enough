@@ -11,7 +11,7 @@ inside Codex CLI (or another agent host), translate as follows.
 | List directory / search        | `Glob` / `Grep`    | `find` / `rg` via `bash`        | same          |
 | Run a shell command            | `Bash`             | `bash`                          | `bash`        |
 | Spawn a subagent for one task  | `Task` / `Agent`   | `spawn_agent` (requires `multi_agent = true` in `~/.codex/config.toml`) | `spawn` |
-| Wait for a spawned subagent    | (return value)     | `wait`                          | (return)      |
+| Wait for a spawned subagent    | (return value)     | `wait_agent`                    | (return)      |
 | Track multi-step todos         | `TodoWrite`        | `update_plan`                   | `update_plan` |
 | Web fetch / search             | `WebFetch` / `WebSearch` | `bash` + `curl` / `web.search` (if enabled) | varies |
 
@@ -25,7 +25,7 @@ mechanism:
   one of the named agents bundled in `agents/` (`tie-planner`, `tie-generator`,
   `tie-evaluator`). The subagent prompt should tell it which `tie:<role>` skill
   to invoke and which phase directory to operate on.
-- **Codex CLI**: Call `spawn_agent` with a worker role, then `wait` for the
+- **Codex CLI**: Call `spawn_agent` with a worker role, then `wait_agent` for the
   result. The subagent prompt should likewise direct it to invoke the
   corresponding skill (e.g., `$tie:planner`) with the phase path.
 - **Fallback (no subagent support)**: Inline the role by directly invoking the

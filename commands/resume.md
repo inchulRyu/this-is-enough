@@ -16,4 +16,5 @@ section before continuing.
 
 If `agents_workspace/run_state.json` does not exist, this is not a resume.
 Tell the user there is no workflow to resume in this directory and suggest
-`/tie:start <requirement>` instead.
+`/tie:start <requirement>` instead. Do not start a new workflow from the resume
+command.

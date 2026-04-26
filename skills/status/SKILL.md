@@ -12,13 +12,15 @@ modify any file. Do not dispatch any subagent.
 
 1. **Verify workspace exists.** If `agents_workspace/run_state.json` is
    missing, say so plainly: "No ThisIsEnough workflow has been started in
-   this directory. Use `$tie:orchestrator <your requirement>` to begin."
+   this directory. Start one with `/tie:start <requirement>` in Claude Code or
+   `$tie:orchestrator <requirement>` in Codex CLI."
 
 2. **Read (do not modify):**
    - `agents_workspace/run_state.json`
    - `agents_workspace/current_state.md`
    - `agents_workspace/roadmap.md`
    - latest `evaluation_report.md` of the current phase (if any)
+   - `agents_workspace/changelog.md`
    - `blockers.md` (if blocked)
 
 3. **Output a single status block:**
@@ -50,7 +52,8 @@ Next action: <next_action from run_state.json>
 🚧 Open blocker: <B-ID> — <title>
    Question: <user decision needed?>
    Options: <brief list>
-   To answer and continue: $tie:resume <your answer>
+   To answer and continue: `/tie:resume <your answer>` in Claude Code or
+   `$tie:resume <your answer>` in Codex CLI
 ```
 
 5. **Do not** suggest improvements, do not start work, do not edit files.

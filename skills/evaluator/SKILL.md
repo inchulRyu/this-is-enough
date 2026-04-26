@@ -19,9 +19,13 @@ return a clear verdict.
 
 ## Inputs you MUST read
 
-`requirements.md`, `roadmap.md`, current phase's `phase.md`, `plan.md`,
-`tasks.md`, `implementation_log.md`, `generator_self_check.md`, prior
-`evaluation_report.md` (if recheck).
+- `intent`: `requirements.md`, `roadmap.md`, current phase's `phase.md`,
+  `plan.md`, and relevant repo context. This mode runs before implementation, so
+  do not require implementation artifacts.
+- `full`: all `intent` inputs plus `tasks.md`, `implementation_log.md`, and
+  `generator_self_check.md`.
+- `recheck`: all `full` inputs plus the prior `evaluation_report.md`,
+  `validation_plan.md`, and the EV-IDs passed by the orchestrator.
 
 You also read the actual code changes — the self-check is one input among
 many, never the only one.

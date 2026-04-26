@@ -59,7 +59,8 @@ desire to stop and summarize are **NOT** stop conditions. Keep going.
 ## Workspace bootstrap
 
 If `agents_workspace/` does not exist, create it. Use the templates in
-`skills/references/file-templates/` as starting structure.
+`../references/file-templates/` as starting structure, then replace every
+placeholder/example value with the actual new workflow state before continuing.
 
 ```text
 agents_workspace/
@@ -110,8 +111,12 @@ intake
 
 ### 1. Intake
 
-Read the user's request. If `agents_workspace/requirements.md` already exists,
-skip to step 7 (Resume). Otherwise:
+Read the user's request. If `agents_workspace/run_state.json` already exists,
+skip to step 7 (Resume). If `agents_workspace/requirements.md` exists but
+`run_state.json` does not, treat the workspace as partially initialized: repair
+or recreate the missing state files from the current requirement files, record
+the repair in `changelog.md`, then continue from the earliest incomplete step.
+Otherwise:
 
 - Create `agents_workspace/` and copy `requirements.md` template.
 - Fill in **User Request** verbatim (or summarized faithfully).
@@ -130,9 +135,10 @@ skip to step 7 (Resume). Otherwise:
 ### 2. Clarify (only if essential)
 
 If you have load-bearing open questions, write them under `## Open Questions`,
-set `run_state.json.blocked = true`, and STOP with a concise message to the
-user listing only those questions. Do NOT proceed past this point until
-answered.
+create/update `blockers.md` with a `clarify_requirements` blocker and
+`Resume target step: clarify_requirements`, set `run_state.json.blocked = true`,
+and STOP with a concise message to the user listing only those questions. Do NOT
+proceed past this point until answered.
 
 If no essential questions, proceed.
 
@@ -190,13 +196,13 @@ h. **Branch on verdict:**
      risk demands a full re-run). Increment `run_state.json.loop_count`.
      - If `loop_count > max_fix_loops_per_phase` (default 3) → BLOCKED.
      - If same EV-ID failed `> max_same_failure_repeats` (default 2) → BLOCKED.
-   - `blocked` → write to `blockers.md`, set `run_state.json.blocked = true`,
-     STOP with a message naming the blocker, the options, and your recommended
-     option.
+   - `blocked` → write to `blockers.md` including `Interrupted step` and
+     `Resume target step`, set `run_state.json.blocked = true`, STOP with a
+     message naming the blocker, the options, and your recommended option.
 
 ### 5. Project complete
 
-When all Phases are `passed`:
+When all Phases are `passed` or explicitly user-approved `skipped`:
 - Write a final summary to `changelog.md`.
 - Set `run_state.json.project_status = "completed"`, `blocked = false`.
 - Update `current_state.md` to reflect completion.
@@ -224,33 +230,33 @@ this order:
 1. `run_state.json`
 2. `current_state.md`
 3. `roadmap.md`
-4. current phase `phase.md`, `plan.md`, `tasks.md`
+4. current phase `phase.md`, `plan.md`, `tasks.md`, `validation_intent.md` (if present)
 5. latest `evaluation_report.md` (if present)
 6. `changelog.md` (last few entries)
 7. `blockers.md` (if `blocked = true`)
 
-Then determine the next owner from `current_phase_status`:
+Then determine the next owner from `current_phase_status` and `current_step`:
 
 | current_phase_status   | next action                                   |
 | ---------------------- | --------------------------------------------- |
 | `pending` / `planning` | dispatch `tie:planner`                        |
 | `planned` / `decomposing` | dispatch `tie:generator` mode=decompose    |
-| `decomposed`           | proceed to (d) optional pre-validation or (e) implement |
+| `decomposed`           | if `current_step` says validation intent is needed and `validation_intent.md` is absent, dispatch `tie:evaluator` mode=intent; otherwise implement |
 | `implementing`         | dispatch `tie:generator` mode=implement       |
 | `self_checking`        | dispatch `tie:generator` mode=self-check      |
 | `validation_planning`  | dispatch `tie:evaluator` mode=full            |
 | `evaluating`           | dispatch `tie:evaluator` — mode=full if `loop_count == 0`, else mode=recheck |
-| `fixing`               | dispatch `tie:generator` mode=fix             |
+| `fixing`               | use `current_step`: `create_fix_tasks` / `implement_fixes` dispatches idempotent `tie:generator` mode=fix; `self_check_after_fix` dispatches `tie:generator` mode=self-check |
 | `blocked`              | check `blockers.md`. If user has answered,    |
 |                        | mark blocker resolved and resume from the     |
 |                        | step the blocker interrupted. Otherwise STOP. |
-| `passed`               | advance to next pending phase                 |
+| `passed` / `skipped`   | advance to next pending phase                 |
 
 Then resume the per-phase loop.
 
 ## Subagent dispatch — platform notes
 
-See `skills/references/tool-mapping.md` for the full platform translation table.
+See `../references/tool-mapping.md` for the full platform translation table.
 TL;DR:
 
 - **Claude Code**: use the `Task`/`Agent` tool with `subagent_type` matching the
@@ -304,7 +310,9 @@ Options:
 
 Recommended: <which option, why>
 
-Resume: $tie:resume   (after answering)
+Resume:
+- Claude Code: /tie:resume <answer>
+- Codex CLI: $tie:resume <answer>
 ```
 
 Then write the same content to `blockers.md` and update `run_state.json`.

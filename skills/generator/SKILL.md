@@ -18,7 +18,7 @@ per invocation.
 | ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
 | `decompose`  | `requirements.md`, `phase.md`, `plan.md`, `current_state.md`                             | `tasks.md`                                        |
 | `implement`  | all above + `tasks.md`, `validation_intent.md` (if present), repo                        | code changes + updated `tasks.md` statuses + appended `implementation_log.md` |
-| `self-check` | all above + `implementation_log.md`                                                      | `generator_self_check.md`                         |
+| `self-check` | `requirements.md`, `phase.md`, `plan.md`, `tasks.md`, `current_state.md`, `implementation_log.md`, `validation_intent.md` (if present) | `generator_self_check.md`                         |
 | `fix`        | all above + `evaluation_report.md`, `validation_plan.md`, list of failed EV-IDs from orchestrator | new `GF-NNN` fix tasks in `tasks.md` + code changes + appended `implementation_log.md` |
 
 ## Universal rules (every mode)
@@ -70,8 +70,9 @@ Return: `tasks.md written. <N> tasks. Covers all RQ-IDs: <list>.`
 
 Stop when:
 - All tasks are `completed`, `skipped` (with reason), or `blocked`.
-- You hit a load-bearing decision you cannot make alone — write a `D-NNN`
-  draft to `decisions.md`, mark the task `blocked`, and return to orchestrator.
+- You hit a load-bearing decision you cannot make alone — mark the task
+  `blocked`, write the decision context in `implementation_log.md`, and return
+  to the orchestrator so it can own the `decisions.md` / `blockers.md` update.
 - You hit a destructive or risky operation — stop and return.
 
 Return: `Implementation pass done. Completed: <list>. Blocked: <list>. See implementation_log.md.`
@@ -81,7 +82,9 @@ Return: `Implementation pass done. Completed: <list>. Blocked: <list>. See imple
 You are the last line of defense before the Evaluator. The point is not to do
 the Evaluator's work — it is to avoid handing them obvious problems.
 
-1. Re-read `requirements.md`, `plan.md`, `tasks.md`.
+1. Re-read `requirements.md`, `phase.md`, `plan.md`, `tasks.md`,
+   `current_state.md`, `implementation_log.md`, and `validation_intent.md` if it
+   exists.
 2. For each RQ-ID this phase owns: did you actually address it? Where?
 3. For each acceptance-intent bullet in `plan.md`: did you satisfy it?
 4. Run the relevant verification commands (build, typecheck, lint, tests).
@@ -102,12 +105,16 @@ The Evaluator returned `fail`. The orchestrator passes you the failed EV-IDs.
 
 1. Read `evaluation_report.md`. For each failed EV-ID, read the
    "Concrete next action for Generator" line.
-2. For each, append a `GF-NNN` fix task to `tasks.md`:
+2. For each failed EV-ID, first check whether `tasks.md` already contains an
+   unresolved `GF-NNN` task with `Source evaluation check: EV-NNN`. If it does,
+   continue that existing task instead of appending a duplicate. If it does not,
+   append a `GF-NNN` fix task to `tasks.md`:
    - `Source evaluation check: EV-NNN`
    - `Related requirements: <RQ-IDs>`
    - `Description:` — what you'll do.
    - `Expected evidence of completion: EV-NNN passes on re-evaluation.`
-3. Implement the fixes. Same rules as `implement` mode.
+3. Implement all pending/in-progress GF tasks for the failed EV-IDs. Same rules
+   as `implement` mode.
 4. Append to `implementation_log.md`:
    - What changed.
    - Why the previous attempt failed (the Evaluator told you).

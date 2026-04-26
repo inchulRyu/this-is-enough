@@ -1,9 +1,11 @@
 {
   "name": "thisisenough",
-  "description": "ThisIsEnough — autonomous workflow runtime for coding agents",
   "owner": {
     "name": "inchulryu",
     "email": "65108642+inchulRyu@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "ThisIsEnough — autonomous workflow runtime for coding agents"
   },
   "plugins": [
     {

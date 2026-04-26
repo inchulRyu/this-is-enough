@@ -1,18 +1,18 @@
 # Current State
 
 Project status: in_progress
-Current phase: phases/02-dashboard
-Current phase status: fixing
-Current owner: generator
-Current loop: fix_loop_2
+Current phase: none
+Current phase status: not_started
+Current owner: orchestrator
+Current loop: 0
 
 ## Last completed step
 
-- Evaluator failed EV-003 because empty state behavior is missing.
+- Workflow initialized.
 
 ## Next action
 
-- Generator should implement GF-001 and rerun self-check.
+- Orchestrator should clarify requirements if needed, then create roadmap.
 
 ## Blocked
 
@@ -20,5 +20,4 @@ No
 
 ## Important context
 
-- Do not change the auth model from Phase 1.
-- Reuse the existing API response shape.
+- None yet.

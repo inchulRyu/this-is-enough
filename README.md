@@ -59,14 +59,15 @@ Then inside Claude Code:
 /reload-plugins
 ```
 
-After install you can verify with `/plugin` → **Installed** tab. The skills
-(`/tie:start`, `/tie:resume`, `/tie:status`, `/tie:next`) appear in the slash
-command picker.
+After install you can verify with `/plugin` → **Installed** tab. The slash
+commands (`/tie:start`, `/tie:resume`, `/tie:status`, `/tie:next`) appear in
+the command picker.
 
 To pull updates later:
 
 ```text
 /plugin marketplace update thisisenough
+/plugin update tie
 /reload-plugins
 ```
 
@@ -91,7 +92,9 @@ curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/insta
 
 The script clones to `~/.codex/thisisenough` and creates
 `~/.agents/skills/tie -> ~/.codex/thisisenough/skills`. It is idempotent: re-run
-the same command any time to update the clone and refresh the symlink.
+the same command any time to update the managed clone and refresh the symlink.
+If the managed clone has local edits or diverged commits, the installer refuses
+to overwrite them.
 
 Restart Codex, then type:
 

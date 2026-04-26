@@ -1,11 +1,11 @@
 {
   "project_status": "in_progress",
-  "current_phase": "phases/02-dashboard",
-  "current_phase_status": "fixing",
-  "current_owner": "generator",
-  "current_step": "implement_fixes",
-  "loop_count": 2,
-  "last_evaluation_verdict": "fail",
+  "current_phase": null,
+  "current_phase_status": "not_started",
+  "current_owner": "orchestrator",
+  "current_step": "intake",
+  "loop_count": 0,
+  "last_evaluation_verdict": null,
   "blocked": false,
-  "next_action": "generator_fix_latest_eval_issues"
+  "next_action": "clarify_requirements_or_create_roadmap"
 }
