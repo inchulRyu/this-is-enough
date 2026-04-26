@@ -419,6 +419,7 @@ implementing
 self_checking
 validation_planning
 evaluating
+committing
 fixing
 passed
 blocked
@@ -476,6 +477,7 @@ intake
 → evaluate
 → pass
   → phase_complete
+  → phase_checkpoint_commit
   → select_next_phase
 → fail
   → create_fix_tasks
@@ -499,7 +501,7 @@ Planner writes plan.md
 → Evaluator writes validation_plan.md
 → Evaluator writes evaluation_report.md
 → if fail: Generator fixes issues
-→ if pass: Orchestrator marks phase passed
+→ if pass: Orchestrator marks phase passed, commits checkpoint, selects next Phase
 ```
 
 ### 6.2 Optional pre-validation loop
@@ -1284,6 +1286,11 @@ A Phase is complete only when:
 - `current_state.md` points to the next Phase or project completion
 - `run_state.json` is updated
 - `changelog.md` includes a summary of completion
+- a phase checkpoint commit is created when git is available and commits are
+  allowed, with the commit hash recorded in `changelog.md` or
+  `implementation_log.md`
+- if the checkpoint commit cannot be created, `changelog.md` records the
+  explicit no-commit reason before the workflow advances
 
 ---
 
@@ -1569,16 +1576,43 @@ git log --oneline -20
 
 If the working tree contains user changes, Generator must not overwrite them without explicit instruction.
 
-### 11.2 Commit policy
+### 11.2 Phase checkpoint commits
 
-If git is available and commits are allowed:
+If git is available and commits are allowed, every Phase that receives an
+Evaluator `pass` must end with a phase checkpoint commit before the
+Orchestrator advances to the next Phase.
 
-- Commit after meaningful units of work.
-- Do not commit known broken code unless explicitly marking a WIP checkpoint.
-- Run relevant tests before final pass commit.
-- Record commit hash in `implementation_log.md` or `changelog.md`.
+The Orchestrator owns this final checkpoint because it also updates
+`roadmap.md`, `phase.md`, `current_state.md`, `run_state.json`, and
+`changelog.md`.
 
-### 11.3 No destructive changes
+Checkpoint rules:
+
+- Run or confirm the relevant tests/checks before the checkpoint. The
+  Evaluator's passing report may satisfy this if it just ran the checks.
+- Update the Phase state files before committing so the code and
+  `agents_workspace/` resume state land in the same commit.
+- Inspect `git status --short` before staging. If unrelated user changes,
+  unknown files, known broken code, or possible secrets are present, stop and
+  ask rather than committing.
+- Stage only intended paths. Verify `git diff --cached --stat` before
+  `git commit`.
+- Use a message shaped like `Phase <n>: <phase name>` unless the project has a
+  stronger local convention.
+- Record the commit hash in `changelog.md` or `implementation_log.md`.
+- If git is unavailable or commits are explicitly disallowed, record the
+  no-commit reason in `changelog.md` before advancing. Do not silently skip the
+  checkpoint.
+
+### 11.3 Optional WIP commits
+
+Generator may make intermediate commits only when git is available, commits are
+allowed, the staged diff is cleanly attributable to the workflow, and the commit
+is a meaningful recovery point. Do not commit known broken code unless the user
+explicitly approves a WIP checkpoint and the commit message makes that status
+clear.
+
+### 11.4 No destructive changes
 
 Generator must not:
 
@@ -1616,6 +1650,9 @@ If current_phase_status = implementing
 
 If current_phase_status = evaluating
 → next owner: Evaluator
+
+If current_phase_status = committing
+→ next owner: Orchestrator
 
 If current_phase_status = fixing
 → next owner: Generator
@@ -1745,7 +1782,8 @@ Repair inconsistent or missing workflow files.
 
 ### `/workflow:complete-phase`
 
-Mark current Phase as passed and move to next Phase.
+Mark current Phase as passed, create or record the phase checkpoint commit, and
+move to next Phase.
 
 ### `/workflow:complete-project`
 
@@ -1865,6 +1903,8 @@ A Phase is complete when:
 - Evaluator verdict is pass
 - current state is updated
 - changelog records completion
+- phase checkpoint commit is created and recorded, unless git is unavailable or
+  commits are explicitly disallowed and the no-commit reason is recorded
 
 ## 15.2 Project completion criteria
 

@@ -100,7 +100,7 @@ intake
    → implement_tasks      (dispatch tie:generator with mode=implement)
    → generator_self_check (dispatch tie:generator with mode=self-check)
    → create_validation_plan + evaluate (dispatch tie:evaluator)
-   → if pass: mark phase passed, advance
+   → if pass: mark phase passed, create phase checkpoint commit, advance
    → if fail: dispatch tie:generator with mode=fix, then re-evaluate
    → if blocked: write blocker, STOP
  → repeat for next phase
@@ -205,8 +205,27 @@ g. **Evaluate** — set phase status `validation_planning`, then dispatch
 
 h. **Branch on verdict:**
 
-   - `pass` → mark Phase `passed` in `roadmap.md` and `phase.md`. Append a
-     completion entry to `changelog.md`. Advance to next Phase. Go to (a).
+   - `pass` → mark Phase `passed` in `roadmap.md` and `phase.md`. Update
+     `current_state.md` and `run_state.json`, then append a completion entry to
+     `changelog.md`.
+     - Set `current_phase_status = "committing"` and `current_step =
+       "phase_checkpoint_commit"` before touching git.
+     - If git is available and commits are allowed, create a phase checkpoint
+       commit before advancing. Include the product changes for the Phase and
+       the relevant `agents_workspace/` files, because the workspace is the
+       resume substrate.
+     - Before committing, inspect `git status --short`. If there are
+       uncommitted changes you did not make, unknown files you cannot classify,
+       known broken code, or anything that looks like a secret, STOP and write a
+       blocker instead of committing.
+     - Stage only intended paths, verify `git diff --cached --stat`, commit with
+       a message like `Phase <n>: <phase name>`, then record the commit hash in
+       `changelog.md` or `implementation_log.md`.
+     - If git is unavailable or commits are explicitly disallowed by the
+       environment, record the no-commit reason in `changelog.md` and continue.
+       Do not silently skip the checkpoint.
+     - After the commit or recorded no-commit reason, advance to the next Phase.
+       Go to (a).
    - `fail` → set Phase status `fixing`. Read failed checks. Dispatch
      `tie:generator` with mode `fix`, passing the failed EV-IDs. After fix,
      set status `self_checking` and dispatch `tie:generator` with mode
@@ -265,6 +284,7 @@ Then determine the next owner from `current_phase_status` and `current_step`:
 | `self_checking`        | dispatch `tie:generator` mode=self-check      |
 | `validation_planning`  | dispatch `tie:evaluator` mode=full            |
 | `evaluating`           | dispatch `tie:evaluator` — mode=full if `loop_count == 0`, else mode=recheck |
+| `committing`           | finish or repair the phase checkpoint commit, then advance only after the hash or no-commit reason is recorded |
 | `fixing`               | use `current_step`: `create_fix_tasks` / `implement_fixes` dispatches idempotent `tie:generator` mode=fix; `self_check_after_fix` dispatches `tie:generator` mode=self-check |
 | `blocked`              | check `blockers.md`. If user has answered,    |
 |                        | mark blocker resolved and resume from the     |
@@ -313,6 +333,9 @@ state.
 - Never run destructive git operations (`reset --hard`, `push --force`,
   `branch -D`) without explicit user confirmation. Treat all destructive ops
   as a stop condition.
+- After an Evaluator `pass`, create a phase checkpoint commit whenever git is
+  available and commits are allowed. Skipping this checkpoint requires an
+  explicit reason in `changelog.md`.
 - If the user's working tree has uncommitted changes you didn't make, STOP and
   ask before any commit.
 - Secrets (`.env`, `credentials*`, key files) — never `cat`, never include in
@@ -353,6 +376,7 @@ When the project finishes, your final message:
 Phases passed: <list>
 Workspace: agents_workspace/
 Changelog: agents_workspace/changelog.md
+Commits: <phase checkpoint hashes, or recorded no-commit reason>
 
 Verify:
 - <one or two concrete verification steps>

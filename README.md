@@ -21,6 +21,8 @@ You state a requirement once. ThisIsEnough then:
      existing conventions, and self-checks.
    - **Evaluator** picks an appropriate validation level (L0–L5), actually
      runs the checks, and returns pass / fail / blocked.
+   - On pass, **Orchestrator** records phase completion and creates a git
+     checkpoint commit when git is available and safe.
    - On fail, fix loop runs until pass or blocker.
 4. **Stops only on**: project complete, user decision needed, environment
    broken, repeated unrecoverable failure, or risky operation requiring
@@ -193,8 +195,9 @@ agents_workspace/
       evaluation_history.md
 ```
 
-By default the workspace IS committed — it's the resume substrate. Add it to
-`.gitignore` only if you don't want shared resumability.
+By default the workspace IS committed — it's the resume substrate. Phase-pass
+checkpoint commits include the relevant `agents_workspace/` files alongside the
+product diff. Add it to `.gitignore` only if you don't want shared resumability.
 
 ## When NOT to use
 
@@ -211,6 +214,7 @@ The orchestrator never:
 - touches files outside the project working directory,
 - runs destructive git operations without confirmation,
 - commits secrets,
+- silently skips a phase-pass checkpoint commit,
 - continues past a destructive/risky step without an explicit user OK.
 
 If any of those come up, it stops with a clear blocker.
