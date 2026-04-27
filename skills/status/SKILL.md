@@ -1,6 +1,6 @@
 ---
 name: status
-description: Use when the user asks for a quick read on where a ThisIsEnough workflow run currently stands without taking any action. Read-only summary of run_state.json, current_state.md, roadmap progress, and any open blocker.
+description: Use when the user asks for a quick read on where the active ThisIsEnough workflow run currently stands without taking any action. Resolves agents_workspace/active_run and summarizes that run's state files and any open blocker.
 ---
 
 # tie:status — read-only snapshot
@@ -10,17 +10,19 @@ modify any file. Do not dispatch any subagent.
 
 ## What you do
 
-1. **Verify workspace exists.** If `agents_workspace/run_state.json` is
-   missing, say so plainly: "No ThisIsEnough workflow has been started in
-   this directory. Start one with `/tie:start <requirement>` in Claude Code or
-   `$tie:orchestrator <requirement>` in Codex CLI."
+1. **Resolve the active run.** Read `agents_workspace/active_run`, resolve its
+   text relative to `agents_workspace/`, and treat that directory as the run
+   directory. If `active_run` is missing, unreadable, or points at a run without
+   `run_state.json`, say so plainly: "No ThisIsEnough workflow has been started
+   in this directory. Start one with `/tie:start <requirement>` in Claude Code
+   or `$tie:orchestrator <requirement>` in Codex CLI."
 
 2. **Read (do not modify):**
-   - `agents_workspace/run_state.json`
-   - `agents_workspace/current_state.md`
-   - `agents_workspace/roadmap.md`
+   - `<active-run-dir>/run_state.json`
+   - `<active-run-dir>/current_state.md`
+   - `<active-run-dir>/roadmap.md`
    - latest `evaluation_report.md` of the current phase (if any)
-   - `agents_workspace/changelog.md`
+   - `<active-run-dir>/changelog.md`
    - `blockers.md` (if blocked)
 
 3. **Output a single status block:**
@@ -29,6 +31,7 @@ modify any file. Do not dispatch any subagent.
 ThisIsEnough — workflow status
 
 Project:   <project_status>
+Run:       <run_id>
 Phase:     <current_phase> — <current_phase_status>  (loop <loop_count>)
 Owner:     <current_owner>
 Step:      <current_step>

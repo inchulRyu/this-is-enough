@@ -34,8 +34,11 @@ mechanism:
 
 ## Persistence is platform-agnostic
 
-All workspace state lives under `agents_workspace/` as plain files. Reading,
-writing, and editing those files works identically on every platform — that is
-the whole point of the file-first design. If the spawned subagent only has read
-access to part of the tree, ensure it at minimum can read the phase directory
-and write to the files its role owns (see Section 4 of the spec).
+Workspace state lives in plain files. `agents_workspace/active_run` points to
+the current/latest run, and the run's state is closed under
+`agents_workspace/runs/<run-id>/`. Reading, writing, and editing those files
+works identically on every platform — that is the whole point of the file-first
+design. If the spawned subagent only has read access to part of the tree, ensure
+it at minimum can read the active run directory and current phase directory, and
+write to the files its role owns (see Section 4 of the spec). Pass explicit
+absolute paths; subagents should not infer state from root `agents_workspace/`.

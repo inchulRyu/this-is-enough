@@ -21,3 +21,5 @@ venv/
 # for ThisIsEnough. Uncomment the next line if you don't want it in version
 # control for a particular project that uses the plugin.
 # agents_workspace/
+
+tmp/*

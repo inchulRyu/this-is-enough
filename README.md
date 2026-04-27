@@ -28,8 +28,10 @@ You state a requirement once. ThisIsEnough then:
    broken, repeated unrecoverable failure, or risky operation requiring
    confirmation.
 
-All state lives under `agents_workspace/` as plain files. Any session can
-resume cleanly with `$tie:resume` or `/tie:resume`.
+All state for a request lives under an isolated run directory in
+`agents_workspace/runs/<run-id>/`, with `agents_workspace/active_run` pointing
+to the current/latest run. Any session can resume cleanly with `$tie:resume` or
+`/tie:resume`.
 
 ## Install
 
@@ -168,36 +170,50 @@ $tie:status
 | `tie:planner`      | Expands raw requirement into a rich product-level Plan (subagent role).     |
 | `tie:generator`    | Decomposes / implements / self-checks / fixes (subagent role, modes).       |
 | `tie:evaluator`    | Adaptive L0–L5 validation, returns pass/fail/blocked (subagent role).       |
-| `tie:resume`       | Resumes an interrupted run from `agents_workspace/`.                        |
+| `tie:resume`       | Resumes the run pointed to by `agents_workspace/active_run`.                |
 | `tie:status`       | Read-only snapshot of where the run currently stands.                       |
 
 ## What the workspace looks like
 
 ```text
 agents_workspace/
-  requirements.md
-  roadmap.md
-  current_state.md
-  run_state.json
-  decisions.md
-  changelog.md
-  blockers.md           (only when blocked)
-  phases/
-    01-<phase-slug>/
-      phase.md
-      plan.md
-      tasks.md
-      validation_intent.md       (optional)
-      implementation_log.md
-      generator_self_check.md
-      validation_plan.md
-      evaluation_report.md
-      evaluation_history.md
+  active_run                       # e.g. runs/2026-04-27-001-add-dashboard
+  runs/
+    <run-id>/
+      requirement.md
+      roadmap.md
+      current_state.md
+      run_state.json
+      decisions.md
+      changelog.md
+      blockers.md                  (only when blocked)
+      phases/
+        01-<phase-slug>/
+          phase.md
+          plan.md
+          tasks.md
+          validation_intent.md
+          implementation_log.md
+          generator_self_check.md
+          validation_plan.md
+          evaluation_report.md
+          evaluation_history.md
 ```
 
+One independent requirement creates one run. `active_run` may continue pointing
+at a completed run; completion is read from that run's
+`run_state.json.project_status` and `current_step`, not by clearing the pointer.
+If the active run is completed and a new start request includes a new
+requirement, ThisIsEnough creates a new run and overwrites `active_run`. If the
+active run is still `in_progress` or `blocked`, extra start/resume text is
+appended to that run's `requirement.md` under `## Updates` with an ISO timestamp
+instead of creating a second run. There is no `index.json`; older runs are kept
+as directories under `agents_workspace/runs/`.
+
 By default the workspace IS committed — it's the resume substrate. Phase-pass
-checkpoint commits include the relevant `agents_workspace/` files alongside the
-product diff. Add it to `.gitignore` only if you don't want shared resumability.
+checkpoint commits include the relevant active run files alongside the product
+diff. Add `agents_workspace/` to `.gitignore` only if you don't want shared
+resumability.
 
 ## When NOT to use
 

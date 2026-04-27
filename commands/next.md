@@ -4,13 +4,15 @@ description: Manually nudge the orchestrator to perform the next workflow step. 
 
 The user wants the orchestrator to perform the next workflow step.
 
-If `agents_workspace/run_state.json` exists and `blocked = false`, invoke
+Resolve the active run through `agents_workspace/active_run`.
+
+If the active run's `run_state.json` exists and `blocked = false`, invoke
 `tie:resume`. The orchestrator's resume logic will determine the correct next
 owner and continue.
 
-If `blocked = true`, do not advance. Output the open blocker (read from
-`agents_workspace/blockers.md`) and instruct the user to use
-`/tie:resume <answer>` to provide a decision.
+If `blocked = true`, do not advance. Output the open blocker from the active
+run's `blockers.md` and instruct the user to use `/tie:resume <answer>` to
+provide a decision.
 
-If `agents_workspace/run_state.json` does not exist, this is not a continuable
-workflow. Suggest `/tie:start <requirement>`.
+If `active_run` is missing or points at a run without `run_state.json`, this is
+not a continuable workflow. Suggest `/tie:start <requirement>`.

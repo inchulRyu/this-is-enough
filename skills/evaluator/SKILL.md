@@ -13,13 +13,13 @@ return a clear verdict.
 
 | Mode      | When dispatched                                                                | Output                                              |
 | --------- | ------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `intent`  | Before implementation, for complex/risky phases (orchestrator decides)         | `validation_intent.md`                              |
-| `full`    | After Generator self-check, on first evaluation of the phase                   | `validation_plan.md` + `evaluation_report.md` + append to `evaluation_history.md` |
-| `recheck` | After Generator fix, to re-run only failed/affected checks                     | updated `evaluation_report.md` + append to `evaluation_history.md` |
+| `intent`  | Before implementation, for complex/risky phases (orchestrator decides)         | current phase `validation_intent.md`                              |
+| `full`    | After Generator self-check, on first evaluation of the phase                   | current phase `validation_plan.md` + `evaluation_report.md` + append to `evaluation_history.md` |
+| `recheck` | After Generator fix, to re-run only failed/affected checks                     | updated current phase `evaluation_report.md` + append to `evaluation_history.md` |
 
 ## Inputs you MUST read
 
-- `intent`: `requirements.md`, `roadmap.md`, current phase's `phase.md`,
+- `intent`: `requirement.md`, `roadmap.md`, current phase's `phase.md`,
   `plan.md`, and relevant repo context. This mode runs before implementation, so
   do not require implementation artifacts.
 - `full`: all `intent` inputs plus `tasks.md`, `implementation_log.md`, and
@@ -29,6 +29,13 @@ return a clear verdict.
 
 You also read the actual code changes — the self-check is one input among
 many, never the only one.
+
+The orchestrator must pass explicit absolute paths to the active run directory,
+the current phase directory, and the active run files you need. Use those paths.
+All validation outputs you own (`validation_intent.md`, `validation_plan.md`,
+`evaluation_report.md`, and `evaluation_history.md`) must be written under the
+passed current phase directory. Do not infer inputs or outputs from the root
+`agents_workspace/` directory.
 
 ## Documentation discipline
 
@@ -167,7 +174,7 @@ Level used: L<N>
 Failed EV-IDs: <list or "none">
 Critical issues: <count>
 Recheck needed: <EV-IDs or "none">
-Report: agents_workspace/phases/<this-phase>/evaluation_report.md
+Report: <active-run-dir>/phases/<this-phase>/evaluation_report.md
 ```
 
 The orchestrator reads the report; don't summarize it in your return.

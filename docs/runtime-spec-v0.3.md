@@ -75,7 +75,7 @@ Planner는 다음을 피해야 한다.
 
 - 사용자가 원하지 않은 별도 제품으로 키우기
 - unrelated feature를 추가해 plan을 부풀리기
-- requirements, decisions, code에 이미 canonical하게 있는 세부사항을 줄 단위로 복제하기
+- requirement.md, decisions.md, code에 이미 canonical하게 있는 세부사항을 줄 단위로 복제하기
 - schema, route table, test case, command transcript를 Plan 안에 장황하게 열거하기
 - repo를 보지 않고 low-level architecture를 단정하기
 - 구현 라이브러리, 함수 구조, DB schema, 파일 구조를 너무 일찍 고정하기
@@ -168,8 +168,9 @@ Evaluator의 핵심 역할은 “마지막에 눌러보는 사람”이 아니�
 
 ### 1.8 Workflow documents are navigation aids
 
-`agents_workspace/` 문서는 재개와 판단을 위한 source of truth이지만, 코드 diff,
-전체 테스트 출력, 구현 설계서, 검증 감사 로그를 복제하는 장소가 아니다.
+`agents_workspace/active_run`과 active run directory의 문서는 재개와 판단을
+위한 source of truth이지만, 코드 diff, 전체 테스트 출력, 구현 설계서, 검증
+감사 로그를 복제하는 장소가 아니다.
 
 각 파일은 자신의 역할 안에서 필요한 정보만 담아야 한다.
 
@@ -283,26 +284,43 @@ Evaluator가 검증 결과를 pass / fail / blocked로 정리한 최신 보고�
 
 ```text
 agents_workspace/
-  requirements.md
-  roadmap.md
-  current_state.md
-  run_state.json
-  decisions.md
-  changelog.md
-  blockers.md
+  active_run                       # e.g. runs/2026-04-27-001-add-dashboard
+  runs/
+    <run-id>/
+      requirement.md
+      roadmap.md
+      current_state.md
+      run_state.json
+      decisions.md
+      changelog.md
+      blockers.md                  # only when blocked
 
-  phases/
-    01-phase-name/
-      phase.md
-      plan.md
-      tasks.md
-      validation_intent.md
-      implementation_log.md
-      generator_self_check.md
-      validation_plan.md
-      evaluation_report.md
-      evaluation_history.md
+      phases/
+        01-phase-name/
+          phase.md
+          plan.md
+          tasks.md
+          validation_intent.md
+          implementation_log.md
+          generator_self_check.md
+          validation_plan.md
+          evaluation_report.md
+          evaluation_history.md
 ```
+
+`agents_workspace/active_run`은 current/latest run을 가리키는 text pointer다.
+값은 `runs/<run-id>` 형태의 상대 경로다. 완료된 run을 가리킨 채로 남아도
+된다. 완료 여부는 pointer를 비우는 것으로 판단하지 않고, 해당 run의
+`run_state.json.project_status`와 `current_step`으로 판단한다.
+
+하나의 independent requirement input은 하나의 run을 만든다. Active run이
+`completed`이고 새 start request가 새 requirement를 포함하면 새 run을 만들고
+`active_run`을 덮어쓴다. Active run이 `in_progress` 또는 `blocked`이면 start /
+resume에 붙은 추가 text는 새 run이 아니라 같은 run의 update다. 이 update는
+해당 run의 `requirement.md`에 `## Updates` 아래 ISO timestamp subheading으로
+append한다.
+
+`index.json`은 현재 만들지 않는다.
 
 ### 3.1 Minimal mode
 
@@ -310,19 +328,23 @@ agents_workspace/
 
 ```text
 agents_workspace/
-  requirements.md
-  roadmap.md
-  current_state.md
-  decisions.md
-  changelog.md
+  active_run
+  runs/
+    <run-id>/
+      requirement.md
+      roadmap.md
+      current_state.md
+      run_state.json
+      decisions.md
+      changelog.md
 
-  phases/
-    01-phase-name/
-      phase.md
-      plan.md
-      tasks.md
-      validation_plan.md
-      evaluation_report.md
+      phases/
+        01-phase-name/
+          phase.md
+          plan.md
+          tasks.md
+          validation_plan.md
+          evaluation_report.md
 ```
 
 ### 3.2 Full mode
@@ -331,25 +353,28 @@ agents_workspace/
 
 ```text
 agents_workspace/
-  requirements.md
-  roadmap.md
-  current_state.md
-  run_state.json
-  decisions.md
-  changelog.md
-  blockers.md
+  active_run
+  runs/
+    <run-id>/
+      requirement.md
+      roadmap.md
+      current_state.md
+      run_state.json
+      decisions.md
+      changelog.md
+      blockers.md
 
-  phases/
-    01-phase-name/
-      phase.md
-      plan.md
-      tasks.md
-      validation_intent.md
-      implementation_log.md
-      generator_self_check.md
-      validation_plan.md
-      evaluation_report.md
-      evaluation_history.md
+      phases/
+        01-phase-name/
+          phase.md
+          plan.md
+          tasks.md
+          validation_intent.md
+          implementation_log.md
+          generator_self_check.md
+          validation_plan.md
+          evaluation_report.md
+          evaluation_history.md
 ```
 
 ---
@@ -360,7 +385,8 @@ agents_workspace/
 
 ```text
 Orchestrator
-- requirements.md
+- active_run
+- requirement.md
 - roadmap.md
 - current_state.md
 - run_state.json
@@ -523,6 +549,33 @@ Planner writes plan.md
 
 ## 7. Workflow Details
 
+## 7.0 Active run selection
+
+Workflow start/resume commands must resolve `agents_workspace/active_run` before
+reading or writing state.
+
+1. If `agents_workspace/active_run` is missing, create `agents_workspace/runs/`
+   if needed, create a new run directory, and write `active_run` to
+   `runs/<run-id>`.
+2. If `active_run` points at a run whose `run_state.json.project_status` is
+   `completed` and whose `current_step` indicates project completion, a start
+   command with a new independent requirement creates a new run and overwrites
+   `active_run`.
+3. If `active_run` points at a run whose status is `in_progress` or `blocked`,
+   a start/resume command with extra text updates the same run. Append the text
+   to that run's `requirement.md` under `## Updates` with an ISO timestamp.
+4. If `active_run` points at a partial run where `requirement.md` exists but
+   `run_state.json` does not, repair that run in place when possible and record
+   the repair in its `changelog.md`.
+
+Run IDs should be stable, readable, and non-conflicting. Recommended format:
+
+```text
+YYYY-MM-DD-NNN-short-slug
+```
+
+Example: `2026-04-27-001-add-dashboard`.
+
 ## 7.1 Intake and requirement clarification
 
 사용자가 요구사항을 작성하면 오케스트레이터는 먼저 요구사항을 읽고 실행 가능한 수준으로 정리한다.
@@ -540,12 +593,12 @@ Planner writes plan.md
 
 구현 디테일이나 reasonable default로 처리 가능한 항목은 Planner / Generator가 자율 판단하도록 남긴다.
 
-결과는 `requirements.md`에 기록한다.
+결과는 `requirement.md`에 기록한다.
 
-### requirements.md template
+### requirement.md template
 
 ```md
-# Requirements
+# Requirement
 
 ## User Request
 
@@ -582,6 +635,10 @@ Source: user | orchestrator_inferred | clarified
 ## Safety / Risk Notes
 
 - ...
+
+## Updates
+
+- None yet.
 ```
 
 ---
@@ -672,11 +729,11 @@ Status: planning
 
 ## 7.4 Planner phase
 
-Planner는 `requirements.md`, `roadmap.md`, `current_state.md`, 현재 Phase의 `phase.md`를 읽고 `plan.md`를 작성한다.
+Planner는 `requirement.md`, `roadmap.md`, `current_state.md`, 현재 Phase의 `phase.md`를 읽고 `plan.md`를 작성한다.
 
 Planner의 목표는 raw requirement를 Generator가 바로 구현하기 쉬운 단순 task로 줄이는 것이 아니다.
 
-Planner의 목표는 raw requirement를 제품적으로 충분히 풍부한 spec으로 확장하여, Generator가 작업 범위를 너무 작게 잡거나 incomplete product experience를 만들지 않도록 하는 것이다. 동시에 Plan은 product-level and proportionate해야 한다. 필요한 만큼 쓰되, requirements / decisions / code / 다른 workflow 파일이 이미 맡고 있는 세부사항을 반복하지 않는다.
+Planner의 목표는 raw requirement를 제품적으로 충분히 풍부한 spec으로 확장하여, Generator가 작업 범위를 너무 작게 잡거나 incomplete product experience를 만들지 않도록 하는 것이다. 동시에 Plan은 product-level and proportionate해야 한다. 필요한 만큼 쓰되, requirement.md / decisions.md / code / 다른 workflow 파일이 이미 맡고 있는 세부사항을 반복하지 않는다.
 
 Planner는 다음을 반드시 지킨다.
 
@@ -699,7 +756,7 @@ Planner는 다음을 반드시 지킨다.
 
 <!-- Keep this product-level and proportionate. Do not paste schemas, route
 tables, test matrices, or task lists when they can be referenced from
-requirements/decisions/code. -->
+requirement.md, decisions.md, or code. -->
 
 ## Requirement coverage
 
@@ -747,7 +804,7 @@ only the raw request>
 ## High-level technical design
 
 - <direction and integration points only; leave exact file/function boundaries
-  to Generator unless fixed by requirements or decisions>
+  to Generator unless fixed by requirement.md or decisions>
 
 ## Implementation freedom left for Generator
 
@@ -776,7 +833,7 @@ This phase should feel complete when:
 
 ## 7.5 Generator task decomposition
 
-Generator는 `requirements.md`, `phase.md`, `plan.md`, `current_state.md`를 읽고 `tasks.md`를 작성한다.
+Generator는 `requirement.md`, `phase.md`, `plan.md`, `current_state.md`를 읽고 `tasks.md`를 작성한다.
 
 Generator는 Plan이 말하는 “무엇”과 Requirement가 말하는 “왜”를 함께 이해해야 한다.
 
@@ -1003,7 +1060,7 @@ Generator는 known failing test나 known broken behavior를 숨기면 안 된다
 
 ## 7.9 Evaluator validation plan
 
-Evaluator는 `requirements.md`, `phase.md`, `plan.md`, `tasks.md`, `implementation_log.md`, `generator_self_check.md`를 읽고 `validation_plan.md`를 작성한다.
+Evaluator는 `requirement.md`, `phase.md`, `plan.md`, `tasks.md`, `implementation_log.md`, `generator_self_check.md`를 읽고 `validation_plan.md`를 작성한다.
 
 Evaluator는 검증 강도를 선택해야 한다.
 
@@ -1091,7 +1148,7 @@ Evaluate Phase <n>: <phase name>
 
 ## Inputs reviewed
 
-- requirements.md
+- requirement.md
 - roadmap.md
 - phase.md
 - plan.md
@@ -1247,7 +1304,7 @@ Generator then reads:
 - `tasks.md`
 - `implementation_log.md`
 - `plan.md`
-- `requirements.md`
+- `requirement.md`
 
 Generator creates fix tasks inside `tasks.md`.
 
@@ -1332,6 +1389,25 @@ violates its role:
 When rejecting an artifact, Orchestrator should dispatch the same role again
 with a concrete rewrite instruction and should not advance the state machine
 until the artifact is both substantive and role-appropriate.
+
+---
+
+## 7.14 Subagent path contract
+
+When Orchestrator dispatches Planner, Generator, or Evaluator, it must pass
+explicit absolute paths. At minimum:
+
+- active run directory
+- current phase directory
+- active run `requirement.md`
+- active run `roadmap.md`
+- active run `current_state.md`
+- active run `run_state.json`
+- failed EV-IDs for fix/recheck, when applicable
+
+Subagents read `requirement.md` from the passed active run path. They must not
+infer state from root `agents_workspace/` or assume there is a root-level
+requirement file.
 
 ---
 
@@ -1440,12 +1516,17 @@ No
 
 ## 9.2 run_state.json
 
-`run_state.json` is machine-readable and minimal.
+`run_state.json` is machine-readable and minimal. It must include `run_id` plus
+`workspace_dir` and `run_dir` (or equivalent fields) sufficient to resolve the
+run without relying on conversation context.
 
 ### run_state.json schema
 
 ```json
 {
+  "run_id": "2026-04-27-001-add-dashboard",
+  "workspace_dir": "agents_workspace",
+  "run_dir": "agents_workspace/runs/2026-04-27-001-add-dashboard",
   "project_status": "in_progress",
   "current_phase": "phases/02-dashboard",
   "current_phase_status": "fixing",
@@ -1590,8 +1671,8 @@ Checkpoint rules:
 
 - Run or confirm the relevant tests/checks before the checkpoint. The
   Evaluator's passing report may satisfy this if it just ran the checks.
-- Update the Phase state files before committing so the code and
-  `agents_workspace/` resume state land in the same commit.
+- Update the Phase state files before committing so the code and active run
+  resume state land in the same commit.
 - Inspect `git status --short` before staging. If unrelated user changes,
   unknown files, known broken code, or possible secrets are present, stop and
   ask rather than committing.
@@ -1625,17 +1706,18 @@ Generator must not:
 
 ## 12. Resume Policy
 
-When resuming work, Orchestrator must read in this order:
+When resuming work, Orchestrator first reads `agents_workspace/active_run` and
+resolves the active run directory. It then reads active run files in this order:
 
-1. `run_state.json`
-2. `current_state.md`
-3. `roadmap.md`
+1. `<active-run-dir>/run_state.json`
+2. `<active-run-dir>/current_state.md`
+3. `<active-run-dir>/roadmap.md`
 4. current phase `phase.md`
 5. current phase `plan.md`
 6. current phase `tasks.md`
 7. latest `evaluation_report.md` if it exists
-8. `changelog.md`
-9. `blockers.md` if blocked
+8. `<active-run-dir>/changelog.md`
+9. `<active-run-dir>/blockers.md` if blocked
 
 Then Orchestrator decides the next owner.
 
@@ -1669,7 +1751,9 @@ A skill or plugin implementing this workflow should expose commands similar to t
 
 ### `/workflow:init`
 
-Create `agents_workspace/`, initialize required files, and write initial `requirements.md`.
+Create or select the active run. If a new run is needed, create
+`agents_workspace/runs/<run-id>/`, write `agents_workspace/active_run`, initialize
+required files there, and write initial `requirement.md`.
 
 Inputs:
 
@@ -1679,9 +1763,10 @@ Inputs:
 Outputs:
 
 - initialized workspace
-- requirements.md
-- current_state.md
-- run_state.json
+- agents_workspace/active_run
+- agents_workspace/runs/<run-id>/requirement.md
+- agents_workspace/runs/<run-id>/current_state.md
+- agents_workspace/runs/<run-id>/run_state.json
 
 ### `/workflow:clarify`
 
@@ -1689,7 +1774,7 @@ Analyze requirements and identify only essential ambiguities.
 
 Outputs:
 
-- updated requirements.md
+- updated active run `requirement.md`
 - open questions if necessary
 - decisions.md updates if assumptions are made
 
@@ -1770,11 +1855,14 @@ Let Orchestrator decide and perform the next appropriate workflow step.
 
 ### `/workflow:resume`
 
-Read current files and resume from the correct step.
+Resolve `agents_workspace/active_run`, read the active run files, and resume
+from the correct step. Extra resume text is appended to the active run's
+`requirement.md` under `## Updates` with an ISO timestamp.
 
 ### `/workflow:status`
 
-Print current project and phase status from `current_state.md` and `run_state.json`.
+Print current project and phase status from the active run's `current_state.md`
+and `run_state.json`.
 
 ### `/workflow:repair`
 
@@ -1787,7 +1875,10 @@ move to next Phase.
 
 ### `/workflow:complete-project`
 
-Mark project as completed when all Phases pass.
+Mark project as completed when all Phases pass. This must set
+`run_state.json.project_status = "completed"` and
+`run_state.json.current_step = "project_complete"` so the next start command can
+unambiguously create a new run.
 
 ---
 
@@ -1912,10 +2003,11 @@ A Project is complete when:
 
 - all Roadmap Phases are passed or explicitly skipped with user-approved reason
 - no open critical blockers remain
-- requirements.md has no unresolved must-have open questions
+- active run `requirement.md` has no unresolved must-have open questions
 - changelog includes final summary
 - current_state.md says project completed
 - run_state.json says `project_status = completed`
+- run_state.json says `current_step = project_complete`
 
 ---
 
@@ -1926,6 +2018,8 @@ Recommended defaults:
 ```json
 {
   "workspace_dir": "agents_workspace",
+  "active_run_file": "agents_workspace/active_run",
+  "run_dir_template": "agents_workspace/runs/<run-id>",
   "mode": "full",
   "max_fix_loops_per_phase": 3,
   "max_same_failure_repeats": 2,

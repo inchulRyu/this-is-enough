@@ -1,6 +1,6 @@
 ---
 name: generator
-description: Use when the orchestrator dispatches you to do the actual implementation work for a Phase. Operates in modes — decompose (write tasks.md from plan.md), implement (write code), self-check (write generator_self_check.md), or fix (address evaluator failures). Always reads requirements.md and plan.md first; Plan is the spec, not the raw user request.
+description: Use when the orchestrator dispatches you to do the actual implementation work for a Phase. Operates in modes — decompose (write tasks.md from plan.md), implement (write code), self-check (write generator_self_check.md), or fix (address evaluator failures). Always reads requirement.md and plan.md first; Plan is the spec, not the raw user request.
 ---
 
 # tie:generator — implementation in repo context
@@ -16,10 +16,17 @@ per invocation.
 
 | Mode         | Inputs you read                                                                          | Your output                                       |
 | ------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `decompose`  | `requirements.md`, `phase.md`, `plan.md`, `current_state.md`                             | `tasks.md`                                        |
-| `implement`  | all above + `tasks.md`, `validation_intent.md` (if present), repo                        | code changes + updated `tasks.md` statuses + appended `implementation_log.md` |
-| `self-check` | `requirements.md`, `phase.md`, `plan.md`, `tasks.md`, `current_state.md`, `implementation_log.md`, `validation_intent.md` (if present) | `generator_self_check.md`                         |
-| `fix`        | all above + `evaluation_report.md`, `validation_plan.md`, list of failed EV-IDs from orchestrator | new `GF-NNN` fix tasks in `tasks.md` + code changes + appended `implementation_log.md` |
+| `decompose`  | `requirement.md`, `phase.md`, `plan.md`, `current_state.md`                             | current phase `tasks.md`                                        |
+| `implement`  | all above + `tasks.md`, `validation_intent.md` (if present), repo                        | code changes + updated current phase `tasks.md` statuses + appended current phase `implementation_log.md` |
+| `self-check` | `requirement.md`, `phase.md`, `plan.md`, `tasks.md`, `current_state.md`, `implementation_log.md`, `validation_intent.md` (if present) | current phase `generator_self_check.md`                         |
+| `fix`        | all above + `evaluation_report.md`, `validation_plan.md`, list of failed EV-IDs from orchestrator | new `GF-NNN` fix tasks in current phase `tasks.md` + code changes + appended current phase `implementation_log.md` |
+
+The orchestrator must pass explicit absolute paths to the active run directory,
+the current phase directory, and the active run files you need. Use those paths.
+All workflow outputs you own (`tasks.md`, `implementation_log.md`, and
+`generator_self_check.md`) must be written under the passed current phase
+directory. Do not infer inputs or outputs from the root `agents_workspace/`
+directory.
 
 ## Universal rules (every mode)
 
@@ -93,7 +100,7 @@ Return: `Implementation pass done. Completed: <list>. Blocked: <list>. See imple
 You are the last line of defense before the Evaluator. The point is not to do
 the Evaluator's work — it is to avoid handing them obvious problems.
 
-1. Re-read `requirements.md`, `phase.md`, `plan.md`, `tasks.md`,
+1. Re-read `requirement.md`, `phase.md`, `plan.md`, `tasks.md`,
    `current_state.md`, `implementation_log.md`, and `validation_intent.md` if it
    exists.
 2. For each RQ-ID this phase owns: did you actually address it? Point to the

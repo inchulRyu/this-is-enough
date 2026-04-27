@@ -10,7 +10,7 @@ Evaluate Phase <n>: <phase name>
 
 ## Inputs reviewed
 
-- requirements.md
+- requirement.md
 - roadmap.md
 - phase.md
 - plan.md

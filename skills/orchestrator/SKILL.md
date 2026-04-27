@@ -15,9 +15,10 @@ resumable.
 
 > **Files are the source of truth. Agents are temporary.**
 >
-> If a fact is not written to a file under `agents_workspace/`, it does not exist.
-> Read state from files before every decision. Write state to files after every
-> step. Your in-context memory is a cache, not the truth.
+> If a fact is not written to `agents_workspace/active_run` or the active run
+> directory under `agents_workspace/runs/<run-id>/`, it does not exist. Read
+> state from files before every decision. Write state to files after every step.
+> Your in-context memory is a cache, not the truth.
 
 ## Stop conditions (MUST honor)
 
@@ -58,30 +59,41 @@ desire to stop and summarize are **NOT** stop conditions. Keep going.
 
 ## Workspace bootstrap
 
-If `agents_workspace/` does not exist, create it. Use the templates in
-`../references/file-templates/` as starting structure, then replace every
-placeholder/example value with the actual new workflow state before continuing.
+If `agents_workspace/` does not exist, create it with a `runs/` directory. Each
+independent requirement input creates one isolated run directory. Use the
+templates in `../references/file-templates/` as starting structure inside that
+run directory, then replace every placeholder/example value with the actual new
+workflow state before continuing.
+
+`agents_workspace/active_run` is a plain text pointer to the current/latest run,
+for example `runs/2026-04-27-001-add-dashboard`. It may continue pointing at a
+completed run; completion is determined from that run's
+`run_state.json.project_status` and `current_step`, not by clearing
+`active_run`. Do not create `index.json`.
 
 ```text
 agents_workspace/
-  requirements.md
-  roadmap.md
-  current_state.md
-  run_state.json
-  decisions.md
-  changelog.md
-  blockers.md           (created on first blocker)
-  phases/
-    01-<phase-name>/
-      phase.md
-      plan.md
-      tasks.md
-      validation_intent.md       (optional, complex phases only)
-      implementation_log.md
-      generator_self_check.md
-      validation_plan.md
-      evaluation_report.md
-      evaluation_history.md      (append-only)
+  active_run
+  runs/
+    <run-id>/
+      requirement.md
+      roadmap.md
+      current_state.md
+      run_state.json
+      decisions.md
+      changelog.md
+      blockers.md           (created on first blocker)
+      phases/
+        01-<phase-name>/
+          phase.md
+          plan.md
+          tasks.md
+          validation_intent.md       (optional, complex phases only)
+          implementation_log.md
+          generator_self_check.md
+          validation_plan.md
+          evaluation_report.md
+          evaluation_history.md      (append-only)
 ```
 
 Add `agents_workspace/` to `.gitignore` **only if the user asks**. By default
@@ -111,14 +123,33 @@ intake
 
 ### 1. Intake
 
-Read the user's request. If `agents_workspace/run_state.json` already exists,
-skip to step 7 (Resume). If `agents_workspace/requirements.md` exists but
-`run_state.json` does not, treat the workspace as partially initialized: repair
-or recreate the missing state files from the current requirement files, record
-the repair in `changelog.md`, then continue from the earliest incomplete step.
-Otherwise:
+Read the user's request, then resolve the active run before deciding whether to
+bootstrap.
 
-- Create `agents_workspace/` and copy `requirements.md` template.
+- If `agents_workspace/active_run` exists, read its text, resolve it relative to
+  `agents_workspace/`, and read that run's `run_state.json`.
+- If the active run is `in_progress` or `blocked`, do NOT create a new run.
+  Treat any extra start/resume text as an update to the same run: append it to
+  that run's `requirement.md` under `## Updates` with an ISO timestamp, record
+  the append in `changelog.md`, then skip to step 7 (Resume).
+- If the active run's `project_status` is `completed` and `current_step`
+  indicates project completion, and the current start request includes a new
+  independent requirement, create a new run and overwrite `active_run`.
+- If `active_run` points at a run directory where `requirement.md` exists but
+  `run_state.json` does not, treat that run as partially initialized: repair or
+  recreate the missing state files from the current requirement file, record the
+  repair in that run's `changelog.md`, then continue from the earliest
+  incomplete step.
+- If there is no active run, create a new run.
+
+For a new run:
+
+- Generate `run_id` as `YYYY-MM-DD-NNN-<short-slug>` using the current date,
+  the next non-conflicting sequence for that date, and a short slug from the
+  requirement.
+- Create `agents_workspace/runs/<run-id>/` and copy the workflow templates into
+  that directory.
+- Write `agents_workspace/active_run` as `runs/<run-id>`.
 - Fill in **User Request** verbatim (or summarized faithfully).
 - Identify ambiguities. Apply this filter for each:
   - Will it cause the implementation to branch in materially different
@@ -130,7 +161,9 @@ Otherwise:
 - Write `Clarified Requirements` (RQ-001, RQ-002, …) with priorities (must /
   should / could).
 - Initialize `current_state.md` and `run_state.json` (status: `in_progress`,
-  current_step: `clarify_requirements` or `create_roadmap`).
+  current_step: `clarify_requirements` or `create_roadmap`). `run_state.json`
+  MUST include `run_id`, `workspace_dir`, and `run_dir` (or equivalent fields)
+  sufficient to resolve the active run without guessing.
 
 ### 2. Clarify (only if essential)
 
@@ -159,7 +192,7 @@ For the next pending Phase:
 a. **Init phase directory** — create `phases/NN-<slug>/` and `phase.md` from template.
 
 b. **Plan** — dispatch `tie:planner` subagent. Pass it: phase path,
-   `requirements.md`, `roadmap.md`, `current_state.md`. It writes `plan.md`.
+   `requirement.md`, `roadmap.md`, `current_state.md`. It writes `plan.md`.
    When it returns, run a shallow artifact check on `plan.md`: verify expected
    sections exist and scan enough content to detect whether it is substantive
    and bounded. If thin, dispatch again with a more pointed prompt. If bloated
@@ -212,8 +245,8 @@ h. **Branch on verdict:**
        "phase_checkpoint_commit"` before touching git.
      - If git is available and commits are allowed, create a phase checkpoint
        commit before advancing. Include the product changes for the Phase and
-       the relevant `agents_workspace/` files, because the workspace is the
-       resume substrate.
+       the relevant active run files, because the run directory is the resume
+       substrate.
      - Before committing, inspect `git status --short`. If there are
        uncommitted changes you did not make, unknown files you cannot classify,
        known broken code, or anything that looks like a secret, STOP and write a
@@ -242,7 +275,8 @@ h. **Branch on verdict:**
 
 When all Phases are `passed` or explicitly user-approved `skipped`:
 - Write a final summary to `changelog.md`.
-- Set `run_state.json.project_status = "completed"`, `blocked = false`.
+- Set `run_state.json.project_status = "completed"`, `blocked = false`, and
+  `current_step = "project_complete"`.
 - Update `current_state.md` to reflect completion.
 - Output a brief, factual completion summary to the user (what was built, where
   the workspace is, how to verify).
@@ -262,8 +296,10 @@ If `current_state.md` and `run_state.json` disagree on resume, trust
 
 ### 7. Resume
 
-If `run_state.json` already exists when invoked, do NOT re-bootstrap. Read in
-this order:
+Resolve `agents_workspace/active_run` first. If it is missing or points at a run
+without `run_state.json`, there is no resumable workflow in this directory. If
+`run_state.json` exists in the active run, do NOT re-bootstrap. Read active run
+files in this order:
 
 1. `run_state.json`
 2. `current_state.md`
@@ -311,9 +347,15 @@ TL;DR:
 When dispatching, pass the subagent:
 - The role's mode (`decompose`, `implement`, `self-check`, `fix`, `intent`,
   `recheck`, etc.)
-- Absolute path to the phase directory (e.g., `agents_workspace/phases/02-foo/`)
-- Absolute path to `requirements.md` and `roadmap.md`
+- Absolute path to the active run directory
+- Absolute path to the phase directory (e.g.,
+  `/path/to/project/agents_workspace/runs/<run-id>/phases/02-foo/`)
+- Absolute path to the active run's `requirement.md`, `roadmap.md`,
+  `current_state.md`, and `run_state.json`
 - For fix/recheck: the specific EV-IDs that failed
+
+Subagents must read the explicit active-run paths they were passed. They must
+not infer files from the root `agents_workspace/` directory.
 
 After the subagent returns, **always** verify the files it claims to have
 written exist and are non-empty before advancing. Then run a shallow role-fit
@@ -364,7 +406,8 @@ Resume:
 - Codex CLI: $tie:resume <answer>
 ```
 
-Then write the same content to `blockers.md` and update `run_state.json`.
+Then write the same content to the active run's `blockers.md` and update its
+`run_state.json`.
 
 ## What "complete" looks like
 
@@ -374,8 +417,8 @@ When the project finishes, your final message:
 ✅ Project complete
 
 Phases passed: <list>
-Workspace: agents_workspace/
-Changelog: agents_workspace/changelog.md
+Workspace: agents_workspace/runs/<run-id>/
+Changelog: agents_workspace/runs/<run-id>/changelog.md
 Commits: <phase checkpoint hashes, or recorded no-commit reason>
 
 Verify:

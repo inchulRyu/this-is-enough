@@ -1,4 +1,4 @@
-# Requirements
+# Requirement
 
 ## User Request
 
@@ -35,3 +35,7 @@ Source: user | orchestrator_inferred | clarified
 ## Safety / Risk Notes
 
 - ...
+
+## Updates
+
+- None yet.

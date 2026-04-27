@@ -2,7 +2,7 @@
 
 <!-- Keep this product-level and proportionate. Do not paste schemas, route
 tables, test matrices, or task lists when they can be referenced from
-requirements/decisions/code. -->
+requirement.md, decisions.md, or code. -->
 
 ## Requirement coverage
 
@@ -50,7 +50,7 @@ only the raw request>
 ## High-level technical design
 
 - <direction and integration points only; leave exact file/function boundaries
-  to Generator unless fixed by requirements or decisions>
+  to Generator unless fixed by requirement.md or decisions>
 
 ## Implementation freedom left for Generator
 
