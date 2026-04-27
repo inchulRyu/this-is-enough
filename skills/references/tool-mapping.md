@@ -32,6 +32,10 @@ mechanism:
   skill in the current context. The orchestrator should warn the user that
   context window pressure is higher in this mode.
 
+`tie:doctor` is not a phase subagent role. It runs inline as a maintenance skill
+because it diagnoses, repairs, or migrates workflow state instead of planning,
+implementing, or evaluating a phase.
+
 ## Persistence is platform-agnostic
 
 Workspace state lives in plain files. `agents_workspace/active_run` points to

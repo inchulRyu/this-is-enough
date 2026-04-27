@@ -15,6 +15,9 @@
     "planner",
     "generator",
     "evaluator",
+    "doctor",
+    "repair",
+    "migration",
     "agent",
     "autonomous",
     "file-first"

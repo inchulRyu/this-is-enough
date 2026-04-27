@@ -64,8 +64,8 @@ Then inside Claude Code:
 ```
 
 After install you can verify with `/plugin` → **Installed** tab. The slash
-commands (`/tie:start`, `/tie:resume`, `/tie:status`, `/tie:next`) appear in
-the command picker.
+commands (`/tie:start`, `/tie:resume`, `/tie:status`, `/tie:next`,
+`/tie:doctor`) appear in the command picker.
 
 To pull updates later:
 
@@ -107,7 +107,7 @@ $tie:
 ```
 
 You should see `tie:orchestrator`, `tie:planner`, `tie:generator`,
-`tie:evaluator`, `tie:resume`, and `tie:status`.
+`tie:evaluator`, `tie:resume`, `tie:status`, and `tie:doctor`.
 
 To uninstall:
 
@@ -162,6 +162,20 @@ Read-only status snapshot:
 $tie:status
 ```
 
+Diagnose or safely repair workflow state:
+
+```text
+# Claude Code
+/tie:doctor           # auto-diagnose, then repair/migrate only when safe
+/tie:doctor diagnose  # read-only
+/tie:doctor repair
+
+# Codex CLI
+$tie:doctor
+$tie:doctor diagnose
+$tie:doctor repair
+```
+
 ## Skills
 
 | Skill              | What it does                                                                |
@@ -172,6 +186,7 @@ $tie:status
 | `tie:evaluator`    | Adaptive L0–L5 validation, returns pass/fail/blocked (subagent role).       |
 | `tie:resume`       | Resumes the run pointed to by `agents_workspace/active_run`.                |
 | `tie:status`       | Read-only snapshot of where the run currently stands.                       |
+| `tie:doctor`       | Diagnoses, safely repairs, or migrates workflow state.                      |
 
 ## What the workspace looks like
 
@@ -209,6 +224,10 @@ active run is still `in_progress` or `blocked`, extra start/resume text is
 appended to that run's `requirement.md` under `## Updates` with an ISO timestamp
 instead of creating a second run. There is no `index.json`; older runs are kept
 as directories under `agents_workspace/runs/`.
+
+If a workspace was created before active-run isolation, `/tie:doctor` in Claude
+Code or `$tie:doctor` in Codex can diagnose it and migrate the old root layout
+into `runs/<run-id>/` when there is no conflicting new layout.
 
 By default the workspace IS committed — it's the resume substrate. Phase-pass
 checkpoint commits include the relevant active run files alongside the product

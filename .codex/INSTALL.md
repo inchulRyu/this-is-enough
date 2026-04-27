@@ -41,6 +41,7 @@ tie:generator
 tie:evaluator
 tie:resume
 tie:status
+tie:doctor
 ```
 
 You can also confirm the symlink directly:

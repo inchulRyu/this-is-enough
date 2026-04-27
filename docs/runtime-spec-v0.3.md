@@ -395,6 +395,14 @@ Orchestrator
 - changelog.md
 - phases/*/phase.md
 
+Doctor (maintenance only)
+- active_run
+- current_state.md repairs
+- run_state.json repairs
+- decisions.md / changelog.md / blockers.md repairs
+- legacy-pre-run-layout-* backups
+- migration from old root layout into runs/<run-id>/
+
 Planner
 - phases/*/plan.md
 
@@ -414,7 +422,9 @@ Evaluator
 
 - 각 에이전트는 자신이 소유한 파일을 주로 수정한다.
 - 다른 에이전트가 소유한 파일을 수정해야 할 경우, 이유를 `changelog.md` 또는 해당 phase log에 기록한다.
-- `current_state.md`와 `run_state.json`은 오케스트레이터만 최종 갱신한다.
+- `current_state.md`와 `run_state.json`은 오케스트레이터가 정상 workflow 중
+  최종 갱신한다. Doctor는 명시적인 state maintenance 중에만 safe repair /
+  migration을 위해 갱신할 수 있다.
 - `decisions.md`, `changelog.md`, `blockers.md`, `evaluation_history.md`는 append-only에 가깝게 운용한다.
 - `evaluation_report.md`는 최신 평가 결과로 덮어쓴다.
 - `evaluation_history.md`에는 모든 평가 run의 짧은 snapshot을 누적한다. full report를 복제하지 않는다.
@@ -575,6 +585,139 @@ YYYY-MM-DD-NNN-short-slug
 ```
 
 Example: `2026-04-27-001-add-dashboard`.
+
+## 7.0.1 Doctor diagnostics, repair, and migration
+
+Implementations should expose a Doctor maintenance entry point for workflow
+state. Doctor operates only on `agents_workspace/`. It must not start workflow
+work, resume a phase, dispatch Planner / Generator / Evaluator, or infer product
+requirements.
+
+Doctor supports these modes:
+
+- `diagnose` — read-only. Inspect layout, parse state files, classify health,
+  and report safe next actions.
+- `repair` — fix safe inconsistencies inside the current active-run layout:
+  `agents_workspace/active_run` plus `agents_workspace/runs/<run-id>/`.
+- `migrate` — upgrade old pre-active-run root layout into
+  `agents_workspace/runs/<run-id>/`.
+- default — run `diagnose` first, then automatically choose `repair` or
+  `migrate` only when the diagnosis is unambiguous and safe.
+
+Doctor classifications:
+
+- `healthy_current_layout`
+- `repairable_current_layout`
+- `migratable_old_layout`
+- `no_workflow_state`
+- `ambiguous_or_risky`
+
+Doctor must stop without editing files when state is ambiguous, risky, corrupt
+beyond safe parsing, or would require overwrite / deletion / choosing between
+multiple possible runs.
+
+Doctor may update non-empty workflow state files only when a safe repair rule
+explicitly allows it, the new content is derived from canonical state, and the
+previous content is preserved in a timestamped backup or summarized in
+`changelog.md`. Doctor must reject absolute paths, `..`, symlinks, and any
+canonical path that resolves outside `agents_workspace/`. Migration run IDs must
+be safe basenames containing only ASCII letters, digits, periods, underscores,
+and hyphens; no slashes, no `..`, no leading dot, and not empty.
+
+Safe current-layout repairs include:
+
+- `active_run` missing while `runs/` contains exactly one viable run with
+  parseable `run_state.json` -> recreate `active_run` as `runs/<run-id>`.
+- `active_run` points to a missing run while exactly one viable run exists ->
+  point `active_run` at that run.
+- `run_state.json` is missing but `requirement.md` exists and no roadmap or
+  phase work has started -> create initial `run_state.json` from the standard
+  template using the run directory path.
+- `run_state.json` is missing a `run_id`, `workspace_dir`, or `run_dir` field,
+  or has stale values that can be derived from the resolved run directory ->
+  update those fields.
+- `project_status = "completed"` while `current_step` is not
+  `"project_complete"` -> set `current_step = "project_complete"`.
+- `current_state.md` disagrees with `run_state.json` -> trust
+  `run_state.json`, rewrite the state summary, and preserve reusable human
+  context when possible. If rewriting an existing file, first preserve the
+  original in a timestamped repair backup or record enough detail in
+  `changelog.md` to recover what was removed.
+- `blocked = true` while `blockers.md` is missing -> create a minimal blocker
+  only when the reason and resume target can be inferred from existing state;
+  otherwise stop and ask the user.
+- `blocked = true` while `blockers.md` exists but has no open blocker -> stop
+  unless a single open blocker can be reconstructed from existing state.
+- Missing template-only files such as `decisions.md`, `changelog.md`, or an
+  empty `phases/` directory may be created when no product requirements,
+  roadmap entries, decisions, or phase details would be invented.
+
+Unsafe current-layout repairs include:
+
+- more than one viable run could be active
+- `active_run` points outside `agents_workspace/`, is absolute, uses `..`, is a
+  symlink escape, or fails canonical path containment checks
+- `run_state.json` is missing after roadmap or phase work has started
+- `run_state.json` exists but is invalid JSON
+- `requirement.md` is missing
+- `roadmap.md` is missing after roadmap creation has started
+- `phases/` is missing while `run_state.json.current_phase` points to a phase
+- old and new layouts both exist
+- any non-empty destination would be replaced without an explicit safe-repair
+  rule and a preservation path
+
+Old pre-active-run layout:
+
+```text
+agents_workspace/
+  requirements.md
+  roadmap.md
+  current_state.md
+  run_state.json
+  decisions.md
+  changelog.md
+  blockers.md
+  phases/
+```
+
+Migration from the old layout is automatic only when:
+
+- root `run_state.json` exists and parses
+- root `requirements.md` exists
+- root `roadmap.md`, `current_state.md`, `decisions.md`, and `changelog.md`
+  exist
+- `active_run` does not exist
+- `runs/` is absent or empty
+- target `runs/<run-id>/` does not exist
+- a backup directory can be created without collision
+- the chosen `<run-id>` passes the safe-basename rule and resolves under
+  `agents_workspace/runs/`
+
+Migration must:
+
+1. Choose `<run-id>` from `run_state.json.run_id` when present and safe;
+   otherwise generate `YYYY-MM-DD-HHMMSS-migrated-run`.
+2. Create `agents_workspace/runs/<run-id>/`.
+3. Copy old root files into the run directory, renaming
+   `requirements.md` -> `requirement.md` and preserving
+   `run_state.json` as `run_state.json`.
+4. Add or correct `run_id`, `workspace_dir`, and `run_dir` in the run copy of
+   `run_state.json`.
+5. Verify the run copy is complete and parseable before modifying the old root
+   files. If verification fails, do not write `active_run`; leave the old root
+   layout untouched and report the partial run directory.
+6. Preserve original root workflow files in
+   `agents_workspace/legacy-pre-run-layout-<timestamp>/`.
+7. Move the original root workflow files into that backup so old and new layouts
+   do not remain side by side. If any move fails, do not write `active_run`; stop
+   for manual recovery.
+8. Write `agents_workspace/active_run` as `runs/<run-id>`.
+9. Append a migration summary to the run's `changelog.md`.
+
+Doctor must stop for user choice when old and new layouts both exist,
+`active_run` conflicts with the detected state, root `run_state.json` is corrupt,
+required old-layout files are missing, or any overwrite / delete would be
+required.
 
 ## 7.1 Intake and requirement clarification
 
@@ -1545,7 +1688,9 @@ If `current_state.md` and `run_state.json` disagree:
 
 1. Use `run_state.json` for machine state.
 2. Use `current_state.md` for human context.
-3. Orchestrator should repair `current_state.md` to match `run_state.json`.
+3. Orchestrator should repair `current_state.md` to match `run_state.json`
+   during normal resume. Doctor may perform the same repair during explicit
+   state maintenance.
 4. Record the repair in `changelog.md`.
 
 ---
@@ -1864,9 +2009,18 @@ from the correct step. Extra resume text is appended to the active run's
 Print current project and phase status from the active run's `current_state.md`
 and `run_state.json`.
 
+### `/workflow:doctor [diagnose|repair|migrate]`
+
+Diagnose, safely repair, or migrate workflow state under `agents_workspace/`.
+With no mode, Doctor runs read-only diagnosis first and automatically chooses
+repair or migration only when the safe action is unambiguous. `diagnose` is
+always read-only. `repair` is limited to safe inconsistencies in the active-run
+layout. `migrate` upgrades the old root workflow layout to
+`agents_workspace/runs/<run-id>/` with a preserved backup.
+
 ### `/workflow:repair`
 
-Repair inconsistent or missing workflow files.
+Optional compatibility alias for `/workflow:doctor repair`.
 
 ### `/workflow:complete-phase`
 
@@ -2026,6 +2180,7 @@ Recommended defaults:
   "default_validation_level": "L1_static_plus_build",
   "use_validation_intent_for_complex_phases": true,
   "git_policy": "safe_optional",
+  "doctor_default_mode": "diagnose_then_safe_action",
   "ask_user_only_when_required": true
 }
 ```
