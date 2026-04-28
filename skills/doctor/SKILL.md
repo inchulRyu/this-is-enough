@@ -46,6 +46,7 @@ Current layout:
 
 ```text
 agents_workspace/
+  drafts/                 # pre-run requirement drafts, optional
   active_run
   runs/<run-id>/
     requirement.md
@@ -85,10 +86,12 @@ generate a fresh migration run ID.
 Read state in this order:
 
 1. `agents_workspace/` existence and direct children.
-2. `agents_workspace/active_run`, if present.
-3. `agents_workspace/runs/*/run_state.json`, if present.
-4. The active run's state files, if an active run resolves safely.
-5. Old root-layout files directly under `agents_workspace/`, if present.
+2. `agents_workspace/drafts/*/requirement.md`, if present. Drafts are pre-run
+   state; count them, but do not repair, promote, or delete them.
+3. `agents_workspace/active_run`, if present.
+4. `agents_workspace/runs/*/run_state.json`, if present.
+5. The active run's state files, if an active run resolves safely.
+6. Old root-layout files directly under `agents_workspace/`, if present.
 
 Classify the workspace as exactly one of:
 
@@ -124,6 +127,7 @@ ThisIsEnough doctor
 Mode: diagnose
 Classification: <classification>
 Active run: <none | runs/<run-id> | invalid: reason>
+Drafts: <count>
 Viable runs: <count and names>
 Old layout: <absent | present | partial>
 
@@ -146,7 +150,10 @@ After diagnosis:
 - `healthy_current_layout` -> report healthy and stop.
 - `repairable_current_layout` -> run the safe repairs and report what changed.
 - `migratable_old_layout` -> migrate and report what changed.
-- `no_workflow_state` -> say no ThisIsEnough workflow state exists and stop.
+- `no_workflow_state` -> say no active ThisIsEnough workflow run exists. If
+  drafts are present, report the draft count and say they can be continued with
+  `/tie:requirements <draft path>` or started with `/tie:start from draft <draft
+  path>`.
 - `ambiguous_or_risky` -> stop and ask the user to choose. Do not edit files.
 
 ## Repair mode

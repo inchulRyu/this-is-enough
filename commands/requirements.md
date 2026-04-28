@@ -1,0 +1,13 @@
+---
+description: Draft or refine a ThisIsEnough requirement before starting an implementation run. Writes only agents_workspace/drafts/.../requirement.md and does not create active_run or runs.
+---
+
+The user wants help preparing a ThisIsEnough requirement draft before starting
+implementation.
+
+Their input is: $ARGUMENTS
+
+Invoke the `tie:requirements` skill now and follow it exactly. Do not start or
+resume a workflow run. Do not create or modify `agents_workspace/active_run`.
+Do not create `agents_workspace/runs/`, `roadmap.md`, `run_state.json`, or phase
+artifacts.

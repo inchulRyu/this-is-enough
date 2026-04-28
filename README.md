@@ -10,7 +10,8 @@ as a cross-platform plugin that works in both **Claude Code** and **Codex CLI**.
 
 ## What it does
 
-You state a requirement once. ThisIsEnough then:
+You can draft a requirement first, or state a requirement directly. Once a run
+starts, ThisIsEnough then:
 
 1. **Clarifies only essential ambiguities** (no busywork questions).
 2. **Builds a Roadmap** of phases.
@@ -28,10 +29,11 @@ You state a requirement once. ThisIsEnough then:
    broken, repeated unrecoverable failure, or risky operation requiring
    confirmation.
 
-All state for a request lives under an isolated run directory in
-`agents_workspace/runs/<run-id>/`, with `agents_workspace/active_run` pointing
-to the current/latest run. Any session can resume cleanly with `$tie:resume` or
-`/tie:resume`.
+Before implementation starts, draft requirements can live under
+`agents_workspace/drafts/`. Once a run starts, state for that request lives under
+an isolated run directory in `agents_workspace/runs/<run-id>/`, with
+`agents_workspace/active_run` pointing to the current/latest run. Any session can
+resume cleanly with `$tie:resume` or `/tie:resume`.
 
 ## Install
 
@@ -64,8 +66,8 @@ Then inside Claude Code:
 ```
 
 After install you can verify with `/plugin` → **Installed** tab. The slash
-commands (`/tie:start`, `/tie:resume`, `/tie:status`, `/tie:next`,
-`/tie:doctor`) appear in the command picker.
+commands (`/tie:requirements`, `/tie:start`, `/tie:resume`, `/tie:status`,
+`/tie:next`, `/tie:doctor`) appear in the command picker.
 
 To pull updates later:
 
@@ -106,8 +108,9 @@ Restart Codex, then type:
 $tie:
 ```
 
-You should see `tie:orchestrator`, `tie:planner`, `tie:generator`,
-`tie:evaluator`, `tie:resume`, `tie:status`, and `tie:doctor`.
+You should see `tie:requirements`, `tie:orchestrator`, `tie:planner`,
+`tie:generator`, `tie:evaluator`, `tie:resume`, `tie:status`, and
+`tie:doctor`.
 
 To uninstall:
 
@@ -138,6 +141,16 @@ rm -rf ~/.codex/thisisenough   # optional, removes the clone
 
 ## Use
 
+Draft a requirement before implementation:
+
+```text
+# Claude Code
+/tie:requirements Help me shape a dashboard requirement before we start.
+
+# Codex CLI
+$tie:requirements Help me shape a dashboard requirement before we start.
+```
+
 Start a workflow:
 
 ```text
@@ -146,6 +159,16 @@ Start a workflow:
 
 # Codex CLI
 $tie:orchestrator I want to add a dashboard with empty/error states and …
+```
+
+Start from an approved draft:
+
+```text
+# Claude Code
+/tie:start from draft agents_workspace/drafts/<draft-id>/requirement.md
+
+# Codex CLI
+$tie:orchestrator Start from draft agents_workspace/drafts/<draft-id>/requirement.md
 ```
 
 Resume after a stopped session:
@@ -180,6 +203,7 @@ $tie:doctor repair
 
 | Skill              | What it does                                                                |
 | ------------------ | --------------------------------------------------------------------------- |
+| `tie:requirements` | Drafts pre-run requirements under `agents_workspace/drafts/`.               |
 | `tie:orchestrator` | Entry point. Drives the entire state machine end-to-end.                    |
 | `tie:planner`      | Expands raw requirement into a rich product-level Plan (subagent role).     |
 | `tie:generator`    | Decomposes / implements / self-checks / fixes (subagent role, modes).       |
@@ -192,6 +216,9 @@ $tie:doctor repair
 
 ```text
 agents_workspace/
+  drafts/
+    <draft-id>/
+      requirement.md                    # pre-run only
   active_run                       # e.g. runs/2026-04-27-001-add-dashboard
   runs/
     <run-id>/
@@ -215,6 +242,12 @@ agents_workspace/
           evaluation_history.md
 ```
 
+`drafts/` contains only requirements whose implementation has not started. When
+you start from a draft, ThisIsEnough copies its `requirement.md` into the new
+run, verifies the copy, then removes the draft directory only if it contains no
+files besides `requirement.md`. From that point on, the run's `requirement.md`
+is the source of truth and history.
+
 One independent requirement creates one run. `active_run` may continue pointing
 at a completed run; completion is read from that run's
 `run_state.json.project_status` and `current_step`, not by clearing the pointer.
@@ -222,8 +255,9 @@ If the active run is completed and a new start request includes a new
 requirement, ThisIsEnough creates a new run and overwrites `active_run`. If the
 active run is still `in_progress` or `blocked`, extra start/resume text is
 appended to that run's `requirement.md` under `## Updates` with an ISO timestamp
-instead of creating a second run. There is no `index.json`; older runs are kept
-as directories under `agents_workspace/runs/`.
+instead of creating a second run. Draft paths are the exception: they are not
+appended, promoted, or deleted while another run is incomplete. There is no
+`index.json`; older runs are kept as directories under `agents_workspace/runs/`.
 
 If a workspace was created before active-run isolation, `/tie:doctor` in Claude
 Code or `$tie:doctor` in Codex can diagnose it and migrate the old root layout

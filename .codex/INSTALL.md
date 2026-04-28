@@ -35,6 +35,7 @@ $tie:
 You should see:
 
 ```text
+tie:requirements
 tie:orchestrator
 tie:planner
 tie:generator

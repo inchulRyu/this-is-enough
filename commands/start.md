@@ -1,5 +1,5 @@
 ---
-description: Start a ThisIsEnough autonomous workflow run for the requirement that follows. Creates or updates the active run under agents_workspace/runs/ and hands off to the orchestrator.
+description: Start a ThisIsEnough autonomous workflow run for the requirement or draft path that follows. Creates or updates the active run under agents_workspace/runs/ and hands off to the orchestrator.
 ---
 
 The user is starting a new ThisIsEnough workflow.
@@ -8,9 +8,11 @@ Their requirement is: $ARGUMENTS
 
 Invoke the `tie:orchestrator` skill now and follow it exactly. Treat the
 requirement above as the initial user request for intake unless there is an
-active incomplete run. Do not start implementing anything before the
-orchestrator's intake → clarify → roadmap flow has produced the active run's
-`requirement.md` and `roadmap.md`.
+active incomplete run or the arguments reference a draft requirement file. If
+`$ARGUMENTS` references `agents_workspace/drafts/<draft-id>/requirement.md`,
+tell the orchestrator to start from that draft. Do not start implementing
+anything before the orchestrator's intake → clarify → roadmap flow has produced
+the active run's `requirement.md` and `roadmap.md`.
 
 Resolve the active run through `agents_workspace/active_run`:
 
@@ -21,4 +23,7 @@ Resolve the active run through `agents_workspace/active_run`:
   `current_step` indicates project completion, create a new run for this
   requirement and overwrite `active_run`.
 - If the active run is `in_progress` or `blocked`, do NOT create a new run.
-  Invoke `tie:resume` and treat "$ARGUMENTS" as an update to that run.
+  If "$ARGUMENTS" references a draft, leave the draft untouched and report that
+  the current active run must be completed or resolved before starting a new run
+  from a draft. Do not append the draft path to the active run. Otherwise invoke
+  `tie:resume` and treat "$ARGUMENTS" as an update to that run.

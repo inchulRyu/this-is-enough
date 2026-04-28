@@ -1,7 +1,7 @@
 {
   "name": "tie",
-  "version": "0.1.0",
-  "description": "ThisIsEnough — autonomous file-first workflow runtime. Run one skill, the orchestrator drives planning, implementation, evaluation, and fix loops until project completion or a real blocker.",
+  "version": "0.2.0",
+  "description": "ThisIsEnough — requirement drafting and autonomous file-first workflow runtime. Draft before a run, or let the orchestrator drive planning, implementation, evaluation, and fix loops until project completion or a real blocker.",
   "author": {
     "name": "inchulryu",
     "email": "65108642+inchulRyu@users.noreply.github.com"
@@ -11,6 +11,8 @@
   "license": "MIT",
   "keywords": [
     "workflow",
+    "requirements",
+    "draft",
     "orchestrator",
     "planner",
     "generator",
@@ -25,8 +27,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "ThisIsEnough",
-    "shortDescription": "Run one skill. The orchestrator drives plan → implement → evaluate → fix loops until done or blocked.",
-    "longDescription": "ThisIsEnough is a file-first workflow runtime. The user states a requirement once; the orchestrator clarifies only when truly necessary, builds a roadmap, then for each phase autonomously runs Planner (rich product spec), Generator (implementation), and Evaluator (adaptive validation), looping fixes until the phase passes. State is isolated per run under agents_workspace/runs/<run-id>/, with agents_workspace/active_run pointing to the current/latest run so any session can resume cleanly. The doctor skill diagnoses, safely repairs, and migrates workflow state without starting workflow work.",
+    "shortDescription": "Draft requirements or run one skill. The orchestrator drives plan → implement → evaluate → fix loops until done or blocked.",
+    "longDescription": "ThisIsEnough is a file-first workflow runtime. The user can draft a requirement under agents_workspace/drafts/ before implementation, or state a requirement directly. The orchestrator clarifies only when truly necessary, builds a roadmap, then for each phase autonomously runs Planner (rich product spec), Generator (implementation), and Evaluator (adaptive validation), looping fixes until the phase passes. State is isolated per run under agents_workspace/runs/<run-id>/, with agents_workspace/active_run pointing to the current/latest run so any session can resume cleanly. The doctor skill diagnoses, safely repairs, and migrates workflow state without starting workflow work.",
     "developerName": "inchulryu",
     "category": "Coding",
     "capabilities": [
@@ -35,6 +37,7 @@
       "Write"
     ],
     "defaultPrompt": [
+      "Help me draft this requirement before starting implementation:",
       "Build this for me end-to-end:",
       "Resume the workflow from agents_workspace/active_run.",
       "Diagnose this workflow state with tie:doctor."

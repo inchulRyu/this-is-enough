@@ -284,6 +284,9 @@ Evaluator가 검증 결과를 pass / fail / blocked로 정리한 최신 보고�
 
 ```text
 agents_workspace/
+  drafts/
+    <draft-id>/
+      requirement.md                    # pre-run only
   active_run                       # e.g. runs/2026-04-27-001-add-dashboard
   runs/
     <run-id>/
@@ -308,6 +311,11 @@ agents_workspace/
           evaluation_history.md
 ```
 
+`agents_workspace/drafts/`는 아직 구현이 시작되지 않은 requirement draft만
+보관한다. Draft가 run으로 승격되면 draft의 `requirement.md`를 새 run의
+`requirement.md`로 복사한다. Draft directory는 안전하게 삭제할 수 있을 때만
+삭제한다. 그 이후의 source of truth와 history는 run directory다.
+
 `agents_workspace/active_run`은 current/latest run을 가리키는 text pointer다.
 값은 `runs/<run-id>` 형태의 상대 경로다. 완료된 run을 가리킨 채로 남아도
 된다. 완료 여부는 pointer를 비우는 것으로 판단하지 않고, 해당 run의
@@ -328,6 +336,7 @@ append한다.
 
 ```text
 agents_workspace/
+  drafts/
   active_run
   runs/
     <run-id>/
@@ -353,6 +362,7 @@ agents_workspace/
 
 ```text
 agents_workspace/
+  drafts/
   active_run
   runs/
     <run-id>/
@@ -394,6 +404,10 @@ Orchestrator
 - blockers.md
 - changelog.md
 - phases/*/phase.md
+- promotion/deletion of agents_workspace/drafts/<draft-id>/
+
+Requirements
+- agents_workspace/drafts/<draft-id>/requirement.md
 
 Doctor (maintenance only)
 - active_run
@@ -562,21 +576,43 @@ Planner writes plan.md
 ## 7.0 Active run selection
 
 Workflow start/resume commands must resolve `agents_workspace/active_run` before
-reading or writing state.
+reading or writing run state. A start command may validate a referenced draft
+path first, but it must not read draft content, write run state, or delete the
+draft until active-run selection confirms a new run can be created.
 
-1. If `agents_workspace/active_run` is missing, create `agents_workspace/runs/`
-   if needed, create a new run directory, and write `active_run` to
-   `runs/<run-id>`.
+1. If `agents_workspace/active_run` is missing, a new run may be created. For
+   raw requirements, write `active_run` during normal bootstrap. For draft
+   starts, first run the draft preflight below, then delay writing `active_run`
+   until the draft copy and minimum run state are verified.
 2. If `active_run` points at a run whose `run_state.json.project_status` is
    `completed` and whose `current_step` indicates project completion, a start
    command with a new independent requirement creates a new run and overwrites
    `active_run`.
 3. If `active_run` points at a run whose status is `in_progress` or `blocked`,
    a start/resume command with extra text updates the same run. Append the text
-   to that run's `requirement.md` under `## Updates` with an ISO timestamp.
+   to that run's `requirement.md` under `## Updates` with an ISO timestamp. If
+   the extra text references a draft path, this append rule does not apply; do
+   not append, promote, or delete the draft.
 4. If `active_run` points at a partial run where `requirement.md` exists but
    `run_state.json` does not, repair that run in place when possible and record
    the repair in its `changelog.md`.
+
+If a start request references
+`agents_workspace/drafts/<draft-id>/requirement.md`, validate that the path is
+relative, does not contain `..`, does not use a symlink escape, resolves under
+`agents_workspace/drafts/`, is named `requirement.md`, and has exactly one
+draft-id segment between `drafts/` and `requirement.md`. If an active run is
+`in_progress` or `blocked`, do not append the draft to that run, promote it, or
+delete it; the current run must be completed or resolved first. If a new run can
+be created, read the draft only after active-run selection allows a new run. If
+the draft has unresolved open questions or the draft directory contains anything
+besides `requirement.md`, stop before creating the run. Otherwise copy the draft
+`requirement.md` into the new run, verify the run copy exactly matches the draft
+content, verify the minimum state files, record the source draft in
+`changelog.md`, write `active_run`, and only then delete the draft directory.
+Draft deletion must never happen before the run copy and minimum state files are
+present, and must never delete a directory containing files other than
+`requirement.md`.
 
 Run IDs should be stable, readable, and non-conflicting. Recommended format:
 
@@ -718,6 +754,25 @@ Doctor must stop for user choice when old and new layouts both exist,
 `active_run` conflicts with the detected state, root `run_state.json` is corrupt,
 required old-layout files are missing, or any overwrite / delete would be
 required.
+
+## 7.0.2 Pre-run requirement drafts
+
+`tie:requirements` may create requirement drafts before any implementation run
+exists. Drafting is intentionally lighter than orchestration:
+
+- It writes only `agents_workspace/drafts/<draft-id>/requirement.md`.
+- It does not create or modify `active_run`, `runs/`, `run_state.json`,
+  `roadmap.md`, `current_state.md`, or phase artifacts.
+- Existing draft paths must pass the same canonical containment and exact-shape
+  checks used by orchestrator promotion.
+- It asks only load-bearing questions: choices that change product direction,
+  phase boundaries, evaluation criteria, or safety/data/deploy/cost/auth risk.
+- It records non-load-bearing uncertainty as assumptions, non-goals, or
+  clarified requirement detail instead of interviewing the user.
+
+Drafts use the same `requirement.md` shape as active runs. This keeps promotion
+simple: orchestrator copies the draft into the new run, verifies the copy, and
+then deletes the draft directory only when it contains exactly `requirement.md`.
 
 ## 7.1 Intake and requirement clarification
 
@@ -1894,11 +1949,30 @@ If current_phase_status = blocked
 
 A skill or plugin implementing this workflow should expose commands similar to the following.
 
+### `/workflow:requirements`
+
+Draft or refine a requirement before starting implementation.
+
+Inputs:
+
+- user idea, rough request, or existing draft path
+
+Outputs:
+
+- `agents_workspace/drafts/<draft-id>/requirement.md`
+- essential open questions if the draft is not ready for handoff
+
+This command must not create `active_run` or any run state.
+
 ### `/workflow:init`
 
 Create or select the active run. If a new run is needed, create
-`agents_workspace/runs/<run-id>/`, write `agents_workspace/active_run`, initialize
-required files there, and write initial `requirement.md`.
+`agents_workspace/runs/<run-id>/`, initialize required files there, write initial
+`requirement.md`, then write `agents_workspace/active_run`. If the input is a
+draft path under `agents_workspace/drafts/`, copy that draft's `requirement.md`
+into the run, verify the copied content and minimum state files, then write
+`active_run`, and remove the draft only after bootstrap succeeds and the draft
+directory contains no files besides `requirement.md`.
 
 Inputs:
 
@@ -2172,6 +2246,7 @@ Recommended defaults:
 ```json
 {
   "workspace_dir": "agents_workspace",
+  "draft_dir_template": "agents_workspace/drafts/<draft-id>",
   "active_run_file": "agents_workspace/active_run",
   "run_dir_template": "agents_workspace/runs/<run-id>",
   "mode": "full",
@@ -2193,6 +2268,8 @@ The workflow is:
 
 ```text
 User requirement
+→ Optional tie:requirements draft under agents_workspace/drafts/
+→ Start from raw request or approved draft
 → Orchestrator clarifies only essential ambiguity
 → Orchestrator creates Roadmap
 → For each Phase:

@@ -73,6 +73,9 @@ completed run; completion is determined from that run's
 
 ```text
 agents_workspace/
+  drafts/
+    <draft-id>/
+      requirement.md       # pre-run draft, not implementation state
   active_run
   runs/
     <run-id>/
@@ -99,6 +102,11 @@ agents_workspace/
 Add `agents_workspace/` to `.gitignore` **only if the user asks**. By default
 the workspace IS committed because it's the resume substrate.
 
+Drafts are pre-run only. `agents_workspace/drafts/` contains requirements whose
+implementation has not started. When a draft is promoted into a run, the run's
+`requirement.md` becomes the source of truth and the draft directory is removed
+only when it is safe to remove.
+
 ## State machine you drive
 
 ```text
@@ -123,15 +131,35 @@ intake
 
 ### 1. Intake
 
-Read the user's request, then resolve the active run before deciding whether to
-bootstrap.
+Read the user's request and detect whether it references a draft requirement
+file before deciding whether to bootstrap. A valid draft handoff reference is a
+safe path of exactly this shape:
+
+```text
+agents_workspace/drafts/<draft-id>/requirement.md
+```
+
+- If the request references a draft, resolve the path canonically and reject it
+  if it is absolute, contains `..`, is a symlink escape, is not named
+  `requirement.md`, resolves outside `agents_workspace/drafts/`, or has anything
+  other than one draft-id path segment between `drafts/` and `requirement.md`.
+- Validate only the draft path before active-run selection. Do not read draft
+  contents, inspect open questions, promote, or delete the draft until active-run
+  selection confirms a new run can be created.
+- Do not delete or modify a draft unless a new run has been successfully
+  bootstrapped from it.
+
+Then resolve the active run before deciding whether to bootstrap.
 
 - If `agents_workspace/active_run` exists, read its text, resolve it relative to
   `agents_workspace/`, and read that run's `run_state.json`.
 - If the active run is `in_progress` or `blocked`, do NOT create a new run.
-  Treat any extra start/resume text as an update to the same run: append it to
-  that run's `requirement.md` under `## Updates` with an ISO timestamp, record
-  the append in `changelog.md`, then skip to step 7 (Resume).
+  If the request referenced a draft, do not append the draft to the active run,
+  promote it, or delete it; stop and explain that the active run must be
+  completed or resolved before starting a new run from a draft. Otherwise treat
+  any extra start/resume text as an update to the same run: append it to that
+  run's `requirement.md` under `## Updates` with an ISO timestamp, record the
+  append in `changelog.md`, then skip to step 7 (Resume).
 - If the active run's `project_status` is `completed` and `current_step`
   indicates project completion, and the current start request includes a new
   independent requirement, create a new run and overwrite `active_run`.
@@ -142,28 +170,51 @@ bootstrap.
   incomplete step.
 - If there is no active run, create a new run.
 
+If starting from a draft and a new run can be created:
+
+- Read the draft file. If the draft has unresolved `## Open Questions` other
+  than `- None`, do not create a run unless the user explicitly instructs you to
+  proceed despite them. Stop and tell the user to resolve the draft with
+  `tie:requirements`.
+- Confirm the draft directory contains exactly one entry: `requirement.md`. If
+  it contains anything else, do not create a run or delete anything; stop and ask
+  the user to remove or explicitly approve handling the extra files.
+
 For a new run:
 
 - Generate `run_id` as `YYYY-MM-DD-NNN-<short-slug>` using the current date,
   the next non-conflicting sequence for that date, and a short slug from the
-  requirement.
+  requirement or draft id.
 - Create `agents_workspace/runs/<run-id>/` and copy the workflow templates into
   that directory.
-- Write `agents_workspace/active_run` as `runs/<run-id>`.
-- Fill in **User Request** verbatim (or summarized faithfully).
-- Identify ambiguities. Apply this filter for each:
+- If starting from a draft, copy the draft file into the new run as
+  `requirement.md` with the draft content preserved. Do not re-interview or
+  rewrite product intent unless a new load-bearing safety issue is obvious.
+- If starting from raw user text, fill in **User Request** verbatim (or
+  summarized faithfully), identify ambiguities, and apply this filter for each:
   - Will it cause the implementation to branch in materially different
     directions? → ask user.
   - Is it about safety, data, deletion, deploy, payment, secrets, auth? → ask user.
   - Is it a low-level implementation choice (function name, file layout,
     library minor-version)? → fill with a reasonable default, record in
     `decisions.md`.
-- Write `Clarified Requirements` (RQ-001, RQ-002, …) with priorities (must /
-  should / could).
+  Then write `Clarified Requirements` (RQ-001, RQ-002, …) with priorities
+  (must / should / could).
 - Initialize `current_state.md` and `run_state.json` (status: `in_progress`,
   current_step: `clarify_requirements` or `create_roadmap`). `run_state.json`
   MUST include `run_id`, `workspace_dir`, and `run_dir` (or equivalent fields)
   sufficient to resolve the active run without guessing.
+- If starting from a draft, append a `changelog.md` entry naming the source
+  draft id/path. Verify the run's `requirement.md` content exactly matches the
+  draft content read before bootstrap, and verify `run_state.json` and
+  `current_state.md` exist before publishing the run.
+- Write `agents_workspace/active_run` as `runs/<run-id>` only after
+  `requirement.md` and the minimum state files are written and verified.
+- If starting from a draft, remove the draft directory only after `active_run`
+  is written, the draft path still resolves to the same canonical file, and the
+  draft directory still contains exactly `requirement.md`. Never remove the
+  draft if bootstrap failed, if the run requirement copy differs from the draft,
+  or if the draft directory contains extra files.
 
 ### 2. Clarify (only if essential)
 
