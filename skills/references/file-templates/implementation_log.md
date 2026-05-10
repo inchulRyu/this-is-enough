@@ -32,3 +32,7 @@ code blocks, full command output, or line-by-line changes. -->
 ### Known risks
 
 - ...
+
+### Project memory candidates
+
+- ...

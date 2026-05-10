@@ -35,6 +35,10 @@ an isolated run directory in `agents_workspace/runs/<run-id>/`, with
 `agents_workspace/active_run` pointing to the current/latest run. Any session can
 resume cleanly with `$tie:resume` or `/tie:resume`.
 
+Volatile workflow state is ignored by git by default. Durable lessons that
+future work should know are promoted to `agents_workspace/project_memory.md`,
+which is intended to be committed.
+
 ## Install
 
 ### Claude Code — persistent install (recommended)
@@ -216,6 +220,7 @@ $tie:doctor repair
 
 ```text
 agents_workspace/
+  project_memory.md                  # durable notes intended for git
   drafts/
     <draft-id>/
       requirement.md                    # pre-run only
@@ -228,6 +233,7 @@ agents_workspace/
       run_state.json
       decisions.md
       changelog.md
+      retrospective.md              # run-local memory candidates
       blockers.md                  (only when blocked)
       phases/
         01-<phase-slug>/
@@ -246,7 +252,8 @@ agents_workspace/
 you start from a draft, ThisIsEnough copies its `requirement.md` into the new
 run, verifies the copy, then removes the draft directory only if it contains no
 files besides `requirement.md`. From that point on, the run's `requirement.md`
-is the source of truth and history.
+is the source of truth for the requirement, and detailed run history stays in
+the local run directory.
 
 One independent requirement creates one run. `active_run` may continue pointing
 at a completed run; completion is read from that run's
@@ -259,14 +266,30 @@ instead of creating a second run. Draft paths are the exception: they are not
 appended, promoted, or deleted while another run is incomplete. There is no
 `index.json`; older runs are kept as directories under `agents_workspace/runs/`.
 
+Run directories, drafts, and `active_run` are volatile state and are gitignored
+by default:
+
+```gitignore
+agents_workspace/drafts/
+agents_workspace/runs/
+agents_workspace/active_run
+```
+
+Do not ignore `agents_workspace/` itself unless you also do not want to commit
+`agents_workspace/project_memory.md`. If an old setup already ignores
+`agents_workspace/`, replace that broad rule with the three rules above. If a
+team wants shared resumability across machines, it can opt into committing the
+volatile state by removing those ignore rules.
+
 If a workspace was created before active-run isolation, `/tie:doctor` in Claude
 Code or `$tie:doctor` in Codex can diagnose it and migrate the old root layout
 into `runs/<run-id>/` when there is no conflicting new layout.
 
-By default the workspace IS committed — it's the resume substrate. Phase-pass
-checkpoint commits include the relevant active run files alongside the product
-diff. Add `agents_workspace/` to `.gitignore` only if you don't want shared
-resumability.
+At project completion, the orchestrator reviews the run-local logs and
+`retrospective.md`, then promotes only durable lessons to
+`agents_workspace/project_memory.md`: resolved failed approaches, unusual
+project structure, constraints future changes must respect, and useful follow-up
+cautions. Routine workflow logs stay local.
 
 ## When NOT to use
 

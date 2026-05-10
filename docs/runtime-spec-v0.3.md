@@ -284,6 +284,7 @@ Evaluator가 검증 결과를 pass / fail / blocked로 정리한 최신 보고�
 
 ```text
 agents_workspace/
+  project_memory.md                  # durable repo-level memory
   drafts/
     <draft-id>/
       requirement.md                    # pre-run only
@@ -296,6 +297,7 @@ agents_workspace/
       run_state.json
       decisions.md
       changelog.md
+      retrospective.md              # run-local memory candidates
       blockers.md                  # only when blocked
 
       phases/
@@ -314,7 +316,8 @@ agents_workspace/
 `agents_workspace/drafts/`는 아직 구현이 시작되지 않은 requirement draft만
 보관한다. Draft가 run으로 승격되면 draft의 `requirement.md`를 새 run의
 `requirement.md`로 복사한다. Draft directory는 안전하게 삭제할 수 있을 때만
-삭제한다. 그 이후의 source of truth와 history는 run directory다.
+삭제한다. 그 이후 requirement의 source of truth는 run directory이고, detailed
+run history는 기본적으로 local state로 남는다.
 
 `agents_workspace/active_run`은 current/latest run을 가리키는 text pointer다.
 값은 `runs/<run-id>` 형태의 상대 경로다. 완료된 run을 가리킨 채로 남아도
@@ -330,12 +333,21 @@ append한다.
 
 `index.json`은 현재 만들지 않는다.
 
+기본 git 정책은 `agents_workspace/` 전체를 ignore하지 않고, volatile state만
+ignore하는 것이다. 기본 ignore 대상은 `agents_workspace/drafts/`,
+`agents_workspace/runs/`, `agents_workspace/active_run`이다.
+`agents_workspace/project_memory.md`는 완료된 run에서 승격된 durable note를 담는
+파일이며 commit 가능한 파일로 남긴다. 기존 `.gitignore`에 broad
+`agents_workspace/` rule이 있으면 사용자가 모든 workflow 파일을 ignore하기로
+명시하지 않은 한 이 세 volatile-state rule로 교체한다.
+
 ### 3.1 Minimal mode
 
 작은 프로젝트에서는 아래 최소 구조로 시작할 수 있다.
 
 ```text
 agents_workspace/
+  project_memory.md
   drafts/
   active_run
   runs/
@@ -346,6 +358,7 @@ agents_workspace/
       run_state.json
       decisions.md
       changelog.md
+      retrospective.md
 
       phases/
         01-phase-name/
@@ -362,6 +375,7 @@ agents_workspace/
 
 ```text
 agents_workspace/
+  project_memory.md
   drafts/
   active_run
   runs/
@@ -372,6 +386,7 @@ agents_workspace/
       run_state.json
       decisions.md
       changelog.md
+      retrospective.md
       blockers.md
 
       phases/
@@ -396,6 +411,7 @@ agents_workspace/
 ```text
 Orchestrator
 - active_run
+- project_memory.md
 - requirement.md
 - roadmap.md
 - current_state.md
@@ -403,6 +419,7 @@ Orchestrator
 - decisions.md
 - blockers.md
 - changelog.md
+- retrospective.md
 - phases/*/phase.md
 - promotion/deletion of agents_workspace/drafts/<draft-id>/
 
@@ -442,6 +459,9 @@ Evaluator
 - `decisions.md`, `changelog.md`, `blockers.md`, `evaluation_history.md`는 append-only에 가깝게 운용한다.
 - `evaluation_report.md`는 최신 평가 결과로 덮어쓴다.
 - `evaluation_history.md`에는 모든 평가 run의 짧은 snapshot을 누적한다. full report를 복제하지 않는다.
+- `retrospective.md`는 해당 run 안에서 나중에 승격할 후보만 compact하게 담는다.
+- `project_memory.md`는 완료된 run에서 장기적으로 유용한 note만 승격해 누적한다.
+  routine progress, diff, command transcript, full evaluation report는 담지 않는다.
 
 ---
 
@@ -760,7 +780,8 @@ required.
 `tie:requirements` may create requirement drafts before any implementation run
 exists. Drafting is intentionally lighter than orchestration:
 
-- It writes only `agents_workspace/drafts/<draft-id>/requirement.md`.
+- It writes `agents_workspace/drafts/<draft-id>/requirement.md` and may update
+  `.gitignore` to enforce the default volatile-state ignore rules.
 - It does not create or modify `active_run`, `runs/`, `run_state.json`,
   `roadmap.md`, `current_state.md`, or phase artifacts.
 - Existing draft paths must pass the same canonical containment and exact-shape
@@ -1546,6 +1567,9 @@ A Phase is complete only when:
   `implementation_log.md`
 - if the checkpoint commit cannot be created, `changelog.md` records the
   explicit no-commit reason before the workflow advances
+- volatile workflow state under `agents_workspace/drafts/`,
+  `agents_workspace/runs/`, and `agents_workspace/active_run` is not staged by
+  default unless the user explicitly chose committed run state
 
 ---
 
@@ -1796,7 +1820,7 @@ Record a decision when:
 
 ## 10.2 changelog.md
 
-`changelog.md` is the portable long-term memory of the workflow.
+`changelog.md` is the run-local event log of the workflow.
 
 It should record:
 
@@ -1807,6 +1831,10 @@ It should record:
 - important commits
 - resolved blockers
 - major evaluation results
+
+Long-term lessons that should survive after volatile run state is pruned belong
+in `retrospective.md` first and then, at project completion, in
+`agents_workspace/project_memory.md`.
 
 ### changelog.md template
 
@@ -1835,6 +1863,48 @@ It should record:
 - ...
 
 ### Next action
+
+- ...
+```
+
+---
+
+## 10.3 retrospective.md and project_memory.md
+
+`retrospective.md` is run-local. It captures only candidate notes that may be
+worth carrying forward after the run completes:
+
+- resolved failed approaches that future agents are likely to retry
+- non-obvious project structure or constraints discovered during the run
+- special implementation choices future work must preserve
+- follow-up cautions that are broader than one task
+
+`agents_workspace/project_memory.md` is repo-level durable memory. At project
+completion, Orchestrator reviews `retrospective.md`, `changelog.md`,
+`implementation_log.md`, and evaluation history, then promotes only durable
+notes to `project_memory.md`. It must not copy routine progress, diffs, full
+reports, command transcripts, or generic summaries.
+
+`project_memory.md` is intended to be committed by default. Volatile run state is
+not.
+
+### project_memory.md entry shape
+
+```md
+## <date/time> — <run-id>: <short title>
+
+### Resolved failed approaches
+
+- Tried: ...
+- Why it failed: ...
+- Final resolution: ...
+- Do not repeat: ...
+
+### Project-specific cautions
+
+- ...
+
+### Future work notes
 
 - ...
 ```
@@ -1871,8 +1941,13 @@ Checkpoint rules:
 
 - Run or confirm the relevant tests/checks before the checkpoint. The
   Evaluator's passing report may satisfy this if it just ran the checks.
-- Update the Phase state files before committing so the code and active run
-  resume state land in the same commit.
+- Update the Phase state files before committing so the local workflow can
+  resume correctly. These volatile state files are not staged by default.
+- Do not stage `agents_workspace/drafts/`, `agents_workspace/runs/`, or
+  `agents_workspace/active_run` unless the user explicitly chose shared
+  resumability through committed run state.
+- Stage `agents_workspace/project_memory.md` when it changed, because it is the
+  default durable workflow artifact.
 - Inspect `git status --short` before staging. If unrelated user changes,
   unknown files, known broken code, or possible secrets are present, stop and
   ask rather than committing.
@@ -1968,11 +2043,15 @@ This command must not create `active_run` or any run state.
 
 Create or select the active run. If a new run is needed, create
 `agents_workspace/runs/<run-id>/`, initialize required files there, write initial
-`requirement.md`, then write `agents_workspace/active_run`. If the input is a
-draft path under `agents_workspace/drafts/`, copy that draft's `requirement.md`
-into the run, verify the copied content and minimum state files, then write
-`active_run`, and remove the draft only after bootstrap succeeds and the draft
-directory contains no files besides `requirement.md`.
+`requirement.md`, create `retrospective.md`, ensure
+`agents_workspace/project_memory.md` exists, ensure default volatile-state
+`.gitignore` rules exist, replace a broad `agents_workspace/` ignore rule unless
+the user explicitly wants no workflow files committed, then write
+`agents_workspace/active_run`. If the input is a draft path under
+`agents_workspace/drafts/`, copy that draft's
+`requirement.md` into the run, verify the copied content and minimum state
+files, then write `active_run`, and remove the draft only after bootstrap
+succeeds and the draft directory contains no files besides `requirement.md`.
 
 Inputs:
 
@@ -1982,10 +2061,12 @@ Inputs:
 Outputs:
 
 - initialized workspace
+- agents_workspace/project_memory.md
 - agents_workspace/active_run
 - agents_workspace/runs/<run-id>/requirement.md
 - agents_workspace/runs/<run-id>/current_state.md
 - agents_workspace/runs/<run-id>/run_state.json
+- agents_workspace/runs/<run-id>/retrospective.md
 
 ### `/workflow:clarify`
 
@@ -2107,6 +2188,10 @@ Mark project as completed when all Phases pass. This must set
 `run_state.json.project_status = "completed"` and
 `run_state.json.current_step = "project_complete"` so the next start command can
 unambiguously create a new run.
+
+Before marking complete, promote durable run lessons to
+`agents_workspace/project_memory.md`. Leave routine run logs in the ignored run
+directory.
 
 ---
 
@@ -2233,6 +2318,9 @@ A Project is complete when:
 - no open critical blockers remain
 - active run `requirement.md` has no unresolved must-have open questions
 - changelog includes final summary
+- durable lessons from the run have been promoted to
+  `agents_workspace/project_memory.md`, or the run explicitly records that
+  there were no durable lessons to promote
 - current_state.md says project completed
 - run_state.json says `project_status = completed`
 - run_state.json says `current_step = project_complete`
@@ -2246,9 +2334,15 @@ Recommended defaults:
 ```json
 {
   "workspace_dir": "agents_workspace",
+  "project_memory_file": "agents_workspace/project_memory.md",
   "draft_dir_template": "agents_workspace/drafts/<draft-id>",
   "active_run_file": "agents_workspace/active_run",
   "run_dir_template": "agents_workspace/runs/<run-id>",
+  "default_ignored_paths": [
+    "agents_workspace/drafts/",
+    "agents_workspace/runs/",
+    "agents_workspace/active_run"
+  ],
   "mode": "full",
   "max_fix_loops_per_phase": 3,
   "max_same_failure_repeats": 2,

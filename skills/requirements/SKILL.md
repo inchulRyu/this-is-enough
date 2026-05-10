@@ -52,10 +52,16 @@ one draft-id directory between `drafts/` and `requirement.md`, and must be named
 1. Understand the user's goal and any relevant conversation context.
 2. Read lightweight repo context only when needed to understand product
    boundaries. Avoid deep implementation planning.
-3. Create or update `agents_workspace/drafts/<draft-id>/requirement.md`.
-4. Ask only load-bearing questions. Do not interview the user for details that a
+3. Ensure the default volatile-state `.gitignore` rules exist:
+   `agents_workspace/drafts/`, `agents_workspace/runs/`, and
+   `agents_workspace/active_run`. Do not ignore `agents_workspace/` itself; if
+   a broad `agents_workspace/` ignore rule already exists, replace it with the
+   three volatile-state rules unless the user explicitly wants no workflow files
+   committed.
+4. Create or update `agents_workspace/drafts/<draft-id>/requirement.md`.
+5. Ask only load-bearing questions. Do not interview the user for details that a
    reasonable default, Planner, or Generator can handle later.
-5. Finish with the draft path and readiness. Include unresolved questions if the
+6. Finish with the draft path and readiness. Include unresolved questions if the
    draft is not ready. Include the handoff command only when no unresolved
    load-bearing questions remain.
 

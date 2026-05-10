@@ -18,7 +18,10 @@ Resolve the active run through `agents_workspace/active_run`:
 
 - If no active run exists, create a new run under
   `agents_workspace/runs/<run-id>/`, write `agents_workspace/active_run` to
-  `runs/<run-id>`, and bootstrap there.
+  `runs/<run-id>`, ensure `agents_workspace/project_memory.md` exists, ensure
+  the default volatile-state `.gitignore` rules exist, replace a broad
+  `agents_workspace/` ignore rule unless the user explicitly wants no workflow
+  files committed, and bootstrap there.
 - If the active run's `run_state.json` says `project_status = completed` and
   `current_step` indicates project completion, create a new run for this
   requirement and overwrite `active_run`.

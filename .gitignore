@@ -17,9 +17,10 @@ __pycache__/
 .venv/
 venv/
 
-# By default, agents_workspace/ IS committed because it's the resume substrate
-# for ThisIsEnough. Uncomment the next line if you don't want it in version
-# control for a particular project that uses the plugin.
-# agents_workspace/
+# ThisIsEnough keeps volatile workflow state out of git by default while still
+# allowing agents_workspace/project_memory.md to be committed as durable notes.
+agents_workspace/drafts/
+agents_workspace/runs/
+agents_workspace/active_run
 
 tmp/*

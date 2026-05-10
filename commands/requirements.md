@@ -1,5 +1,5 @@
 ---
-description: Draft or refine a ThisIsEnough requirement before starting an implementation run. Writes only agents_workspace/drafts/.../requirement.md and does not create active_run or runs.
+description: Draft or refine a ThisIsEnough requirement before starting an implementation run. Writes agents_workspace/drafts/.../requirement.md and default volatile-state gitignore rules; does not create active_run or runs.
 ---
 
 The user wants help preparing a ThisIsEnough requirement draft before starting

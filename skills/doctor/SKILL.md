@@ -46,6 +46,7 @@ Current layout:
 
 ```text
 agents_workspace/
+  project_memory.md       # durable repo-level memory, optional but recommended
   drafts/                 # pre-run requirement drafts, optional
   active_run
   runs/<run-id>/
@@ -55,6 +56,7 @@ agents_workspace/
     run_state.json
     decisions.md
     changelog.md
+    retrospective.md      # run-local memory candidates
     blockers.md          # only when blocked
     phases/
 ```
@@ -86,12 +88,14 @@ generate a fresh migration run ID.
 Read state in this order:
 
 1. `agents_workspace/` existence and direct children.
-2. `agents_workspace/drafts/*/requirement.md`, if present. Drafts are pre-run
+2. `agents_workspace/project_memory.md`, if present. It is durable memory, not
+   active run state.
+3. `agents_workspace/drafts/*/requirement.md`, if present. Drafts are pre-run
    state; count them, but do not repair, promote, or delete them.
-3. `agents_workspace/active_run`, if present.
-4. `agents_workspace/runs/*/run_state.json`, if present.
-5. The active run's state files, if an active run resolves safely.
-6. Old root-layout files directly under `agents_workspace/`, if present.
+4. `agents_workspace/active_run`, if present.
+5. `agents_workspace/runs/*/run_state.json`, if present.
+6. The active run's state files, if an active run resolves safely.
+7. Old root-layout files directly under `agents_workspace/`, if present.
 
 Classify the workspace as exactly one of:
 
@@ -186,6 +190,9 @@ Safe repairs:
   the active run directory and mention the backup path in `changelog.md`.
 - If `decisions.md` or `changelog.md` is missing, create the standard heading
   template. Append a doctor entry to `changelog.md` after the repair.
+- If `project_memory.md` is missing, create it from the standard template.
+- If the active run's `retrospective.md` is missing, create it from the standard
+  template.
 - If `phases/` is missing and `run_state.json.current_phase` is null or
   `"none"`, create an empty `phases/` directory.
 - If `blocked = true` and `blockers.md` is missing, create a minimal blocker
@@ -284,6 +291,7 @@ Migration steps:
    - `changelog.md` -> `changelog.md`
    - `blockers.md` -> `blockers.md` if present
    - `phases/` -> `phases/` if present
+   - create `retrospective.md` from the standard template if absent
 4. Write the run copy of `run_state.json`, adding or correcting:
    - `"run_id": "<run-id>"`
    - `"workspace_dir": "agents_workspace"`
@@ -300,8 +308,9 @@ Migration steps:
    If any move fails, do not write `active_run`; report the root/backup split
    and stop for manual recovery.
 8. Verify no old root workflow files remain directly under `agents_workspace/`.
-9. Write `agents_workspace/active_run` as `runs/<run-id>`.
-10. Append a migration summary to the run's `changelog.md`, including the backup
+9. Ensure `agents_workspace/project_memory.md` exists.
+10. Write `agents_workspace/active_run` as `runs/<run-id>`.
+11. Append a migration summary to the run's `changelog.md`, including the backup
    path and the old-to-new filename mapping.
 
 Do not migrate partial old layouts automatically. If any required root old-layout

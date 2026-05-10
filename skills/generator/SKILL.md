@@ -84,6 +84,10 @@ Return: `tasks.md written. <N> tasks. Covers all RQ-IDs: <list>.`
    Keep entries summary-level: one sentence per changed file or file group,
    no diffs, no full code blocks, no command transcripts. If a command output
    matters, record command + pass/fail + the one relevant line.
+   If the work exposed a failed approach that future agents are likely to retry
+   or a non-obvious project constraint future work must respect, add it under
+   `Project memory candidates` so the Orchestrator can promote it at project
+   completion.
 7. Loop to the next pending task.
 
 Stop when:

@@ -65,6 +65,9 @@ templates in `../references/file-templates/` as starting structure inside that
 run directory, then replace every placeholder/example value with the actual new
 workflow state before continuing.
 
+Create `agents_workspace/project_memory.md` from the template if it does not
+exist. This is durable repo-level memory, not active workflow state.
+
 `agents_workspace/active_run` is a plain text pointer to the current/latest run,
 for example `runs/2026-04-27-001-add-dashboard`. It may continue pointing at a
 completed run; completion is determined from that run's
@@ -73,6 +76,7 @@ completed run; completion is determined from that run's
 
 ```text
 agents_workspace/
+  project_memory.md        # durable repo-level notes, intended for git
   drafts/
     <draft-id>/
       requirement.md       # pre-run draft, not implementation state
@@ -85,6 +89,7 @@ agents_workspace/
       run_state.json
       decisions.md
       changelog.md
+      retrospective.md      # run-local source for project_memory.md
       blockers.md           (created on first blocker)
       phases/
         01-<phase-name>/
@@ -99,8 +104,20 @@ agents_workspace/
           evaluation_history.md      (append-only)
 ```
 
-Add `agents_workspace/` to `.gitignore` **only if the user asks**. By default
-the workspace IS committed because it's the resume substrate.
+By default, keep volatile workflow state out of git while allowing durable
+project memory to be committed. Ensure `.gitignore` ignores these paths unless
+the user explicitly asks for shared resumability through committed run state:
+
+```gitignore
+agents_workspace/drafts/
+agents_workspace/runs/
+agents_workspace/active_run
+```
+
+Do not ignore `agents_workspace/` itself, because `project_memory.md` is meant
+to remain trackable. If an existing `.gitignore` broadly ignores
+`agents_workspace/`, replace that broad rule with the three volatile-state rules
+unless the user explicitly wants no workflow files committed.
 
 Drafts are pre-run only. `agents_workspace/drafts/` contains requirements whose
 implementation has not started. When a draft is promoted into a run, the run's
@@ -186,7 +203,14 @@ For a new run:
   the next non-conflicting sequence for that date, and a short slug from the
   requirement or draft id.
 - Create `agents_workspace/runs/<run-id>/` and copy the workflow templates into
-  that directory.
+  that directory, excluding the root-only `project_memory.md` template. Include
+  `retrospective.md` as the run-local promotion source.
+- Ensure `agents_workspace/project_memory.md` exists and `.gitignore` ignores
+  only `agents_workspace/drafts/`, `agents_workspace/runs/`, and
+  `agents_workspace/active_run` unless the user explicitly chose committed run
+  state. If `.gitignore` already ignores `agents_workspace/`, replace that broad
+  rule with the three volatile-state rules unless the user explicitly wants no
+  workflow files committed.
 - If starting from a draft, copy the draft file into the new run as
   `requirement.md` with the draft content preserved. Do not re-interview or
   rewrite product intent unless a new load-bearing safety issue is obvious.
@@ -295,9 +319,10 @@ h. **Branch on verdict:**
      - Set `current_phase_status = "committing"` and `current_step =
        "phase_checkpoint_commit"` before touching git.
      - If git is available and commits are allowed, create a phase checkpoint
-       commit before advancing. Include the product changes for the Phase and
-       the relevant active run files, because the run directory is the resume
-       substrate.
+       commit before advancing. Include the product changes for the Phase.
+       Volatile run files under `agents_workspace/runs/` and
+       `agents_workspace/active_run` are ignored by default; commit them only if
+       the project explicitly chose shared resumability.
      - Before committing, inspect `git status --short`. If there are
        uncommitted changes you did not make, unknown files you cannot classify,
        known broken code, or anything that looks like a secret, STOP and write a
@@ -326,6 +351,12 @@ h. **Branch on verdict:**
 
 When all Phases are `passed` or explicitly user-approved `skipped`:
 - Write a final summary to `changelog.md`.
+- Review `changelog.md`, `implementation_log.md`, evaluation history, and the
+  run-local `retrospective.md`. Promote only durable lessons to
+  `agents_workspace/project_memory.md`: resolved failed approaches likely to be
+  retried, non-obvious project constraints, special structures future work must
+  preserve, and useful follow-up cautions. Do not promote routine task progress,
+  full reports, diffs, or command transcripts.
 - Set `run_state.json.project_status = "completed"`, `blocked = false`, and
   `current_step = "project_complete"`.
 - Update `current_state.md` to reflect completion.
@@ -340,6 +371,9 @@ Without exception, before yielding control or stopping:
 - If a meaningful decision was made autonomously, append to `decisions.md`.
 - Append a brief entry to `changelog.md` for completed work or notable failed
   approaches.
+- If a failed approach was resolved or a non-obvious project constraint became
+  clear, add a compact note to the run's `retrospective.md` as a candidate for
+  `project_memory.md`.
 
 If `current_state.md` and `run_state.json` disagree on resume, trust
 `run_state.json` for machine state and repair `current_state.md` to match
@@ -429,6 +463,10 @@ state.
 - After an Evaluator `pass`, create a phase checkpoint commit whenever git is
   available and commits are allowed. Skipping this checkpoint requires an
   explicit reason in `changelog.md`.
+- Do not stage ignored volatile workflow state (`agents_workspace/drafts/`,
+  `agents_workspace/runs/`, `agents_workspace/active_run`) unless the user
+  explicitly chose committed run state. `agents_workspace/project_memory.md` is
+  the default committed workflow artifact.
 - If the user's working tree has uncommitted changes you didn't make, STOP and
   ask before any commit.
 - Secrets (`.env`, `credentials*`, key files) — never `cat`, never include in
