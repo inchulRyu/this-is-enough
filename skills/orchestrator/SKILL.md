@@ -96,12 +96,12 @@ agents_workspace/
           phase.md
           plan.md
           tasks.md
-          validation_intent.md       (optional, complex phases only)
+          validation_intent.md       (profile-gated preflight)
           implementation_log.md
           generator_self_check.md
-          validation_plan.md
+          validation_plan.md         (optional in compact profile if inlined)
           evaluation_report.md
-          evaluation_history.md      (append-only)
+          evaluation_history.md      (append-only; optional in compact)
 ```
 
 By default, keep volatile workflow state out of git while allowing durable
@@ -133,10 +133,11 @@ intake
  → select_phase
    → plan_phase           (dispatch tie:planner)
    → decompose_tasks      (dispatch tie:generator with mode=decompose)
-   → [optional] validation_intent (dispatch tie:evaluator with mode=intent)
+   → select_validation_profile (compact | standard | high | system)
+   → [profile-gated] validation_intent (dispatch tie:evaluator with mode=intent)
    → implement_tasks      (dispatch tie:generator with mode=implement)
    → generator_self_check (dispatch tie:generator with mode=self-check)
-   → create_validation_plan + evaluate (dispatch tie:evaluator)
+   → create_validation_plan_or_inline + evaluate (dispatch tie:evaluator)
    → if pass: mark phase passed, create phase checkpoint commit, advance
    → if fail: dispatch tie:generator with mode=fix, then re-evaluate
    → if blocked: write blocker, STOP
@@ -265,6 +266,10 @@ Write `roadmap.md`. Update `current_state.md` and `run_state.json`.
 For the next pending Phase:
 
 a. **Init phase directory** — create `phases/NN-<slug>/` and `phase.md` from template.
+   Reset `run_state.json.current_phase_metrics` for the new phase:
+   `validation_profile = null`, `validation_level = null`, `intent_used = false`,
+   `compact_mode = false`, `fix_loop_count = 0`, and
+   `failed_ev_ids_seen = []`.
 
 b. **Plan** — dispatch `tie:planner` subagent. Pass it: phase path,
    `requirement.md`, `roadmap.md`, `current_state.md`. It writes `plan.md`.
@@ -282,36 +287,71 @@ c. **Decompose** — dispatch `tie:generator` with mode `decompose`. It writes
    again asking for a proportionate task rewrite. Update status:
    `decomposing` → `decomposed`.
 
-d. **Optional pre-validation** — if the Phase touches data flow across
-   multiple systems, security, payment, deletion, or has weak existing tests,
-   dispatch `tie:evaluator` with mode `intent`. It writes
-   `validation_intent.md`. Run a shallow artifact check before advancing. If it
-   is an exhaustive EV-ID matrix instead of preflight guidance, dispatch again
-   asking for representative risk areas and success oracles only.
+d. **Select validation profile** — choose the lightest profile that can still
+   support a reliable Evaluator verdict:
 
-e. **Implement** — dispatch `tie:generator` with mode `implement`. It works
+   - `compact`: low-risk, localized work. No high-impact side effects,
+     external authoritative state, sensitive data, persistence integrity risk,
+     cross-surface contract change, safety invariant, or runtime-E2E-only
+     behavior.
+   - `standard`: normal product/code work that needs a separate validation
+     plan and report, but no pre-implementation Evaluator guidance.
+   - `high`: high-impact side effects, external authoritative state,
+     sensitive data, persistence integrity, cross-surface contracts, safety
+     invariants, weak or missing regression coverage, or correctness that is
+     hard to infer statically.
+   - `system`: high risk plus a real integrated runtime/system/E2E surface is
+     required to establish confidence.
+
+   Record the selected profile in `run_state.json.current_phase_metrics`,
+   `current_state.md`, and the phase's `phase.md`. Do not choose `compact` when
+   any `high` or `system` trigger is present.
+
+e. **Optional pre-validation** — dispatch `tie:evaluator` with mode `intent`
+   only when the selected profile is `high` or `system`, or when `standard`
+   has a specific preflight risk that Generator needs before implementation.
+   It writes `validation_intent.md`. Run a shallow artifact check before
+   advancing. If it is an exhaustive EV-ID matrix instead of preflight
+   guidance, dispatch again asking for representative risk areas and success
+   oracles only. Set `intent_used = true` in phase metrics when this artifact is
+   created. Skip this step for `compact`.
+
+f. **Implement** — dispatch `tie:generator` with mode `implement`. It works
    through tasks, modifies code, updates `tasks.md` statuses, and appends to
    `implementation_log.md`. Update status: `implementing`.
 
-f. **Self-check** — set phase status `self_checking`, then dispatch
+g. **Self-check** — set phase status `self_checking`, then dispatch
    `tie:generator` with mode `self-check`. It writes `generator_self_check.md`.
    Run a shallow artifact check before advancing. If it duplicates
    `validation_plan.md` or pre-judges every EV-ID, dispatch again asking for
    readiness, primary evidence, limitations, and evaluator focus areas only.
-   If `Ready for evaluation: no`, loop back to (e) with whatever `Risks` it
+   If `Ready for evaluation: no`, loop back to (f) with whatever `Risks` it
    flagged.
 
-g. **Evaluate** — set phase status `validation_planning`, then dispatch
-   `tie:evaluator` with mode `full`. It chooses a validation level (L0–L5) and
-   writes `validation_plan.md`. Set status `evaluating`. The evaluator runs the
-   checks, writes `evaluation_report.md`, and appends a short snapshot to
-   `evaluation_history.md`. Run a shallow artifact check before advancing. If
-   the validation plan creates tiny EV-IDs for every assertion/source line, or
-   if the report/history duplicate routine pass evidence instead of focusing
+h. **Evaluate** — set phase status `validation_planning`, then dispatch
+   `tie:evaluator` with mode `full`, passing the selected validation profile.
+   For `compact`, the evaluator may inline the validation plan inside
+   `evaluation_report.md` and omit a separate `validation_plan.md`; it still
+   must run enough checks to issue a real verdict. For `standard`, `high`, and
+   `system`, it writes `validation_plan.md` separately. For `high` and
+   `system`, preserve the full loop: validation intent, separate
+   validation plan, evaluation report, evaluation history snapshot, and
+   recheck/fix loop. Set status `evaluating`. The evaluator runs the checks,
+   writes `evaluation_report.md`, and appends a short snapshot to
+   `evaluation_history.md` unless the `compact` profile explicitly records the
+   whole decision in the report. Run a shallow artifact check before advancing.
+   If the validation plan creates tiny EV-IDs for every assertion/source line,
+   or if the report/history duplicate routine pass evidence instead of focusing
    detail on failures, blockers, surprising results, and high-risk checks,
-   dispatch again for a grouped validation rewrite.
+   dispatch again for a grouped validation rewrite. No Phase may pass without
+   an Evaluator `pass` verdict, including `compact`. After every evaluation or
+   recheck, copy the report's `Validation profile used`, `Validation level
+   used`, `Compact mode`, `Validation intent used`, `Fix loop count`, and
+   `Failed EV-IDs seen` into `run_state.json.current_phase_metrics`,
+   `current_state.md`, and the phase's `phase.md`; also set
+   `last_evaluation_verdict`.
 
-h. **Branch on verdict:**
+i. **Branch on verdict:**
 
    - `pass` → mark Phase `passed` in `roadmap.md` and `phase.md`. Update
      `current_state.md` and `run_state.json`, then append a completion entry to
@@ -340,7 +380,9 @@ h. **Branch on verdict:**
      set status `self_checking` and dispatch `tie:generator` with mode
      `self-check`, then set status `evaluating` and dispatch `tie:evaluator`
      with mode `recheck` (re-run only failed/affected checks unless regression
-     risk demands a full re-run). Increment `run_state.json.loop_count`.
+     risk demands a full re-run). Increment `run_state.json.loop_count` and
+     `current_phase_metrics.fix_loop_count`; merge the failed EV-IDs into
+     `current_phase_metrics.failed_ev_ids_seen` without duplicates.
      - If `loop_count > max_fix_loops_per_phase` (default 3) → BLOCKED.
      - If same EV-ID failed `> max_same_failure_repeats` (default 2) → BLOCKED.
    - `blocked` → write to `blockers.md` including `Interrupted step` and
@@ -351,6 +393,10 @@ h. **Branch on verdict:**
 
 When all Phases are `passed` or explicitly user-approved `skipped`:
 - Write a final summary to `changelog.md`.
+- Do not add a catch-all final closure or E2E Phase by default. Closure is the
+  Orchestrator's completion check. Add a final system/E2E Phase only when a
+  remaining cross-phase or runtime risk cannot be validated inside the owning
+  Phase.
 - Review `changelog.md`, `implementation_log.md`, evaluation history, and the
   run-local `retrospective.md`. Promote only durable lessons to
   `agents_workspace/project_memory.md`: resolved failed approaches likely to be
@@ -366,7 +412,8 @@ When all Phases are `passed` or explicitly user-approved `skipped`:
 ### 6. After every step
 
 Without exception, before yielding control or stopping:
-- Update `current_state.md` (human-readable, short).
+- Update `current_state.md` (human-readable, short, and limited to current
+  resume facts; do not turn it into a history or transcript).
 - Update `run_state.json` (machine-readable, schema in spec §9.2).
 - If a meaningful decision was made autonomously, append to `decisions.md`.
 - Append a brief entry to `changelog.md` for completed work or notable failed
@@ -400,10 +447,10 @@ Then determine the next owner from `current_phase_status` and `current_step`:
 | ---------------------- | --------------------------------------------- |
 | `pending` / `planning` | dispatch `tie:planner`                        |
 | `planned` / `decomposing` | dispatch `tie:generator` mode=decompose    |
-| `decomposed`           | if `current_step` says validation intent is needed and `validation_intent.md` is absent, dispatch `tie:evaluator` mode=intent; otherwise implement |
+| `decomposed`           | select or recover validation profile; if `high`/`system` or a specific `standard` preflight risk needs `validation_intent.md`, dispatch `tie:evaluator` mode=intent; otherwise implement |
 | `implementing`         | dispatch `tie:generator` mode=implement       |
 | `self_checking`        | dispatch `tie:generator` mode=self-check      |
-| `validation_planning`  | dispatch `tie:evaluator` mode=full            |
+| `validation_planning`  | dispatch `tie:evaluator` mode=full with the selected validation profile |
 | `evaluating`           | dispatch `tie:evaluator` — mode=full if `loop_count == 0`, else mode=recheck |
 | `committing`           | finish or repair the phase checkpoint commit, then advance only after the hash or no-commit reason is recorded |
 | `fixing`               | use `current_step`: `create_fix_tasks` / `implement_fixes` dispatches idempotent `tie:generator` mode=fix; `self_check_after_fix` dispatches `tie:generator` mode=self-check |
@@ -432,6 +479,8 @@ TL;DR:
 When dispatching, pass the subagent:
 - The role's mode (`decompose`, `implement`, `self-check`, `fix`, `intent`,
   `recheck`, etc.)
+- For Evaluator dispatches: selected validation profile (`compact`,
+  `standard`, `high`, or `system`)
 - Absolute path to the active run directory
 - Absolute path to the phase directory (e.g.,
   `/path/to/project/agents_workspace/runs/<run-id>/phases/02-foo/`)

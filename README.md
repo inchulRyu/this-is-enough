@@ -19,9 +19,13 @@ starts, ThisIsEnough then:
    - **Planner** expands the raw requirement into a rich product-level Plan
      (prevents under-scoping).
    - **Generator** decomposes into tasks, implements them in your repo's
-     existing conventions, and self-checks.
-   - **Evaluator** picks an appropriate validation level (L0–L5), actually
-     runs the checks, and returns pass / fail / blocked.
+     existing conventions, and writes a compact self-check.
+   - **Evaluator** picks the lightest validation profile
+     (`compact` / `standard` / `high` / `system`) and the lowest L0-L5
+     validation level that give confidence, actually runs the checks, and
+     returns pass / fail / blocked.
+   - Complex or risky phases may get optional pre-validation guidance in
+     `validation_intent.md`; simpler phases skip it.
    - On pass, **Orchestrator** records phase completion and creates a git
      checkpoint commit when git is available and safe.
    - On fail, fix loop runs until pass or blocker.
@@ -38,6 +42,13 @@ resume cleanly with `$tie:resume` or `/tie:resume`.
 Volatile workflow state is ignored by git by default. Durable lessons that
 future work should know are promoted to `agents_workspace/project_memory.md`,
 which is intended to be committed.
+
+Workflow artifacts stay compact by default: `current_state.md` stays a short
+handoff pointer, `generator_self_check.md` summarizes readiness instead of
+pre-judging every check, and validation reports keep routine pass evidence
+concise. Low-risk phases can use the `compact` validation profile. Compact
+artifacts do not loosen the phase gate: no phase is complete until the
+Evaluator returns `pass`.
 
 ## Install
 
@@ -210,8 +221,8 @@ $tie:doctor repair
 | `tie:requirements` | Drafts pre-run requirements under `agents_workspace/drafts/`.               |
 | `tie:orchestrator` | Entry point. Drives the entire state machine end-to-end.                    |
 | `tie:planner`      | Expands raw requirement into a rich product-level Plan (subagent role).     |
-| `tie:generator`    | Decomposes / implements / self-checks / fixes (subagent role, modes).       |
-| `tie:evaluator`    | Adaptive L0–L5 validation, returns pass/fail/blocked (subagent role).       |
+| `tie:generator`    | Decomposes / implements / compact self-checks / fixes (subagent role).      |
+| `tie:evaluator`    | Risk-based L0-L5 validation profiles, returns pass/fail/blocked.            |
 | `tie:resume`       | Resumes the run pointed to by `agents_workspace/active_run`.                |
 | `tie:status`       | Read-only snapshot of where the run currently stands.                       |
 | `tie:doctor`       | Diagnoses, safely repairs, or migrates workflow state.                      |
@@ -229,7 +240,7 @@ agents_workspace/
     <run-id>/
       requirement.md
       roadmap.md
-      current_state.md
+      current_state.md              # compact human-readable handoff
       run_state.json
       decisions.md
       changelog.md
@@ -240,12 +251,12 @@ agents_workspace/
           phase.md
           plan.md
           tasks.md
-          validation_intent.md
+          validation_intent.md       (optional risk preflight)
           implementation_log.md
-          generator_self_check.md
+          generator_self_check.md    # compact readiness summary
           validation_plan.md
           evaluation_report.md
-          evaluation_history.md
+          evaluation_history.md      # compact snapshots
 ```
 
 `drafts/` contains only requirements whose implementation has not started. When
@@ -254,6 +265,16 @@ run, verifies the copy, then removes the draft directory only if it contains no
 files besides `requirement.md`. From that point on, the run's `requirement.md`
 is the source of truth for the requirement, and detailed run history stays in
 the local run directory.
+
+Validation uses profiles, not a one-size-fits-all checklist: `compact`,
+`standard`, `high`, or `system`. Separately, the Evaluator chooses the lowest
+validation level that gives confidence: `L0_static_review`,
+`L1_static_plus_build`, `L2_unit_or_integration`, `L3_runtime_scenario`,
+`L4_e2e_or_system`, or `L5_reference_or_benchmark`. The Evaluator raises the
+profile and level only when risk requires it.
+`validation_intent.md` is truly optional preflight guidance for complex or risky
+phases; when present, it names representative risks and success oracles, not an
+exhaustive EV-ID matrix.
 
 One independent requirement creates one run. `active_run` may continue pointing
 at a completed run; completion is read from that run's
@@ -307,6 +328,7 @@ The orchestrator never:
 - runs destructive git operations without confirmation,
 - commits secrets,
 - silently skips a phase-pass checkpoint commit,
+- marks a phase complete without an Evaluator `pass`,
 - continues past a destructive/risky step without an explicit user OK.
 
 If any of those come up, it stops with a clear blocker.

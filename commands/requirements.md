@@ -10,4 +10,5 @@ Their input is: $ARGUMENTS
 Invoke the `tie:requirements` skill now and follow it exactly. Do not start or
 resume a workflow run. Do not create or modify `agents_workspace/active_run`.
 Do not create `agents_workspace/runs/`, `roadmap.md`, `run_state.json`, or phase
-artifacts.
+artifacts. Do not choose validation profiles or create `validation_intent.md`,
+`generator_self_check.md`, or `current_state.md` from this command.

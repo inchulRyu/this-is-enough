@@ -6,6 +6,11 @@ The user wants the orchestrator to perform the next workflow step.
 
 Resolve the active run through `agents_workspace/active_run`.
 
+Continue the existing compact workflow state. Do not create or require
+`validation_intent.md` unless the resume logic determines optional preflight is
+the next risk-based step, and never mark a phase complete without an Evaluator
+`pass`.
+
 If the active run's `run_state.json` exists and `blocked = false`, invoke
 `tie:resume`. The orchestrator's resume logic will determine the correct next
 owner and continue.

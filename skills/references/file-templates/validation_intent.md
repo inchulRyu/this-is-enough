@@ -1,7 +1,8 @@
 # Validation Intent
 
-<!-- Preflight guidance only. Do not assign an exhaustive EV-ID matrix here;
-save concrete EV-IDs for validation_plan.md. -->
+<!-- Optional preflight guidance only. Create this file only when general risk
+conditions justify it. Do not assign an exhaustive EV-ID matrix here; save
+concrete EV-IDs for validation_plan.md after implementation exists. -->
 
 ## Phase
 
@@ -11,7 +12,18 @@ save concrete EV-IDs for validation_plan.md. -->
 
 L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_scenario | L4_e2e_or_system | L5_reference_or_benchmark
 
-## Why this level is appropriate
+## Recommended validation profile
+
+standard | high | system
+
+<!-- If the appropriate profile is compact, do not create validation_intent.md. -->
+
+## Intent trigger
+
+- <general risk condition that makes preflight useful: blast radius, data risk,
+  security/privacy, external system, ambiguous oracle, benchmark/parity, etc.>
+
+## Why this profile and level are appropriate
 
 - ...
 

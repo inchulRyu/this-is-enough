@@ -1,11 +1,15 @@
 # Generator Self Check
 
-<!-- Readiness summary, not an evaluation report. Do not create an EV-ID matrix;
-group related acceptance checks and point to primary evidence. -->
+<!-- Compact readiness memo, not an evaluation report. Do not create an EV-ID
+matrix, duplicate evaluator checks, or forecast pass/fail per EV-ID. Group
+related acceptance checks and point to primary evidence only. -->
 
 ## Summary
 
 <what was implemented>
+
+Validation intent consulted: yes | no | not_present
+Expected validation profile if known: compact | standard | high | system | unknown
 
 ## Requirements addressed
 

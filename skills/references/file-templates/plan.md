@@ -61,6 +61,16 @@ The Generator should decide:
 - exact test implementation
 - repo-specific integration details
 
+## Validation sizing
+
+Recommended validation profile: compact | standard | high | system
+
+Why this profile is proportionate:
+- <phase risk/blast radius and why this does not need a heavier or lighter profile>
+
+Validation notes:
+- <success oracle or risk area for Evaluator; do not write EV-IDs or test matrix>
+
 ## Constraints and edge considerations
 
 - ...

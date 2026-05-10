@@ -8,6 +8,14 @@
   "current_owner": "orchestrator",
   "current_step": "intake",
   "loop_count": 0,
+  "current_phase_metrics": {
+    "validation_profile": null,
+    "validation_level": null,
+    "intent_used": false,
+    "compact_mode": false,
+    "fix_loop_count": 0,
+    "failed_ev_ids_seen": []
+  },
   "last_evaluation_verdict": null,
   "blocked": false,
   "next_action": "clarify_requirements_or_create_roadmap"
