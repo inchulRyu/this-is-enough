@@ -14,9 +14,10 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 ## Recommended validation profile
 
-standard | high | system
+high
 
-<!-- If the appropriate profile is compact, do not create validation_intent.md. -->
+<!-- Use standard without this file unless a specific preflight risk makes early
+validation guidance useful. -->
 
 ## Intent trigger
 

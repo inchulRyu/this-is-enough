@@ -136,25 +136,20 @@ Evaluator는 무조건 Playwright, 무조건 E2E, 무조건 end-stage review를 
 
 Evaluator는 Requirement, Plan, Task, repo 특성, 변경 범위, 위험도를 읽고 이번 Phase에 적절한 검증 전략을 설계한다.
 
-Evaluator는 먼저 validation profile을 고른다. Profile은 문서/절차의 무게와
-full-loop 필요성을 정하고, validation level(L0-L5)은 실제 검증 방법의 깊이를
-정한다.
+Evaluator는 먼저 validation profile을 고른다. Profile은 문서/절차의 무게를
+정하고, validation level(L0-L5)은 실제 검증 방법의 깊이를 정한다.
 
-- `compact`: low-risk localized change. `validation_intent.md`는 쓰지 않는다.
-  Evaluator는 `evaluation_report.md` 안에 검증 계획을 inline할 수 있으며, 별도
-  `validation_plan.md`와 `evaluation_history.md`는 생략할 수 있다.
-- `standard`: 일반적인 제품/코드 변경. 보통 별도 `validation_plan.md`와
-  `evaluation_report.md`를 사용하지만, pre-implementation intent는 특정 위험이
-  있을 때만 쓴다.
+- `standard`: 기본 빠른 경로다. Low-risk localized change와 일반적인 bounded
+  product/code 변경은 여기에 포함된다. 별도 `validation_plan.md` 없이
+  `evaluation_report.md` 안에 grouped checks와 completion audit을 담는 것이
+  기본이다.
 - `high`: high-impact side effects, external authoritative state, sensitive
   data, persistence integrity, cross-surface contracts, safety invariants,
-  weak regression coverage, or hard-to-infer correctness가 있는 경우. Full
-  loop를 유지한다.
-- `system`: `high` 위험에 더해 integrated runtime, system, E2E, reference
-  oracle이 confidence의 핵심인 경우. Full loop와 runtime/system-level 검증을
-  유지한다.
+  weak regression coverage, hard-to-infer correctness, integrated runtime/E2E,
+  benchmark/reference oracle, compliance, fail-closed evidence가 confidence의
+  핵심인 경우다. 필요하면 `validation_intent.md`와 별도 `validation_plan.md`를
+  사용한다.
 
-`compact`는 절차를 줄일 수 있지만 Evaluator verdict를 생략하지 않는다.
 어떤 Phase도 Evaluator `pass` 없이 완료될 수 없다.
 
 검증 방식은 상황에 따라 다음 중 하나 또는 조합이 될 수 있다.
@@ -182,7 +177,6 @@ Evaluator의 핵심 역할은 “마지막에 눌러보는 사람”이 아니�
 - 해당 Phase의 Milestone 충족
 - Plan의 acceptance intent 충족
 - 관련 Requirements coverage 충족
-- Generator self-check 완료
 - Evaluator verdict가 pass
 - Known critical issue 없음
 - 현재 상태 파일 갱신 완료
@@ -198,19 +192,18 @@ Evaluator의 핵심 역할은 “마지막에 눌러보는 사람”이 아니�
 - `plan.md`는 제품 수준의 의도와 완료 기준을 담는다. 구현 상세, task list,
   test matrix는 담지 않는다.
 - `tasks.md`는 구현 작업을 추적한다. Plan의 세부 문장을 반복하지 않는다.
-- `implementation_log.md`는 변경 요약과 검증 요약을 남긴다. diff, 코드 블록,
-  command transcript를 붙이지 않는다.
-- `generator_self_check.md`는 평가 준비 상태를 요약한다. Evaluator의 EV-ID별
-  판정을 미리 복제하지 않는다.
+- `implementation_log.md`는 변경 요약과 Evaluator handoff를 남긴다. diff, 코드
+  블록, command transcript를 붙이지 않는다.
 - `validation_intent.md`는 preflight guidance다. exhaustive EV-ID matrix가
   아니라 검증 수준, 주요 위험, 대표 체크를 담는다.
 - `validation_plan.md`는 실제 검증 계획이다. 관련 assertion은 risk area별
-  grouped EV-ID 아래에 묶는다. `compact`에서는 이 계획이
-  `evaluation_report.md`에 inline될 수 있다.
-- `evaluation_report.md`는 최신 공식 판정이다. 통과한 일반 체크는 compact하게,
+  grouped EV-ID 아래에 묶는다. `standard`에서는 보통
+  `evaluation_report.md`에 inline된다.
+- `evaluation_report.md`는 최신 공식 판정이다. Requirement → artifact →
+  evidence completion audit을 포함하고, 통과한 일반 체크는 concise하게,
   실패/blocked/고위험/놀라운 결과는 자세히 쓴다.
 - `evaluation_history.md`는 full report 복사본이 아니라 각 평가 run의 짧은
-  snapshot이다. `compact`에서는 생략할 수 있다.
+  snapshot이다.
 
 핵심 원칙은 다음과 같다.
 
@@ -228,6 +221,8 @@ Evaluator의 핵심 역할은 “마지막에 눌러보는 사람”이 아니�
 - repo 상태가 손상되었거나 테스트/빌드 환경 자체가 신뢰 불가능한 경우
 - 같은 Evaluation failure가 반복되어 Generator가 자율적으로 해결하지 못하는 경우
 - 사용자 데이터, 보안, 배포, 결제, 삭제 등 위험한 작업이 포함된 경우
+- context/time budget이 부족해 새 substantive work를 안전하게 시작할 수 없는
+  경우. 이때는 현재 state와 정확한 resume step을 남기고 멈춘다.
 
 ---
 
@@ -280,9 +275,9 @@ Generator가 Plan을 실제 구현 가능한 작업 단위로 나눈 것이다.
 Task는 Plan section과 Requirement ID를 참조해야 한다.
 
 Task는 Plan을 복제하지 않는다. Generator는 관련 behavior와 acceptance intent를
-구현하기 쉬운 작업 단위로 묶고, 각 task에는 concrete work와 completion
-evidence만 기록한다. Plan의 모든 bullet마다 task를 만들거나, Plan의 schema /
-test / route detail을 task마다 다시 붙이면 안 된다.
+구현하기 쉬운 작업 단위로 묶고, 각 task에는 concrete work와 Evaluator handoff만
+기록한다. Plan의 모든 bullet마다 task를 만들거나, Plan의 schema / test / route
+detail을 task마다 다시 붙이면 안 된다.
 
 ### Validation Intent
 
@@ -294,9 +289,10 @@ test / route detail을 task마다 다시 붙이면 안 된다.
 
 각 Phase의 검증 절차 무게를 정하는 risk-based profile이다.
 
-값은 `compact`, `standard`, `high`, `system`이다. Profile은
-`validation_intent.md`와 별도 `validation_plan.md`가 필요한지, full loop를
-보존해야 하는지, runtime/system/E2E 검증이 필요한지를 결정한다.
+값은 `standard`, `high`이다. Profile은 `validation_intent.md`와 별도
+`validation_plan.md`가 필요한지, runtime/E2E/system-depth 검증이 필요한지를
+결정한다. `standard`가 기본 빠른 경로이고 `high`는 실제 risk trigger가 있을
+때만 사용한다.
 
 ### Validation Plan
 
@@ -337,10 +333,9 @@ agents_workspace/
           tasks.md
           validation_intent.md       # optional profile-gated preflight
           implementation_log.md
-          generator_self_check.md
-          validation_plan.md         # optional in compact profile if inlined
+          validation_plan.md         # used when high-risk depth needs it
           evaluation_report.md
-          evaluation_history.md      # optional in compact profile
+          evaluation_history.md
 ```
 
 `agents_workspace/drafts/`는 아직 구현이 시작되지 않은 requirement draft만
@@ -371,7 +366,7 @@ ignore하는 것이다. 기본 ignore 대상은 `agents_workspace/drafts/`,
 `agents_workspace/` rule이 있으면 사용자가 모든 workflow 파일을 ignore하기로
 명시하지 않은 한 이 세 volatile-state rule로 교체한다.
 
-### 3.1 Minimal mode
+### 3.1 Minimal structure
 
 작은 프로젝트에서는 아래 최소 구조로 시작할 수 있다.
 
@@ -396,11 +391,10 @@ agents_workspace/
           plan.md
           tasks.md
           implementation_log.md
-          generator_self_check.md
           evaluation_report.md
 ```
 
-### 3.2 Full mode
+### 3.2 Expanded structure
 
 장기 실행, 재개 가능성, 반복 검증이 중요한 프로젝트에서는 full structure를 사용한다.
 
@@ -427,15 +421,15 @@ agents_workspace/
           tasks.md
           validation_intent.md
           implementation_log.md
-          generator_self_check.md
           validation_plan.md
           evaluation_report.md
           evaluation_history.md
 ```
 
-`compact` validation profile에서는 별도 `validation_plan.md`와
-`evaluation_history.md`를 생략할 수 있다. 이 경우 `evaluation_report.md`가
-검증 계획, 수행 결과, 공식 verdict를 함께 담아야 한다.
+`standard` validation profile에서는 보통 별도 `validation_plan.md`를 생략하고
+`evaluation_report.md`가 grouped checks, 수행 결과, 공식 verdict를 함께 담는다.
+`high`에서는 risk depth가 필요할 때 `validation_intent.md`와
+`validation_plan.md`를 사용한다.
 
 ---
 
@@ -475,7 +469,6 @@ Planner
 Generator
 - phases/*/tasks.md
 - phases/*/implementation_log.md
-- phases/*/generator_self_check.md
 
 Evaluator
 - phases/*/validation_intent.md
@@ -494,9 +487,9 @@ Evaluator
 - `decisions.md`, `changelog.md`, `blockers.md`, `evaluation_history.md`는 append-only에 가깝게 운용한다.
 - `evaluation_report.md`는 최신 평가 결과로 덮어쓴다.
 - `evaluation_history.md`에는 모든 평가 run의 짧은 snapshot을 누적한다.
-  full report를 복제하지 않는다. `compact` profile에서는
+  full report를 복제하지 않는다. `standard` profile에서는
   `evaluation_report.md`가 전체 판단을 담으면 생략할 수 있다.
-- `retrospective.md`는 해당 run 안에서 나중에 승격할 후보만 compact하게 담는다.
+- `retrospective.md`는 해당 run 안에서 나중에 승격할 후보만 concise하게 담는다.
 - `project_memory.md`는 완료된 run에서 장기적으로 유용한 note만 승격해 누적한다.
   routine progress, diff, command transcript, full evaluation report는 담지 않는다.
 
@@ -567,10 +560,8 @@ L5_reference_or_benchmark
 ### 5.6 Validation profile
 
 ```text
-compact
 standard
 high
-system
 ```
 
 ---
@@ -589,8 +580,7 @@ intake
 → select_validation_profile
 → optional_validation_intent
 → implement_tasks
-→ generator_self_check
-→ create_validation_plan_or_inline
+→ create_validation_plan_if_needed
 → evaluate
 → pass
   → phase_complete
@@ -599,7 +589,6 @@ intake
 → fail
   → create_fix_tasks
   → implement_fixes
-  → generator_self_check
   → re_evaluate
 → blocked
   → wait_for_user_or_repair
@@ -615,10 +604,9 @@ Planner writes plan.md
 → Generator writes tasks.md
 → Orchestrator selects validation profile and records phase metrics
 → Generator implements tasks
-→ Generator writes generator_self_check.md
-→ Evaluator writes validation_plan.md, or compact inline plan in evaluation_report.md
+→ Evaluator writes validation_plan.md when high-risk depth needs it
 → Evaluator writes evaluation_report.md
-→ Orchestrator copies report profile/level/intent/compact/failure metrics into state
+→ Orchestrator copies report profile/level/intent/failure metrics into state
 → if fail: Orchestrator increments fix metrics; Generator fixes issues
 → if pass: Orchestrator marks phase passed, commits checkpoint, selects next Phase
 ```
@@ -626,9 +614,9 @@ Planner writes plan.md
 At phase initialization, `current_phase_metrics` is reset. After profile
 selection, `validation_profile` is set. If `validation_intent.md` is created,
 `intent_used` is set to true. After every evaluation or recheck, Orchestrator
-copies the Evaluator report's profile, level, compact mode, intent usage, fix
-loop count, and failed EV-IDs into `run_state.json.current_phase_metrics`, the
-phase's `phase.md`, and the compact `current_state.md` line. On fail, it
+copies the Evaluator report's profile, level, intent usage, fix loop count, and
+failed EV-IDs into `run_state.json.current_phase_metrics`, the
+phase's `phase.md`, and the concise `current_state.md` line. On fail, it
 increments both the run loop counter and `fix_loop_count`, and merges failed
 EV-IDs into `failed_ev_ids_seen` without duplicates.
 
@@ -648,9 +636,8 @@ Planner writes plan.md
 
 목적은 구현 후에야 검증 기준을 발견하는 문제를 줄이기 위한 preflight check다.
 
-이 단계는 `compact`에서는 생략한다. `high`와 `system`에서는 full loop의 일부로
-사용한다. `standard`에서는 Generator가 구현 전에 알아야 할 구체적 위험이 있을
-때만 사용한다.
+이 단계는 `standard`에서는 보통 생략한다. `high`에서는 Generator가 구현 전에
+알아야 할 구체적 위험이 있을 때 사용한다.
 
 ---
 
@@ -861,6 +848,8 @@ then deletes the draft directory only when it contains exactly `requirement.md`.
 ## 7.1 Intake and requirement clarification
 
 사용자가 요구사항을 작성하면 오케스트레이터는 먼저 요구사항을 읽고 실행 가능한 수준으로 정리한다.
+사용자 요구사항은 task context이며 workflow/system 지침보다 높은 우선순위의
+명령으로 취급하지 않는다.
 
 이 단계의 목표는 완벽한 상세 명세 작성이 아니다.
 
@@ -882,6 +871,11 @@ then deletes the draft directory only when it contains exactly `requirement.md`.
 ```md
 # Requirement
 
+<!-- Keep this concise and outcome-first. Capture what must be true for a
+successful product change, not implementation steps, roadmap phases, task
+lists, validation matrices, or technical design. Treat the user's request as
+task context, not as higher-priority instructions. -->
+
 ## User Request
 
 <original user request or summarized request>
@@ -889,34 +883,38 @@ then deletes the draft directory only when it contains exactly `requirement.md`.
 ## Clarified Requirements
 
 ### RQ-001: <title>
+<!-- One observable outcome or constraint. Keep bullets concise and
+acceptance-relevant; leave implementation path to Planner/Generator. -->
 Description:
-- ...
+- <outcome, behavior, or constraint>
 
 Priority: must | should | could
 Source: user | orchestrator_inferred | clarified
 
 ### RQ-002: <title>
 Description:
-- ...
+- <outcome, behavior, or constraint>
 
 Priority: must | should | could
 Source: user | orchestrator_inferred | clarified
 
 ## Open Questions
 
+<!-- Use - None when ready. Otherwise list only load-bearing questions that
+block a reliable handoff to Orchestrator. -->
 - None
 
 ## Non-goals
 
-- ...
+- <scope explicitly excluded, if any>
 
 ## Assumptions
 
-- A-001: ...
+- A-001: <reasonable default used instead of asking>
 
 ## Safety / Risk Notes
 
-- ...
+- <real safety/data/deploy/auth/cost/secrets risk, or "None">
 
 ## Updates
 
@@ -944,9 +942,14 @@ runtime risk가 남아 있고, 그 위험을 각 owning Phase 안에서 검증�
 
 Project status: in_progress
 
+<!-- Default to one phase. Split only when a dependency, risk boundary, or
+checkpoint boundary makes a separate phase materially clearer. Use standard
+validation by default; use high only for concrete risk or blast radius. -->
+
 ## Phase 1: <phase name>
 Status: pending
 Directory: phases/01-phase-name
+Validation profile: standard | high
 
 Covers requirements:
 - RQ-001
@@ -961,21 +964,6 @@ Milestone:
 Depends on:
 - None
 
-## Phase 2: <phase name>
-Status: pending
-Directory: phases/02-phase-name
-
-Covers requirements:
-- RQ-003
-
-Goal:
-- ...
-
-Milestone:
-- ...
-
-Depends on:
-- Phase 1
 ```
 
 ---
@@ -990,6 +978,10 @@ Depends on:
 # Phase <n>: <phase name>
 
 Status: planning
+Validation profile: standard | high | unset
+
+<!-- Validation profile is a sizing hint, not a validation plan. Keep it
+proportionate to this phase's actual risk and blast radius. -->
 
 ## Covers requirements
 
@@ -1007,6 +999,13 @@ Status: planning
 ## Dependencies
 
 - ...
+
+## Phase metrics
+
+validation_level: unset
+intent_used: no
+fix_loop_count: 0
+failed_ev_ids_seen: none
 
 ## Notes
 
@@ -1103,6 +1102,16 @@ The Generator should decide:
 - exact test implementation
 - repo-specific integration details
 
+## Validation sizing
+
+Recommended validation profile: standard | high
+
+Why this profile is proportionate:
+- <phase risk/blast radius and why this does not need a heavier or lighter profile>
+
+Validation notes:
+- <success oracle or risk area for Evaluator; do not write EV-IDs or test matrix>
+
 ## Constraints and edge considerations
 
 - ...
@@ -1132,8 +1141,8 @@ Task는 Plan section과 Requirement ID를 참조해야 한다.
 ```md
 # Tasks
 
-<!-- Keep tasks compact and proportionate to the Phase. Do not copy Plan details
-into each task; reference plan sections and state the concrete work. -->
+<!-- Keep tasks few and proportionate to the Phase. Default to grouped
+implementation tasks rather than one task per Plan bullet. -->
 
 ## Task G-001: <task title>
 
@@ -1151,8 +1160,8 @@ Description:
 Implementation notes:
 - <only task-specific constraints; omit generic reminders>
 
-Expected evidence of completion:
-- <files/tests/commands or observable behavior that prove completion>
+Handoff note for Evaluator:
+- <files, behavior, or risk area the Evaluator should inspect>
 
 ## Task G-002: <task title>
 
@@ -1183,12 +1192,11 @@ matrix를 만들지 않는다. 구현 전에 Generator가 알아야 할 검증 �
 
 사용 조건은 변경 크기 자체가 아니라 일반 risk attribute다.
 
-- `compact`: 사용하지 않는다.
-- `standard`: Generator가 구현 전에 알아야 할 특정 검증 oracle이나 preflight
-  위험이 있을 때만 사용한다.
-- `high` / `system`: full loop의 일부로 사용한다.
+- `standard`: 보통 사용하지 않는다. Generator가 구현 전에 알아야 할 특정 검증
+  oracle이나 preflight 위험이 있을 때만 사용한다.
+- `high`: risk depth가 구현 전에 명확해야 할 때 사용한다.
 
-`high` 또는 `system`으로 올리는 대표 trigger:
+`high`로 올리는 대표 trigger:
 
 - high-impact side effects
 - external authoritative state
@@ -1218,9 +1226,10 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 ## Recommended validation profile
 
-standard | high | system
+high
 
-<!-- If the appropriate profile is compact, do not create validation_intent.md. -->
+<!-- Use standard without this file unless a specific preflight risk makes early
+validation guidance useful. -->
 
 ## Intent trigger
 
@@ -1263,15 +1272,16 @@ Generator는 task를 하나씩 처리한다.
 - Requirement와 Plan에 없는 기능을 임의로 크게 추가하지 않는다.
 - 필요한 경우 자율적으로 구현 결정을 내리되, 장기적으로 영향이 큰 결정은 `decisions.md`에 기록한다.
 - 실패한 접근은 `implementation_log.md` 또는 `changelog.md`에 기록한다.
-- `implementation_log.md`에는 diff, 전체 코드 블록, command transcript를 붙이지 않는다. 완료한 task, 변경한 파일/파일그룹의 목적, 검증 요약, 남은 risk만 남긴다.
+- `implementation_log.md`에는 diff, 전체 코드 블록, command transcript를 붙이지 않는다. 완료한 task, 변경한 파일/파일그룹의 목적, Evaluator handoff, 남은 risk만 남긴다.
 
 ### implementation_log.md template
 
 ```md
 # Implementation Log
 
-<!-- Summary log, not a diff. For each entry: completed task IDs, changed file
-groups with one purpose sentence each, verification summary, risks. Do not paste
+<!-- Phase-level implementation handoff, not a diff or validation report. For
+each entry: completed task IDs, changed file groups with one purpose sentence
+each, decisions, risks, and anything the Evaluator should inspect. Do not paste
 code blocks, full command output, or line-by-line changes. -->
 
 ## <date/time>
@@ -1295,9 +1305,9 @@ code blocks, full command output, or line-by-line changes. -->
 - Why it failed: ...
 - Do not repeat: ...
 
-### Verification summary
+### Evaluator handoff
 
-- <command or manual check>: pass | fail | not run — <one-line note>
+- <changed behavior, file group, risk, or known issue to inspect>
 
 ### Known risks
 
@@ -1306,159 +1316,79 @@ code blocks, full command output, or line-by-line changes. -->
 
 ---
 
-## 7.8 Generator self-check
+## 7.8 Generator handoff
 
-Generator는 Evaluator에게 넘기기 전에 반드시 self-check를 수행한다.
+Generator는 구현에 집중한다. 구현이 끝나면 별도 validation artifact를 만들지
+않고 `implementation_log.md`와 `tasks.md` 상태를 통해 Evaluator에게 넘긴다.
 
-Self-check는 완벽한 평가가 아니라, 명백한 문제를 Evaluator에게 넘기지 않기 위한 최소 품질 게이트다.
+handoff에는 다음만 짧게 남긴다.
 
-Self-check는 evaluation report가 아니다. Generator는 요구사항/acceptance coverage를
-grouped evidence 중심으로 확인하고, EV-ID별 판정표를 만들지 않는다.
+- 완료한 task ID
+- 변경한 파일/파일 그룹과 목적
+- Evaluator가 봐야 할 위험, known issue, 실패했던 접근
+- 장기 영향이 있는 결정의 `decisions.md` 참조
 
-### generator_self_check.md template
-
-```md
-# Generator Self Check
-
-<!-- Compact readiness memo, not an evaluation report. Do not create an EV-ID
-matrix, duplicate evaluator checks, or forecast pass/fail per EV-ID. Group
-related acceptance checks and point to primary evidence only. -->
-
-## Summary
-
-<what was implemented>
-
-Validation intent consulted: yes | no | not_present
-Expected validation profile if known: compact | standard | high | system | unknown
-
-## Requirements addressed
-
-- RQ-001: <primary evidence only: task/file/test/manual check>
-- RQ-002: ...
-
-## Acceptance coverage
-
-- <grouped acceptance intent>: met | partial | not met — <evidence>
-
-## Tasks completed
-
-- G-001: completed
-- G-002: completed
-
-## Commands run
-
-- Command: <command>
-  Result: pass | fail | not_applicable
-  Notes: <one-line summary, not full output>
-
-## Manual checks performed
-
-- ...
-
-## Known limitations
-
-- ...
-
-## Risks / areas needing evaluator focus
-
-- ...
-
-## Handoff readiness
-
-Ready for evaluation: yes | no
-```
-
-Generator는 known failing test나 known broken behavior를 숨기면 안 된다.
+Generator는 phase 완료나 validation pass를 주장하지 않는다. 검증과 최종 verdict는
+Evaluator가 담당한다.
 
 ---
 
 ## 7.9 Evaluator validation plan
 
 Evaluator는 `requirement.md`, `phase.md`, `plan.md`, `tasks.md`,
-`implementation_log.md`, `generator_self_check.md`를 읽고 검증 계획을 작성한다.
-`standard`, `high`, `system`에서는 별도 `validation_plan.md`를 쓰고,
-`compact`에서는 계획을 `evaluation_report.md`에 inline할 수 있다.
+`implementation_log.md`, optional `validation_intent.md`, 실제 diff를 읽고 검증
+계획을 작성한다. `standard`에서는 보통 grouped checks를
+`evaluation_report.md`에 inline한다. `high`에서는 별도 계획이 confidence를 높일
+때 `validation_plan.md`를 쓴다.
 
 Evaluator는 validation profile과 검증 강도를 선택해야 한다. Profile은 ceremony와
-full-loop 필요성을 정하고, validation level은 실제 검증 방법을 정한다.
+문서 무게를 정하고, validation level은 실제 검증 방법을 정한다.
 
 검증은 엄격해야 하지만, 검증 문서는 navigation 가능한 상태를 유지해야 한다.
 Evaluator는 decision-making에 실제로 필요한 check를 risk area별 grouped EV-ID로
 작성한다. 모든 field, route, assertion, source line을 별도 EV-ID로 만들면 안 된다.
 
-`compact` profile에서는 별도 `validation_plan.md`를 만들지 않고
-`evaluation_report.md` 안에 "Validation plan used" section을 inline할 수 있다.
-이 경우에도 Evaluator는 검증 계획, 수행한 evidence, verdict를 명확히 남겨야
-하며, Phase pass에는 Evaluator `pass`가 반드시 필요하다.
+`standard` profile에서는 별도 `validation_plan.md`를 만들지 않고
+`evaluation_report.md` 안에 grouped checks, completion audit, evidence, verdict를
+남기는 것이 기본이다.
 
-`high`와 `system` profile에서는 full loop를 줄이지 않는다.
-`validation_intent.md`로 preflight 위험을 다루고, 별도 `validation_plan.md`,
-`evaluation_report.md`, `evaluation_history.md`, fix/recheck loop를 유지한다.
+`high` profile에서는 risk depth에 맞춰 `validation_intent.md`,
+`validation_plan.md`, `evaluation_report.md`, `evaluation_history.md`, fix/recheck
+loop를 사용한다.
 
 ### Validation profile guide
 
-#### compact
-
-Low-risk, localized changes only.
-
-Allowed when:
-
-- no high-impact side effects
-- no external authoritative state
-- no sensitive data or permission boundary
-- no persistence integrity concern
-- no cross-surface contract change
-- no safety invariant
-- correctness can be established by static review, focused command, or small
-  existing test
-
-Behavior:
-
-- skip `validation_intent.md`
-- inline validation plan in `evaluation_report.md` if that is enough
-- keep evidence concise
-- still require Evaluator `pass`
-
 #### standard
 
-Default for normal product/code work.
+Default for low-risk localized changes and normal bounded product/code work.
 
 Behavior:
 
-- usually write separate `validation_plan.md`
+- define grouped checks in `evaluation_report.md`
+- include a completion audit mapping requirement/acceptance item to artifact
+  and evidence
 - write `evaluation_report.md`
 - use `validation_intent.md` only for a specific preflight risk
-- use L1-L3 as appropriate
+- use L0-L3 as appropriate
 
 #### high
 
 Required when the Phase involves high-impact side effects, external
 authoritative state, sensitive data, persistence integrity, cross-surface
 contracts, safety invariants, weak regression coverage on risky behavior, or
-correctness that is hard to infer statically.
+correctness that is hard to infer statically. Also use it when confidence
+depends on integrated runtime, system, E2E, reference, benchmark, compliance, or
+fail-closed evidence.
 
 Behavior:
 
-- preserve full loop
-- write `validation_intent.md` as preflight risk guidance
-- write separate `validation_plan.md`
+- write `validation_intent.md` as preflight risk guidance when it helps
+- write separate `validation_plan.md` when separate planning improves confidence
 - append `evaluation_history.md`
-- use targeted runtime/integration evidence where needed
-
-#### system
-
-Required when high risk must be proven through an integrated runtime, system,
-E2E, reference, or benchmark surface.
-
-Behavior:
-
-- preserve full loop
-- write `validation_intent.md` as preflight risk guidance
 - include runtime/system/E2E validation unless impossible or unsafe
 - use sandbox, dry-run, read-only, mock, or reference oracle when real side
   effects would be unsafe
-- return `blocked`, not `pass`, when required system confidence cannot be
-  obtained
+- return `blocked`, not `pass`, when required confidence cannot be obtained
 
 ### Validation level guide
 
@@ -1530,10 +1460,10 @@ reference implementation, benchmark, quantitative threshold, regression suite를
 ```md
 # Validation Plan
 
-<!-- Concrete validation plan for standard/high/system profiles. Prefer grouped
-EV-IDs by risk area. Put related sub-assertions under one EV-ID instead of
-making a new EV-ID for every field, route, or source line. Compact profile may
-inline this plan in evaluation_report.md instead of creating this file. -->
+<!-- Concrete validation plan for high profile, or for standard only when a
+separate plan is clearer than inline grouped checks. Prefer grouped EV-IDs by
+risk area. Put related sub-assertions under one EV-ID instead of making a new
+EV-ID for every field, route, or source line. -->
 
 ## Scope
 
@@ -1547,7 +1477,6 @@ Evaluate Phase <n>: <phase name>
 - plan.md
 - tasks.md
 - implementation_log.md
-- generator_self_check.md
 
 ## Selected validation level
 
@@ -1555,9 +1484,8 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 ## Selected validation profile
 
-standard | high | system
+standard | high
 
-Compact mode: no
 Validation intent used: yes | no
 
 ## Why this profile and level are appropriate
@@ -1608,28 +1536,24 @@ Evaluator는 검증 수행 후 최신 공식 판정인 `evaluation_report.md`를
 `evaluation_history.md`에는 짧은 snapshot만 append한다. `evaluation_history.md`에
 full report를 복제하지 않는다.
 
-`compact` profile에서는 `evaluation_report.md`가 검증 계획과 결과를 함께 담을
-수 있다. 이 경우 report 안에 reviewed inputs, selected level, checks run, and
-verdict rationale를 compact하게 남긴다. `standard`, `high`, `system`에서는 별도
-`validation_plan.md`를 유지한다.
+`standard` profile에서는 `evaluation_report.md`가 검증 계획과 결과를 함께 담는
+것이 기본이다. 이 경우 report 안에 reviewed inputs, selected level, checks run,
+completion audit, verdict rationale를 concise하게 남긴다. `high`에서는 별도
+`validation_plan.md`를 유지할 수 있다.
 
 ### evaluation_report.md template
 
 ```md
 # Evaluation Report
 
-<!-- Latest verdict. Keep passed evidence compact; write detail for failures,
-blockers, surprising results, and high-risk checks only.
-
-For compact profile, this report is both validation plan and result: include
-the grouped checks, method, expected behavior, result, and evidence below.
-For standard/high/system, keep detailed check definitions in validation_plan.md
-and summarize results here. -->
+<!-- Latest verdict. Keep passed evidence concise; write detail for failures,
+blockers, surprising results, and high-risk checks only. In standard profile,
+this report contains the grouped checks and completion audit. In high profile,
+link validation_plan.md when a separate plan was useful. -->
 
 Verdict: pass | fail | blocked
-Validation profile used: compact | standard | high | system
+Validation profile used: standard | high
 Validation level used: L0 | L1 | L2 | L3 | L4 | L5
-Compact mode: yes | no
 Validation intent used: yes | no
 Validation plan: inline | validation_plan.md
 Fix loop count: <N>
@@ -1639,9 +1563,16 @@ Failed EV-IDs seen: none | EV-001, EV-002
 
 <short summary>
 
+## Completion audit
+
+| Requirement / acceptance item | Artifact or behavior inspected | Evidence | Result |
+| ----------------------------- | ------------------------------ | -------- | ------ |
+| RQ-001 | <file/path or behavior> | <command/output/review/runtime evidence> | pass |
+| RQ-002 | <file/path or behavior> | <evidence> | fail |
+
 ## Validation checks
 
-<!-- Required for compact mode; optional summary for other profiles. -->
+<!-- Group related assertions by risk area. -->
 
 | EV-ID | Method | Covers | Expected | Result | Evidence |
 | ----- | ------ | ------ | -------- | ------ | -------- |
@@ -1709,7 +1640,7 @@ Evaluator may return `pass` only if:
 - remaining issues are minor and documented
 - implementation is maintainable enough to proceed
 - the selected validation profile produced enough evidence for a reliable
-  verdict; compact reporting does not lower the pass bar
+  verdict; lean reporting does not lower the pass bar
 
 Evaluator returns `blocked` if:
 
@@ -1727,8 +1658,8 @@ If Evaluator returns fail, Orchestrator sets Phase status to `fixing`.
 Generator then reads:
 
 - `evaluation_report.md`
-- `validation_plan.md`, or the inline validation plan in `evaluation_report.md`
-  for `compact`
+- `validation_plan.md`, when present, or the grouped checks in
+  `evaluation_report.md`
 - `tasks.md`
 - `implementation_log.md`
 - `plan.md`
@@ -1753,11 +1684,13 @@ Related requirements:
 Description:
 - Add explicit empty state behavior when dashboard data is empty.
 
-Expected evidence of completion:
+Recheck target:
 - EV-003 passes on re-evaluation.
 ```
 
-After fixes, Generator updates `generator_self_check.md`, then Evaluator re-runs only necessary checks unless broader regression risk requires a full re-evaluation.
+After fixes, Generator updates `tasks.md` and `implementation_log.md`, then
+Evaluator re-runs only necessary checks unless broader regression risk requires
+a full re-evaluation.
 
 ---
 
@@ -1766,8 +1699,8 @@ After fixes, Generator updates `generator_self_check.md`, then Evaluator re-runs
 A Phase is complete only when:
 
 - `evaluation_report.md` verdict is `pass`
-- the selected validation profile is satisfied; if `compact` omitted
-  `validation_plan.md`, the report includes the inline validation plan used
+- the selected validation profile is satisfied; for `standard`, the report
+  includes the grouped checks and completion audit used
 - `roadmap.md` marks the Phase as `passed`
 - `phase.md` status is `passed`
 - `current_state.md` points to the next Phase or project completion
@@ -1806,21 +1739,19 @@ violates its role:
 - `plan.md` is thin, or bloated with task lists, test matrices, command
   transcripts, schemas, route tables, or low-level implementation detail.
 - `tasks.md` mostly restates `plan.md`, creates one task per Plan bullet, or
-  embeds spec/test detail instead of concrete work and completion evidence.
+  embeds spec/test detail instead of concrete work and handoff notes.
 - `validation_intent.md` is an exhaustive EV-ID matrix instead of preflight
   guidance.
 - `implementation_log.md` contains diffs, full code blocks, or command
-  transcripts instead of summary-level implementation evidence.
-- `generator_self_check.md` duplicates `validation_plan.md` or pre-judges every
-  EV-ID instead of summarizing readiness and primary evidence.
+  transcripts instead of summary-level implementation handoff.
 - `validation_plan.md` creates tiny EV-IDs for every assertion/source line
   instead of grouped checks by risk area.
 - `evaluation_report.md` or `evaluation_history.md` duplicate routine pass
   evidence instead of keeping detail focused on failures, blockers, surprising
   results, and high-risk checks.
 
-For `compact`, absence of a separate `validation_plan.md` is not a violation
-when `evaluation_report.md` clearly includes the inline validation plan used,
+For `standard`, absence of a separate `validation_plan.md` is not a violation
+when `evaluation_report.md` clearly includes grouped checks, completion audit,
 checks run, evidence, and verdict rationale.
 
 When rejecting an artifact, Orchestrator should dispatch the same role again
@@ -1940,9 +1871,9 @@ Current phase status: fixing
 Current owner: generator
 Current step: implement_fixes
 Current loop: fix_loop_2
-Phase metrics: validation_profile=standard; validation_level=L2_unit_or_integration; intent_used=no; compact_mode=no; fix_loop_count=2; failed_ev_ids_seen=EV-003
+Phase metrics: validation_profile=standard; validation_level=L2_unit_or_integration; intent_used=no; fix_loop_count=2; failed_ev_ids_seen=EV-003
 Last completed step: Evaluator failed EV-003 because empty state behavior is missing.
-Next action: Generator should implement GF-001 and rerun self-check.
+Next action: Generator should implement GF-001 and hand back to Evaluator recheck.
 Blocked: no
 Important context:
 - Do not change the auth model from Phase 1.
@@ -1972,7 +1903,6 @@ run without relying on conversation context.
     "validation_profile": "standard",
     "validation_level": "L2_unit_or_integration",
     "intent_used": false,
-    "compact_mode": false,
     "fix_loop_count": 2,
     "failed_ev_ids_seen": ["EV-003"]
   },
@@ -2221,7 +2151,7 @@ If resume lands after task decomposition or during evaluation, Orchestrator
 recovers the selected validation profile from `run_state.json`,
 `current_state.md`, or the latest Evaluator artifact before dispatching the next
 step. If no profile was recorded, default to `standard` unless `high` or
-`system` risk triggers are visible.
+deep runtime/system risk triggers are visible.
 
 ### Resume decision examples
 
@@ -2253,7 +2183,8 @@ A skill or plugin implementing this workflow should expose commands similar to t
 
 ### `/workflow:requirements`
 
-Draft or refine a requirement before starting implementation.
+Draft or refine a concise outcome-first requirement before starting
+implementation.
 
 Inputs:
 
@@ -2283,7 +2214,7 @@ succeeds and the draft directory contains no files besides `requirement.md`.
 Inputs:
 
 - user request
-- optional project mode: adaptive | minimal | full
+- optional structure hint, if the implementation exposes one
 
 Outputs:
 
@@ -2332,9 +2263,8 @@ Outputs:
 
 ### `/workflow:validation-intent`
 
-Optional pre-implementation validation planning. It is skipped for `compact`,
-used for `high`/`system`, and used for `standard` only when a specific
-preflight risk exists.
+Optional pre-implementation validation planning. It is skipped for most
+`standard` phases and used for `high` when a specific preflight risk exists.
 
 Outputs:
 
@@ -2350,23 +2280,15 @@ Outputs:
 - tasks.md updates
 - implementation_log.md updates
 
-### `/workflow:self-check`
-
-Run Generator self-check.
-
-Outputs:
-
-- generator_self_check.md
-
 ### `/workflow:evaluate`
 
 Run Evaluator.
 
 Outputs:
 
-- validation_plan.md, unless `compact` inlines the plan in `evaluation_report.md`
+- validation_plan.md when high-risk depth needs it
 - evaluation_report.md
-- evaluation_history.md, unless `compact` records the whole decision in the report
+- evaluation_history.md when used
 
 ### `/workflow:fix`
 
@@ -2376,7 +2298,6 @@ Outputs:
 
 - updated tasks.md
 - implementation_log.md
-- generator_self_check.md
 
 ### `/workflow:next`
 
@@ -2484,7 +2405,7 @@ The Generator must:
 - implement complete behavior, not isolated fragments
 - preserve existing architecture and conventions
 - update tasks and implementation logs at summary level
-- self-check before evaluation without producing an Evaluator-style EV matrix
+- focus on implementation and provide a short Evaluator handoff
 - honestly record limitations and risks
 
 The Generator must not:
@@ -2500,17 +2421,19 @@ The Generator must not:
 
 The Evaluator must:
 
-- read Requirements, Plan, Tasks, Implementation Log, and Self Check
+- read Requirements, Plan, Tasks, Implementation Log, optional Validation
+  Intent, and actual code changes
 - evaluate against the expanded Plan, not only the raw request
 - choose and honor the validation profile
 - choose appropriate validation level
-- create a grouped validation plan, separately or inline for `compact`
+- create grouped checks in `evaluation_report.md`, and use `validation_plan.md`
+  when high-risk depth needs it
+- map requirements and acceptance items to artifacts and evidence
 - verify product-level correctness
 - distinguish critical, major, and minor issues
 - return pass/fail/blocked
 - provide concrete next actions
-- append short snapshots to Evaluation History unless `compact` records the
-  whole decision in `evaluation_report.md`
+- append short snapshots to Evaluation History when useful
 
 The Evaluator must not:
 
@@ -2520,8 +2443,8 @@ The Evaluator must not:
 - create exhaustive EV-ID matrices when grouped checks would give the same confidence
 - duplicate the full Evaluation Report into Evaluation History
 - require Playwright or E2E when unnecessary
-- choose `compact` when high/system risk triggers are present
-- skip required runtime/system evidence for `system` profile
+- keep `standard` when high risk triggers are present
+- skip required runtime/system evidence for high-risk validation
 - ignore code quality issues
 - be vague or flattering without evidence
 
@@ -2536,7 +2459,6 @@ A Phase is complete when:
 - all must-have Requirements assigned to the Phase are covered
 - Planner Plan acceptance intent is satisfied
 - Generator tasks are completed or explicitly skipped with reason
-- Generator self-check is complete
 - Evaluator verdict is pass
 - current state is updated
 - changelog records completion
@@ -2578,13 +2500,12 @@ Recommended defaults:
     "agents_workspace/runs/",
     "agents_workspace/active_run"
   ],
-  "mode": "adaptive",
   "max_fix_loops_per_phase": 3,
   "max_same_failure_repeats": 2,
   "default_validation_profile": "standard",
   "default_validation_level": "L1_static_plus_build",
-  "validation_profiles": ["compact", "standard", "high", "system"],
-  "use_validation_intent_for_high_and_system": true,
+  "validation_profiles": ["standard", "high"],
+  "use_validation_intent_for_high": true,
   "git_policy": "safe_optional",
   "doctor_default_mode": "diagnose_then_safe_action",
   "ask_user_only_when_required": true
@@ -2608,10 +2529,9 @@ User requirement
     Planner prevents under-scoping while avoiding premature implementation rigidity
     Generator decomposes Plan into Tasks
     Orchestrator selects validation profile and records phase metrics
-    Optional Evaluator writes Validation Intent for high/system and selected standard preflight risk
+    Optional Evaluator writes Validation Intent for high risk
     Generator implements Tasks
-    Generator runs Self Check
-    Evaluator writes Validation Plan, or inlines it in compact Evaluation Report
+    Evaluator writes Validation Plan when high-risk depth needs it
     Evaluator evaluates implementation against Requirement + expanded Plan
     If fail: Orchestrator increments fix metrics; Generator fixes and Evaluator rechecks
     If pass: Orchestrator completes Phase
@@ -2627,7 +2547,7 @@ Agents must read before work and write after work.
 Planner should enrich product scope without locking implementation details.
 Generator must implement the expanded Plan, not just the literal raw request.
 Evaluator must evaluate against Requirement + Plan acceptance intent, not only surface completion.
-Compact validation can reduce documents, not the need for evidence or an Evaluator verdict.
+Lean validation can reduce documents, not the need for evidence or an Evaluator verdict.
 No Phase is complete until Evaluator passes it.
 No project is complete until every Phase is passed or explicitly resolved.
 ```

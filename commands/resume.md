@@ -4,7 +4,7 @@ description: Resume the active ThisIsEnough workflow run. Reads agents_workspace
 
 Invoke the `tie:resume` skill now and follow it exactly.
 
-Resume in compact mode: keep `current_state.md` as a short handoff, do not treat
+Resume in lean mode: keep `current_state.md` as a short handoff, do not treat
 a missing `validation_intent.md` as a problem unless `run_state.json` explicitly
 says optional preflight is the current step, and preserve the rule that only an
 Evaluator `pass` can complete a phase.

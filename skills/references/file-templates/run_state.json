@@ -12,7 +12,6 @@
     "validation_profile": null,
     "validation_level": null,
     "intent_used": false,
-    "compact_mode": false,
     "fix_loop_count": 0,
     "failed_ev_ids_seen": []
   },

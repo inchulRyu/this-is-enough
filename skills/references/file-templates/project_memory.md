@@ -1,7 +1,7 @@
 # Project Memory
 
 <!-- Durable repo-level notes promoted from completed workflow runs. Keep this
-file compact. Record only information that future unrelated work should know:
+file concise. Record only information that future unrelated work should know:
 resolved failed approaches that are likely to be retried, non-obvious project
 structure, unusual constraints, and follow-up cautions. Do not copy run logs,
 diffs, test transcripts, or routine completion summaries. -->

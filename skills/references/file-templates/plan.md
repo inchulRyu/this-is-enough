@@ -63,7 +63,7 @@ The Generator should decide:
 
 ## Validation sizing
 
-Recommended validation profile: compact | standard | high | system
+Recommended validation profile: standard | high
 
 Why this profile is proportionate:
 - <phase risk/blast radius and why this does not need a heavier or lighter profile>

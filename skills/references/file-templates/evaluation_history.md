@@ -8,9 +8,8 @@ the bottom. Keep entries short; the full latest report lives in
 
 ## <ISO timestamp> — Loop <N> — <verdict: pass | fail | blocked>
 
-Validation profile: compact | standard | high | system
+Validation profile: standard | high
 Validation level: L0 | L1 | L2 | L3 | L4 | L5
-Compact mode: yes | no
 Validation intent used: yes | no
 Fix loop count: <N>
 Mode: full | recheck

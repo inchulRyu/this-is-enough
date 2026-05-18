@@ -1,7 +1,7 @@
 # Phase <n>: <phase name>
 
 Status: planning
-Validation profile: compact | standard | high | system | unset
+Validation profile: standard | high | unset
 
 <!-- Validation profile is a sizing hint, not a validation plan. Keep it
 proportionate to this phase's actual risk and blast radius. -->
@@ -27,7 +27,6 @@ proportionate to this phase's actual risk and blast radius. -->
 
 validation_level: unset
 intent_used: no
-compact_mode: no
 fix_loop_count: 0
 failed_ev_ids_seen: none
 

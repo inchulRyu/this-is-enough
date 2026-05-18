@@ -14,16 +14,16 @@ You can draft a requirement first, or state a requirement directly. Once a run
 starts, ThisIsEnough then:
 
 1. **Clarifies only essential ambiguities** (no busywork questions).
-2. **Builds a Roadmap** of phases.
+2. **Builds a Roadmap**, defaulting to one phase unless dependency or risk
+   boundaries justify a split.
 3. For each phase, autonomously:
    - **Planner** expands the raw requirement into a rich product-level Plan
      (prevents under-scoping).
    - **Generator** decomposes into tasks, implements them in your repo's
-     existing conventions, and writes a compact self-check.
-   - **Evaluator** picks the lightest validation profile
-     (`compact` / `standard` / `high` / `system`) and the lowest L0-L5
-     validation level that give confidence, actually runs the checks, and
-     returns pass / fail / blocked.
+     existing conventions, and leaves a short implementation handoff.
+   - **Evaluator** picks `standard` or `high` validation plus the lowest L0-L5
+     validation level that gives confidence, actually runs the checks, maps
+     requirements to artifacts and evidence, and returns pass / fail / blocked.
    - Complex or risky phases may get optional pre-validation guidance in
      `validation_intent.md`; simpler phases skip it.
    - On pass, **Orchestrator** records phase completion and creates a git
@@ -43,12 +43,16 @@ Volatile workflow state is ignored by git by default. Durable lessons that
 future work should know are promoted to `agents_workspace/project_memory.md`,
 which is intended to be committed.
 
-Workflow artifacts stay compact by default: `current_state.md` stays a short
-handoff pointer, `generator_self_check.md` summarizes readiness instead of
-pre-judging every check, and validation reports keep routine pass evidence
-concise. Low-risk phases can use the `compact` validation profile. Compact
-artifacts do not loosen the phase gate: no phase is complete until the
-Evaluator returns `pass`.
+Workflow artifacts stay concise by default: `current_state.md` stays a short
+handoff pointer, Generator logs stay phase-level, and validation reports keep
+routine pass evidence concise. `standard` is the default fast path. `high` is
+reserved for phases where risk, blast radius, or runtime/system evidence needs
+more ceremony. Lean artifacts do not loosen the phase gate: no phase is
+complete until the Evaluator returns `pass`.
+
+Role prompts are kept outcome-first: they define ownership, success criteria,
+stop conditions, and handoff shape, while the full runtime spec and templates
+remain the detailed reference for state schemas and edge-case procedure.
 
 ## Install
 
@@ -218,11 +222,11 @@ $tie:doctor repair
 
 | Skill              | What it does                                                                |
 | ------------------ | --------------------------------------------------------------------------- |
-| `tie:requirements` | Drafts pre-run requirements under `agents_workspace/drafts/`.               |
+| `tie:requirements` | Drafts concise pre-run requirements under `agents_workspace/drafts/`.       |
 | `tie:orchestrator` | Entry point. Drives the entire state machine end-to-end.                    |
 | `tie:planner`      | Expands raw requirement into a rich product-level Plan (subagent role).     |
-| `tie:generator`    | Decomposes / implements / compact self-checks / fixes (subagent role).      |
-| `tie:evaluator`    | Risk-based L0-L5 validation profiles, returns pass/fail/blocked.            |
+| `tie:generator`    | Decomposes / implements / fixes while keeping handoffs short.               |
+| `tie:evaluator`    | Owns validation, evidence, and pass/fail/blocked verdicts.                  |
 | `tie:resume`       | Resumes the run pointed to by `agents_workspace/active_run`.                |
 | `tie:status`       | Read-only snapshot of where the run currently stands.                       |
 | `tie:doctor`       | Diagnoses, safely repairs, or migrates workflow state.                      |
@@ -240,7 +244,7 @@ agents_workspace/
     <run-id>/
       requirement.md
       roadmap.md
-      current_state.md              # compact human-readable handoff
+      current_state.md              # concise human-readable handoff
       run_state.json
       decisions.md
       changelog.md
@@ -253,10 +257,9 @@ agents_workspace/
           tasks.md
           validation_intent.md       (optional risk preflight)
           implementation_log.md
-          generator_self_check.md    # compact readiness summary
-          validation_plan.md
+          validation_plan.md         (used when high-risk depth needs it)
           evaluation_report.md
-          evaluation_history.md      # compact snapshots
+          evaluation_history.md      # concise snapshots
 ```
 
 `drafts/` contains only requirements whose implementation has not started. When
@@ -266,12 +269,12 @@ files besides `requirement.md`. From that point on, the run's `requirement.md`
 is the source of truth for the requirement, and detailed run history stays in
 the local run directory.
 
-Validation uses profiles, not a one-size-fits-all checklist: `compact`,
-`standard`, `high`, or `system`. Separately, the Evaluator chooses the lowest
-validation level that gives confidence: `L0_static_review`,
-`L1_static_plus_build`, `L2_unit_or_integration`, `L3_runtime_scenario`,
-`L4_e2e_or_system`, or `L5_reference_or_benchmark`. The Evaluator raises the
-profile and level only when risk requires it.
+Validation uses profiles, not a one-size-fits-all checklist: `standard` or
+`high`. Separately, the Evaluator chooses the lowest validation level that gives
+confidence: `L0_static_review`, `L1_static_plus_build`,
+`L2_unit_or_integration`, `L3_runtime_scenario`, `L4_e2e_or_system`, or
+`L5_reference_or_benchmark`. The Evaluator raises the profile and level only
+when risk requires it.
 `validation_intent.md` is truly optional preflight guidance for complex or risky
 phases; when present, it names representative risks and success oracles, not an
 exhaustive EV-ID matrix.

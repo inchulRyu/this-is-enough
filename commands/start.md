@@ -14,7 +14,7 @@ tell the orchestrator to start from that draft. Do not start implementing
 anything before the orchestrator's intake → clarify → roadmap flow has produced
 the active run's `requirement.md` and `roadmap.md`.
 
-Preserve runtime invariants: workflow artifacts stay compact,
+Preserve runtime invariants: workflow artifacts stay concise,
 `validation_intent.md` is optional risk preflight for complex or risky phases
 only, validation uses the lightest validation profile and lowest L0-L5 level
 that gives confidence, and no phase is complete without an Evaluator `pass`.

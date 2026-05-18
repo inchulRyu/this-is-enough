@@ -1,9 +1,9 @@
 # Validation Plan
 
-<!-- Concrete validation plan for standard/high/system profiles. Prefer grouped
-EV-IDs by risk area. Put related sub-assertions under one EV-ID instead of
-making a new EV-ID for every field, route, or source line. Compact profile may
-inline this plan in evaluation_report.md instead of creating this file. -->
+<!-- Concrete validation plan for high profile, or for standard only when a
+separate plan is clearer than inline grouped checks. Prefer grouped EV-IDs by
+risk area. Put related sub-assertions under one EV-ID instead of making a new
+EV-ID for every field, route, or source line. -->
 
 ## Scope
 
@@ -17,7 +17,6 @@ Evaluate Phase <n>: <phase name>
 - plan.md
 - tasks.md
 - implementation_log.md
-- generator_self_check.md
 
 ## Selected validation level
 
@@ -25,9 +24,8 @@ L0_static_review | L1_static_plus_build | L2_unit_or_integration | L3_runtime_sc
 
 ## Selected validation profile
 
-standard | high | system
+standard | high
 
-Compact mode: no
 Validation intent used: yes | no
 
 ## Why this profile and level are appropriate

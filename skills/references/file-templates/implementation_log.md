@@ -1,7 +1,8 @@
 # Implementation Log
 
-<!-- Summary log, not a diff. For each entry: completed task IDs, changed file
-groups with one purpose sentence each, verification summary, risks. Do not paste
+<!-- Phase-level implementation handoff, not a diff or validation report. For
+each entry: completed task IDs, changed file groups with one purpose sentence
+each, decisions, risks, and anything the Evaluator should inspect. Do not paste
 code blocks, full command output, or line-by-line changes. -->
 
 ## <date/time>
@@ -25,9 +26,9 @@ code blocks, full command output, or line-by-line changes. -->
 - Why it failed: ...
 - Do not repeat: ...
 
-### Verification summary
+### Evaluator handoff
 
-- <command or manual check>: pass | fail | not run — <one-line note>
+- <changed behavior, file group, risk, or known issue to inspect>
 
 ### Known risks
 

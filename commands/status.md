@@ -7,7 +7,7 @@ Invoke the `tie:status` skill now. Resolve the active run through
 status block, and stop. Do not modify any file. Do not dispatch any subagent.
 Do not start any work.
 
-Report compact state as-is. Missing optional phase artifacts, including
+Report concise state as-is. Missing optional phase artifacts, including
 `validation_intent.md`, are not status errors unless the run's machine state
 requires them.
 
