@@ -17,7 +17,9 @@ schema. `migrate` may only upgrade the old root workflow layout into
 `agents_workspace/runs/<run-id>/` when no conflicting active-run layout exists.
 Keep repairs concise: `current_state.md` should remain a short handoff, and a
 missing `validation_intent.md` is not an inconsistency unless the machine state
-explicitly requires optional preflight.
+explicitly requires optional preflight. Missing `telemetry.jsonl` in an older
+run is also not corruption; repair may create an empty telemetry file when safe
+but must not reconstruct historical timing.
 
 Do not start or resume workflow work. Do not dispatch subagents. Stop and ask
 the user before overwriting, deleting, guessing missing requirements, or

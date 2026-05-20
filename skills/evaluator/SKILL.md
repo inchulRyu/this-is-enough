@@ -27,6 +27,12 @@ major unresolved issue.
 Use only the explicit active-run and phase paths passed by Orchestrator. Write
 all validation outputs under the current phase directory. Do not infer state
 from root `agents_workspace/`.
+Use the telemetry path passed by Orchestrator, normally
+`<active-run-dir>/telemetry.jsonl`, for validation command/check and verdict
+events. If the file is absent in an older run but the active run directory is
+explicit, create it and continue appending; if telemetry cannot be written,
+make that visible in the evaluation report or blocker path instead of silently
+claiming timing was captured.
 
 ## Inputs
 
@@ -44,7 +50,7 @@ risk, not for document length.
 
 | Profile | Use when | Artifacts |
 | --- | --- | --- |
-| `standard` | default fast path for docs/copy/config/mechanical work and normal bounded product/code changes with a clear oracle | grouped completion audit and evidence in `evaluation_report.md`; no separate plan by default |
+| `standard` | default validation-confidence profile for docs/copy/config/mechanical work and normal bounded product/code changes with a clear oracle | grouped completion audit and evidence in `evaluation_report.md`; no separate plan by default |
 | `high` | high-impact side effects, external state, sensitive data, permissions, persistence, cross-surface contracts, safety invariants, weak risky coverage, hard-to-infer correctness, or runtime/system/E2E/reference/benchmark evidence needs | `validation_intent.md` when useful, `validation_plan.md` when separate planning improves confidence |
 
 | Level | Use when |
@@ -73,6 +79,17 @@ evidence. Bias up for data, security, or user-visible runtime behavior.
   surprising, or high-risk checks.
 - `evaluation_history.md`: short append-only snapshot when used. Never copy the
   full report.
+- Detailed timing belongs in `telemetry.jsonl`, not `evaluation_report.md` or
+  `evaluation_history.md`.
+- For validation commands/checks, append compact `command` or `check`
+  telemetry with run id, phase, `role = "evaluator"`, evaluator mode,
+  validation profile/level when known, safe command/check label, elapsed
+  seconds, outcome, and exit code when available. Failed attempts and
+  meaningful retries should be separate events.
+- After `full` or `recheck`, append `validation_verdict` telemetry with
+  evaluator mode, validation profile, validation level, verdict, failed EV-IDs,
+  critical/major issue counts when available, fix-loop count when known, and
+  recheck outcome when applicable.
 
 ## `intent`
 
@@ -102,8 +119,11 @@ Intent written. Recommended profile: <profile>. Recommended level: L<N>. Key ris
 4. Run the checks. Use real commands, tests, build, browser/runtime exercise,
    API checks, DB inspection, benchmark, or reference oracle as appropriate.
    Reading alone is not validation when behavior can be exercised.
-5. Write `evaluation_report.md`.
-6. Append a short `evaluation_history.md` snapshot when the profile uses it.
+5. Record command/check telemetry separately from evaluator wall time and
+   markdown evidence.
+6. Write `evaluation_report.md`.
+7. Append a `validation_verdict` telemetry event.
+8. Append a short `evaluation_history.md` snapshot when the profile uses it.
 
 Each failed check must include severity, expected, actual, why it matters, and
 a concrete next action for Generator.
@@ -113,6 +133,8 @@ a concrete next action for Generator.
 Re-run only the failed EV-IDs and checks affected by the fix. Update the report
 and history snapshot. If a fix breaks a previously passing dependent check,
 raise it as a new failure with at least major severity.
+Record recheck command/check telemetry and include the recheck outcome in the
+`validation_verdict` telemetry event.
 
 ## Verdict rules
 

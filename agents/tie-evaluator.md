@@ -22,6 +22,13 @@ paths to `requirement.md`, `roadmap.md`, `current_state.md`, and
 - `recheck` → re-run only the EV-IDs specified in the dispatch prompt and
   update the report.
 
+The orchestrator also passes the active run telemetry path, normally
+`<active-run-dir>/telemetry.jsonl`. Append compact command/check timing events
+there for validation commands and a `validation_verdict` event with profile,
+level, mode, verdict, failed EV-IDs, issue counts when available, fix-loop
+count, and recheck outcome. Keep detailed timing streams out of
+`evaluation_report.md` and `evaluation_history.md`.
+
 You evaluate against the Requirement + expanded Plan acceptance intent, not just
 the literal raw request. Choose the lightest profile and lowest L0-L5 level that
 give confidence for the actual changes, then run the relevant checks. Keep

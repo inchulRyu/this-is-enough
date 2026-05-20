@@ -139,8 +139,9 @@ Evaluator는 Requirement, Plan, Task, repo 특성, 변경 범위, 위험도를 �
 Evaluator는 먼저 validation profile을 고른다. Profile은 문서/절차의 무게를
 정하고, validation level(L0-L5)은 실제 검증 방법의 깊이를 정한다.
 
-- `standard`: 기본 빠른 경로다. Low-risk localized change와 일반적인 bounded
-  product/code 변경은 여기에 포함된다. 별도 `validation_plan.md` 없이
+- `standard`: 기본 validation-confidence profile이다. Low-risk localized
+  change와 일반적인 bounded product/code 변경은 여기에 포함된다. 별도
+  `validation_plan.md` 없이
   `evaluation_report.md` 안에 grouped checks와 completion audit을 담는 것이
   기본이다.
 - `high`: high-impact side effects, external authoritative state, sensitive
@@ -291,8 +292,9 @@ detail을 task마다 다시 붙이면 안 된다.
 
 값은 `standard`, `high`이다. Profile은 `validation_intent.md`와 별도
 `validation_plan.md`가 필요한지, runtime/E2E/system-depth 검증이 필요한지를
-결정한다. `standard`가 기본 빠른 경로이고 `high`는 실제 risk trigger가 있을
-때만 사용한다.
+결정한다. `standard`가 기본 confidence profile이고 `high`는 실제 risk
+trigger가 있을 때만 사용한다. Profile은 expected runtime이나 latency mode가
+아니다.
 
 ### Validation Plan
 
@@ -321,6 +323,7 @@ agents_workspace/
       roadmap.md
       current_state.md
       run_state.json
+      telemetry.jsonl              # append-only timing / execution events
       decisions.md
       changelog.md
       retrospective.md              # run-local memory candidates
@@ -343,6 +346,12 @@ agents_workspace/
 `requirement.md`로 복사한다. Draft directory는 안전하게 삭제할 수 있을 때만
 삭제한다. 그 이후 requirement의 source of truth는 run directory이고, detailed
 run history는 기본적으로 local state로 남는다.
+
+`telemetry.jsonl`은 run-local append-only telemetry stream이다. Latency와
+execution-event analysis의 source of truth이며, human-facing markdown
+artifacts를 parse하지 않고 phase / role / step / command / validation /
+fix-loop timing을 집계할 수 있게 한다. 기존 run에 이 파일이 없어도 resume,
+status, doctor는 corrupt state로 보지 않는다.
 
 `agents_workspace/active_run`은 current/latest run을 가리키는 text pointer다.
 값은 `runs/<run-id>` 형태의 상대 경로다. 완료된 run을 가리킨 채로 남아도
@@ -381,6 +390,7 @@ agents_workspace/
       roadmap.md
       current_state.md
       run_state.json
+      telemetry.jsonl
       decisions.md
       changelog.md
       retrospective.md
@@ -409,6 +419,7 @@ agents_workspace/
       roadmap.md
       current_state.md
       run_state.json
+      telemetry.jsonl
       decisions.md
       changelog.md
       retrospective.md
@@ -445,6 +456,7 @@ Orchestrator
 - roadmap.md
 - current_state.md
 - run_state.json
+- telemetry.jsonl lifecycle and Orchestrator wall-time events
 - decisions.md
 - blockers.md
 - changelog.md
@@ -469,12 +481,14 @@ Planner
 Generator
 - phases/*/tasks.md
 - phases/*/implementation_log.md
+- append-only command/check events in telemetry.jsonl
 
 Evaluator
 - phases/*/validation_intent.md
 - phases/*/validation_plan.md
 - phases/*/evaluation_report.md
 - phases/*/evaluation_history.md
+- append-only validation/check events in telemetry.jsonl
 ```
 
 ### 4.1 Write rules
@@ -492,6 +506,11 @@ Evaluator
 - `retrospective.md`는 해당 run 안에서 나중에 승격할 후보만 concise하게 담는다.
 - `project_memory.md`는 완료된 run에서 장기적으로 유용한 note만 승격해 누적한다.
   routine progress, diff, command transcript, full evaluation report는 담지 않는다.
+- `telemetry.jsonl`은 여러 role이 공유하는 append-only machine log다.
+  Markdown artifact와 달리 reasoning, diff, command transcript, raw output,
+  secrets, environment dumps, 또는 large payload를 담지 않는다. 각 event는
+  한 줄의 JSON object여야 하며, write failure가 timing capture를 불가능하게
+  만들면 일반 blocker / changelog path로 명확히 드러내야 한다.
 
 ---
 
@@ -595,6 +614,12 @@ intake
 → project_complete
 ```
 
+At every Orchestrator-owned boundary, implementations should append telemetry
+events for the step start and step end. Start/end pairs should include the run
+ID, phase path when applicable, role, step, mode when applicable, ISO-8601
+timestamp with timezone, elapsed seconds on the end event, and a concise
+outcome such as `started`, `pass`, `fail`, `blocked`, `skipped`, or `error`.
+
 ### 6.1 Normal loop
 
 정상적인 Phase 진행 루프는 다음과 같다.
@@ -619,6 +644,14 @@ failed EV-IDs into `run_state.json.current_phase_metrics`, the
 phase's `phase.md`, and the concise `current_state.md` line. On fail, it
 increments both the run loop counter and `fix_loop_count`, and merges failed
 EV-IDs into `failed_ev_ids_seen` without duplicates.
+
+Telemetry mirrors these transitions without replacing state: Orchestrator
+records wall time for phase initialization, Planner dispatch, Generator
+decomposition, Generator implementation, Evaluator validation, Generator fix,
+Evaluator recheck, state updates, phase pass, checkpoint commit, blockers, and
+project completion. Generator and Evaluator separately record command/check
+duration events they can observe directly. This separation lets later analysis
+distinguish agent wall time from external command time.
 
 ### 6.2 Optional pre-validation loop
 
@@ -666,6 +699,12 @@ draft until active-run selection confirms a new run can be created.
 4. If `active_run` points at a partial run where `requirement.md` exists but
    `run_state.json` does not, repair that run in place when possible and record
    the repair in its `changelog.md`.
+
+When a new run is created, initialize `<run-dir>/telemetry.jsonl` and append a
+`run_initialized` event before substantive workflow work starts. When resuming
+an existing run, continue appending to the same file. If the file is missing in
+an older run, create it on resume when safe, but do not treat the missing file
+as state corruption or attempt to reconstruct historical events.
 
 If a start request references
 `agents_workspace/drafts/<draft-id>/requirement.md`, validate that the path is
@@ -757,6 +796,9 @@ Safe current-layout repairs include:
 - Missing template-only files such as `decisions.md`, `changelog.md`, or an
   empty `phases/` directory may be created when no product requirements,
   roadmap entries, decisions, or phase details would be invented.
+- Missing `telemetry.jsonl` in an otherwise valid current-layout run is
+  informational, not corruption. Repair may create an empty telemetry file, but
+  must not synthesize historical timing events.
 
 Unsafe current-layout repairs include:
 
@@ -807,18 +849,19 @@ Migration must:
 3. Copy old root files into the run directory, renaming
    `requirements.md` -> `requirement.md` and preserving
    `run_state.json` as `run_state.json`.
-4. Add or correct `run_id`, `workspace_dir`, and `run_dir` in the run copy of
+4. Create an empty `telemetry.jsonl`; do not reconstruct historical events.
+5. Add or correct `run_id`, `workspace_dir`, and `run_dir` in the run copy of
    `run_state.json`.
-5. Verify the run copy is complete and parseable before modifying the old root
+6. Verify the run copy is complete and parseable before modifying the old root
    files. If verification fails, do not write `active_run`; leave the old root
    layout untouched and report the partial run directory.
-6. Preserve original root workflow files in
+7. Preserve original root workflow files in
    `agents_workspace/legacy-pre-run-layout-<timestamp>/`.
-7. Move the original root workflow files into that backup so old and new layouts
+8. Move the original root workflow files into that backup so old and new layouts
    do not remain side by side. If any move fails, do not write `active_run`; stop
    for manual recovery.
-8. Write `agents_workspace/active_run` as `runs/<run-id>`.
-9. Append a migration summary to the run's `changelog.md`.
+9. Write `agents_workspace/active_run` as `runs/<run-id>`.
+10. Append a migration summary to the run's `changelog.md`.
 
 Doctor must stop for user choice when old and new layouts both exist,
 `active_run` conflicts with the detected state, root `run_state.json` is corrupt,
@@ -1272,7 +1315,10 @@ Generator는 task를 하나씩 처리한다.
 - Requirement와 Plan에 없는 기능을 임의로 크게 추가하지 않는다.
 - 필요한 경우 자율적으로 구현 결정을 내리되, 장기적으로 영향이 큰 결정은 `decisions.md`에 기록한다.
 - 실패한 접근은 `implementation_log.md` 또는 `changelog.md`에 기록한다.
-- `implementation_log.md`에는 diff, 전체 코드 블록, command transcript를 붙이지 않는다. 완료한 task, 변경한 파일/파일그룹의 목적, Evaluator handoff, 남은 risk만 남긴다.
+- `implementation_log.md`에는 diff, 전체 코드 블록, command transcript,
+  detailed timing을 붙이지 않는다. 완료한 task, 변경한 파일/파일그룹의 목적,
+  Evaluator handoff, 남은 risk만 남긴다. Command/check duration은
+  `telemetry.jsonl`에 남긴다.
 
 ### implementation_log.md template
 
@@ -1282,7 +1328,8 @@ Generator는 task를 하나씩 처리한다.
 <!-- Phase-level implementation handoff, not a diff or validation report. For
 each entry: completed task IDs, changed file groups with one purpose sentence
 each, decisions, risks, and anything the Evaluator should inspect. Do not paste
-code blocks, full command output, or line-by-line changes. -->
+code blocks, full command output, line-by-line changes, or detailed timing.
+Command/check durations belong in telemetry.jsonl. -->
 
 ## <date/time>
 
@@ -1549,7 +1596,8 @@ completion audit, verdict rationale를 concise하게 남긴다. `high`에서는 
 <!-- Latest verdict. Keep passed evidence concise; write detail for failures,
 blockers, surprising results, and high-risk checks only. In standard profile,
 this report contains the grouped checks and completion audit. In high profile,
-link validation_plan.md when a separate plan was useful. -->
+link validation_plan.md when a separate plan was useful. Detailed timing and
+command/check durations belong in telemetry.jsonl. -->
 
 Verdict: pass | fail | blocked
 Validation profile used: standard | high
@@ -1865,6 +1913,9 @@ constraints. Put history in `changelog.md`, implementation details in
 ```md
 # Current State
 
+<!-- Keep this file concise. At completion it may include a short
+telemetry-derived timing summary, but never the detailed event stream. -->
+
 Project status: in_progress
 Current phase: phases/02-dashboard
 Current phase status: fixing
@@ -1925,6 +1976,119 @@ If `current_state.md` and `run_state.json` disagree:
 
 ---
 
+## 9.3 telemetry.jsonl
+
+`telemetry.jsonl` is the run-local, append-only source of truth for latency and
+execution-event analysis. It is not a resume state file and it does not replace
+`run_state.json`, `current_state.md`, Evaluator verdicts, or human rationale in
+markdown artifacts.
+
+Each line must be one compact JSON object. Required envelope fields:
+
+```json
+{
+  "ts": "2026-05-21T10:15:30+09:00",
+  "event": "step_end",
+  "run_id": "2026-05-21-001-example",
+  "role": "orchestrator",
+  "step": "evaluate",
+  "phase": "phases/01-example",
+  "mode": "full",
+  "elapsed_sec": 42.37,
+  "outcome": "fail"
+}
+```
+
+Field conventions:
+
+- `ts`: ISO-8601 timestamp with timezone.
+- `event`: low-cardinality event name.
+- `run_id`: same run id used by `run_state.json`.
+- `role`: `orchestrator`, `planner`, `generator`, `evaluator`, or `doctor`.
+- `phase`: phase path when applicable; omit or set `null` for run-level events.
+- `step`: workflow step name for Orchestrator wall-time events.
+- `mode`: subagent mode or evaluator mode when applicable.
+- `elapsed_sec`: numeric seconds on end/duration events; omit on start events.
+- `outcome`: concise result such as `started`, `pass`, `fail`, `blocked`,
+  `skipped`, or `error`.
+
+Standard event names:
+
+```text
+run_initialized
+run_resumed
+step_start
+step_end
+state_update
+command
+check
+validation_verdict
+fix_loop
+checkpoint
+blocker
+phase_passed
+project_completed
+telemetry_write_failed
+```
+
+Command/check events should include concise identity fields instead of raw
+transcripts:
+
+```json
+{
+  "ts": "2026-05-21T10:16:02+09:00",
+  "event": "command",
+  "run_id": "2026-05-21-001-example",
+  "role": "generator",
+  "phase": "phases/01-example",
+  "command_kind": "focused_test",
+  "command_label": "pytest tests/test_policy.py",
+  "elapsed_sec": 11.82,
+  "outcome": "pass",
+  "exit_code": 0
+}
+```
+
+Validation events should include outcome metadata when known:
+
+```json
+{
+  "ts": "2026-05-21T10:17:10+09:00",
+  "event": "validation_verdict",
+  "run_id": "2026-05-21-001-example",
+  "role": "evaluator",
+  "phase": "phases/01-example",
+  "mode": "recheck",
+  "validation_profile": "standard",
+  "validation_level": "L2_unit_or_integration",
+  "verdict": "pass",
+  "failed_ev_ids": [],
+  "critical_issues": 0,
+  "major_issues": 0,
+  "fix_loop_count": 1
+}
+```
+
+Fix-loop events should identify the loop number, failed EV-IDs being addressed,
+and recheck outcome when available. Checkpoint events should record elapsed
+seconds and success/failure/no-commit reason without storing git transcripts.
+Blocker events should include a blocker id or one-line category, interrupted
+step, and outcome `blocked`.
+
+Telemetry must not store secrets, raw environment dumps, full command output,
+complete evaluation reports, diffs, or large transcripts. Failed commands and
+retries that materially affect latency should still be represented as separate
+events with `outcome = "fail"` or `outcome = "error"` and a safe
+`command_kind` / `command_label`.
+
+Completion summaries in `changelog.md`, `current_state.md`, or the final user
+message may cite concise totals derived from telemetry, but detailed timing
+streams stay only in `telemetry.jsonl`. If telemetry is missing or partially
+written, completion and status should degrade cleanly and say timing summary is
+unavailable rather than parsing markdown as a fallback.
+
+---
+
 ## 10. Decisions and Changelog
 
 ## 10.1 decisions.md
@@ -1971,7 +2135,10 @@ Record a decision when:
 
 ## 10.2 changelog.md
 
-`changelog.md` is the run-local event log of the workflow.
+`changelog.md` is the run-local human-readable workflow log. It records
+meaningful progress, decisions, limitations, commits, and blocker resolution.
+It is not the timing source of truth; detailed timing and command/check
+duration events belong in `telemetry.jsonl`.
 
 It should record:
 
@@ -1982,6 +2149,7 @@ It should record:
 - important commits
 - resolved blockers
 - major evaluation results
+- concise timing summaries derived from telemetry at completion, when useful
 
 Long-term lessons that should survive after volatile run state is pruned belong
 in `retrospective.md` first and then, at project completion, in
@@ -2002,6 +2170,10 @@ in `retrospective.md` first and then, at project completion, in
 ### Completed
 
 - ...
+
+### Timing summary
+
+- <optional concise summary derived from telemetry.jsonl at completion; omit detailed events>
 
 ### Failed approaches
 
@@ -2087,6 +2259,7 @@ Orchestrator advances to the next Phase.
 The Orchestrator owns this final checkpoint because it also updates
 `roadmap.md`, `phase.md`, `current_state.md`, `run_state.json`, and
 `changelog.md`.
+It also records checkpoint duration and outcome in `telemetry.jsonl`.
 
 Checkpoint rules:
 
@@ -2110,6 +2283,9 @@ Checkpoint rules:
 - If git is unavailable or commits are explicitly disallowed, record the
   no-commit reason in `changelog.md` before advancing. Do not silently skip the
   checkpoint.
+- Append a `checkpoint` telemetry event with elapsed seconds and outcome
+  `pass`, `blocked`, `skipped`, or `error`; include only a commit hash or safe
+  no-commit reason, not a git transcript.
 
 ### 11.3 Optional WIP commits
 
@@ -2143,7 +2319,9 @@ resolves the active run directory. It then reads active run files in this order:
 6. current phase `tasks.md`
 7. latest `evaluation_report.md` if it exists
 8. `<active-run-dir>/changelog.md`
-9. `<active-run-dir>/blockers.md` if blocked
+9. `<active-run-dir>/telemetry.jsonl` metadata if present; missing telemetry is
+   not a resume error
+10. `<active-run-dir>/blockers.md` if blocked
 
 Then Orchestrator decides the next owner.
 
@@ -2224,6 +2402,7 @@ Outputs:
 - agents_workspace/runs/<run-id>/requirement.md
 - agents_workspace/runs/<run-id>/current_state.md
 - agents_workspace/runs/<run-id>/run_state.json
+- agents_workspace/runs/<run-id>/telemetry.jsonl
 - agents_workspace/runs/<run-id>/retrospective.md
 
 ### `/workflow:clarify`
@@ -2279,6 +2458,7 @@ Outputs:
 - code changes
 - tasks.md updates
 - implementation_log.md updates
+- command/check telemetry events when implementation commands are run
 
 ### `/workflow:evaluate`
 
@@ -2289,6 +2469,8 @@ Outputs:
 - validation_plan.md when high-risk depth needs it
 - evaluation_report.md
 - evaluation_history.md when used
+- validation command/check telemetry events
+- validation verdict telemetry events
 
 ### `/workflow:fix`
 
@@ -2298,6 +2480,7 @@ Outputs:
 
 - updated tasks.md
 - implementation_log.md
+- fix-loop and command/check telemetry events
 
 ### `/workflow:next`
 
@@ -2312,7 +2495,8 @@ from the correct step. Extra resume text is appended to the active run's
 ### `/workflow:status`
 
 Print current project and phase status from the active run's `current_state.md`
-and `run_state.json`.
+and `run_state.json`. If `telemetry.jsonl` exists, status may include a concise
+timing summary; missing telemetry in older runs is not an error.
 
 ### `/workflow:doctor [diagnose|repair|migrate]`
 
@@ -2341,7 +2525,9 @@ unambiguously create a new run.
 
 Before marking complete, promote durable run lessons to
 `agents_workspace/project_memory.md`. Leave routine run logs in the ignored run
-directory.
+directory. Derive any concise timing summary from `telemetry.jsonl`; if
+telemetry is unavailable, record that the timing summary is unavailable instead
+of reconstructing it from markdown prose.
 
 ---
 
@@ -2354,6 +2540,9 @@ The Orchestrator must:
 - keep the workflow moving
 - read file state before deciding
 - update `current_state.md` and `run_state.json`
+- initialize and append run-local telemetry for Orchestrator-owned step
+  boundaries, state updates, phase transitions, fix loops, blockers,
+  checkpoint commits, and completion
 - only ask the user when necessary
 - avoid over-clarifying
 - prevent infinite loops
@@ -2368,6 +2557,8 @@ The Orchestrator must not:
 - skip Planner for non-trivial Phases
 - mark a Phase complete without Evaluator pass
 - rely on agent memory instead of files
+- treat `standard` or `high` as latency profiles; they remain validation
+  confidence profiles
 
 ## 14.2 Planner contract
 
@@ -2405,6 +2596,9 @@ The Generator must:
 - implement complete behavior, not isolated fragments
 - preserve existing architecture and conventions
 - update tasks and implementation logs at summary level
+- append command/check telemetry for focused tests, full tests, build,
+  typecheck, lint, git checks, custom probes, failed attempts, and meaningful
+  retries without storing transcripts
 - focus on implementation and provide a short Evaluator handoff
 - honestly record limitations and risks
 
@@ -2416,6 +2610,7 @@ The Generator must not:
 - ignore existing repo patterns
 - create unnecessary complexity
 - overwrite unrelated user changes
+- duplicate detailed timing streams into `implementation_log.md`
 
 ## 14.4 Evaluator contract
 
@@ -2426,6 +2621,9 @@ The Evaluator must:
 - evaluate against the expanded Plan, not only the raw request
 - choose and honor the validation profile
 - choose appropriate validation level
+- append command/check telemetry for validation commands and append
+  validation-verdict telemetry with profile, level, mode, verdict, failed
+  EV-IDs, issue counts when available, fix-loop count, and recheck outcome
 - create grouped checks in `evaluation_report.md`, and use `validation_plan.md`
   when high-risk depth needs it
 - map requirements and acceptance items to artifacts and evidence
@@ -2442,6 +2640,7 @@ The Evaluator must not:
 - pass an implementation that satisfies the literal request but misses important Planner-defined acceptance intent
 - create exhaustive EV-ID matrices when grouped checks would give the same confidence
 - duplicate the full Evaluation Report into Evaluation History
+- duplicate detailed timing streams into evaluation markdown artifacts
 - require Playwright or E2E when unnecessary
 - keep `standard` when high risk triggers are present
 - skip required runtime/system evidence for high-risk validation
@@ -2478,6 +2677,9 @@ A Project is complete when:
 - durable lessons from the run have been promoted to
   `agents_workspace/project_memory.md`, or the run explicitly records that
   there were no durable lessons to promote
+- a concise completion timing summary has been derived from `telemetry.jsonl`
+  when telemetry is available, or the run records that timing summary is
+  unavailable
 - current_state.md says project completed
 - run_state.json says `project_status = completed`
 - run_state.json says `current_step = project_complete`
@@ -2495,6 +2697,7 @@ Recommended defaults:
   "draft_dir_template": "agents_workspace/drafts/<draft-id>",
   "active_run_file": "agents_workspace/active_run",
   "run_dir_template": "agents_workspace/runs/<run-id>",
+  "telemetry_file": "telemetry.jsonl",
   "default_ignored_paths": [
     "agents_workspace/drafts/",
     "agents_workspace/runs/",
@@ -2536,7 +2739,7 @@ User requirement
     If fail: Orchestrator increments fix metrics; Generator fixes and Evaluator rechecks
     If pass: Orchestrator completes Phase
 → Repeat until all Phases pass
-→ Project complete
+→ Project complete with concise timing summary derived from telemetry when available
 ```
 
 The most important invariants are:

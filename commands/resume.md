@@ -7,7 +7,9 @@ Invoke the `tie:resume` skill now and follow it exactly.
 Resume in lean mode: keep `current_state.md` as a short handoff, do not treat
 a missing `validation_intent.md` as a problem unless `run_state.json` explicitly
 says optional preflight is the current step, and preserve the rule that only an
-Evaluator `pass` can complete a phase.
+Evaluator `pass` can complete a phase. Continue appending to
+`telemetry.jsonl`; if an older run lacks telemetry, let resume/orchestrator
+create it when safe and do not treat the missing file as corruption.
 
 If the user provided text after the command (`$ARGUMENTS`), treat it as their
 answer to any open blocker recorded in the active run's `blockers.md`. The

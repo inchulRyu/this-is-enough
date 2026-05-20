@@ -25,11 +25,17 @@ The user is continuing a previous workflow run. There should already be an
    - current phase's `phase.md`, `plan.md`, `tasks.md`, `validation_intent.md` (if present)
    - latest `evaluation_report.md` (if present)
    - last 3 entries of `changelog.md`
+   - `<active-run-dir>/telemetry.jsonl` metadata if present (existence and
+     recent timing summary only; do not parse markdown as a timing fallback)
    - `blockers.md` (if `run_state.json.blocked = true`)
 
 3. **Reconcile any disagreement.** If `current_state.md` and `run_state.json`
    conflict, trust `run_state.json` and repair `current_state.md`. Note the
    repair in `changelog.md`.
+
+   If `telemetry.jsonl` is missing, do not treat the run as corrupt. This is
+   expected for older runs. Create the file when safe and let Orchestrator
+   append a `run_resumed` event before continuing.
 
 4. **Process user input passed alongside `/tie:resume` or `$tie:resume`.** If
    the user provided text after the command:

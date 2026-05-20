@@ -38,6 +38,9 @@ Before implementation starts, draft requirements can live under
 an isolated run directory in `agents_workspace/runs/<run-id>/`, with
 `agents_workspace/active_run` pointing to the current/latest run. Any session can
 resume cleanly with `$tie:resume` or `/tie:resume`.
+Each run also keeps `telemetry.jsonl`, an append-only machine log for timing and
+execution events. It lets you analyze long runs by phase, role, step, command,
+validation, and fix loop without parsing or bloating markdown artifacts.
 
 Volatile workflow state is ignored by git by default. Durable lessons that
 future work should know are promoted to `agents_workspace/project_memory.md`,
@@ -45,7 +48,9 @@ which is intended to be committed.
 
 Workflow artifacts stay concise by default: `current_state.md` stays a short
 handoff pointer, Generator logs stay phase-level, and validation reports keep
-routine pass evidence concise. `standard` is the default fast path. `high` is
+routine pass evidence concise. Detailed timing stays in `telemetry.jsonl`, with
+only short derived summaries appearing in human-facing artifacts when useful.
+`standard` is the default validation profile. `high` is
 reserved for phases where risk, blast radius, or runtime/system evidence needs
 more ceremony. Lean artifacts do not loosen the phase gate: no phase is
 complete until the Evaluator returns `pass`.
@@ -246,6 +251,7 @@ agents_workspace/
       roadmap.md
       current_state.md              # concise human-readable handoff
       run_state.json
+      telemetry.jsonl               # append-only timing / execution events
       decisions.md
       changelog.md
       retrospective.md              # run-local memory candidates
@@ -278,6 +284,13 @@ when risk requires it.
 `validation_intent.md` is truly optional preflight guidance for complex or risky
 phases; when present, it names representative risks and success oracles, not an
 exhaustive EV-ID matrix.
+
+Telemetry is separate from validation profiles. `standard` and `high` describe
+confidence and evidence depth, not expected runtime or speed. Generator and
+Evaluator command/check durations are recorded separately from Orchestrator
+wall-time events so slow agent work, tests, validation, fix loops, and
+checkpoint overhead can be attributed independently. Older runs without
+`telemetry.jsonl` remain resumable and diagnosable.
 
 One independent requirement creates one run. `active_run` may continue pointing
 at a completed run; completion is read from that run's
@@ -313,7 +326,9 @@ At project completion, the orchestrator reviews the run-local logs and
 `retrospective.md`, then promotes only durable lessons to
 `agents_workspace/project_memory.md`: resolved failed approaches, unusual
 project structure, constraints future changes must respect, and useful follow-up
-cautions. Routine workflow logs stay local.
+cautions. Routine workflow logs stay local. A concise completion timing summary
+may be derived from `telemetry.jsonl`; the detailed event stream stays in the
+ignored run directory.
 
 ## When NOT to use
 

@@ -23,6 +23,8 @@ modify any file. Do not dispatch any subagent.
    - `<active-run-dir>/roadmap.md`
    - latest `evaluation_report.md` of the current phase (if any)
    - `<active-run-dir>/changelog.md`
+   - `<active-run-dir>/telemetry.jsonl` if present, only enough to report a
+     concise timing summary when straightforward
    - `blockers.md` (if blocked)
 
 3. **Output a single status block:**
@@ -45,6 +47,7 @@ Roadmap progress:
 
 Last evaluation: <verdict> (L<N>)   <if any>
 Last log entry:  <one line from changelog>
+Timing:         <concise telemetry-derived summary, or "unavailable" if no telemetry>
 
 Next action: <next_action from run_state.json>
 ```
@@ -68,3 +71,5 @@ Next action: <next_action from run_state.json>
   `tie:resume` or `tie:orchestrator`).
 - ❌ Dispatching subagents.
 - ❌ Long narratives. The status block is the answer.
+- ❌ Treating missing telemetry in older runs as an error or parsing markdown
+  artifacts to reconstruct detailed timing.

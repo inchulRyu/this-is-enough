@@ -3,7 +3,8 @@
 <!-- Phase-level implementation handoff, not a diff or validation report. For
 each entry: completed task IDs, changed file groups with one purpose sentence
 each, decisions, risks, and anything the Evaluator should inspect. Do not paste
-code blocks, full command output, or line-by-line changes. -->
+code blocks, full command output, line-by-line changes, or detailed timing.
+Command/check durations belong in the run's telemetry.jsonl. -->
 
 ## <date/time>
 

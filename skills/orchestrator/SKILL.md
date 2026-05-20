@@ -34,6 +34,11 @@ before every decision. Write state after every completed step. If a fact,
 decision, blocker, phase status, or verdict is not written to the active run
 files, it does not exist.
 
+Telemetry is the exception only in purpose, not discipline:
+`<active-run-dir>/telemetry.jsonl` is the append-only source of truth for
+latency and execution-event analysis. It never replaces `run_state.json`,
+`current_state.md`, `evaluation_report.md`, or changelog rationale.
+
 ## Stop only when
 
 Stop for exactly one of these:
@@ -95,6 +100,12 @@ agents_workspace/active_run
 Keep `agents_workspace/project_memory.md` trackable unless the user explicitly
 chooses otherwise.
 
+For every new run, create `<run-dir>/telemetry.jsonl` and append a compact
+`run_initialized` JSONL event before substantive work starts. For resumed runs,
+continue appending to the same file; if an older run has no telemetry file,
+create it when safe and append `run_resumed` instead of treating the run as
+corrupt or trying to reconstruct old timing.
+
 ## State machine
 
 Follow the spec state machine, in this lean shape:
@@ -122,13 +133,22 @@ Use `run_state.json` for machine resume state and `current_state.md` as a
 short human handoff. If they disagree, repair `current_state.md` to match
 `run_state.json` and record the repair.
 
+Around each Orchestrator-owned state-machine boundary, append telemetry
+`step_start` and `step_end` events with run id, phase when applicable, role,
+step, mode when applicable, ISO-8601 timestamp with timezone, elapsed seconds
+on the end event, and outcome. Cover intake/bootstrap, roadmap creation, phase
+initialization, Planner dispatch, Generator decomposition, Generator
+implementation, self-check when used, Evaluator validation, Generator fix,
+Evaluator recheck, state updates, blocker handling, phase pass, checkpoint
+commit, and project completion.
+
 ## Validation profile selection
 
 Choose the lightest profile that can support a reliable Evaluator verdict:
 
-- `standard`: default fast path for bounded product/code work, docs, copy,
-  config, and localized mechanical changes. The Evaluator records grouped
-  checklist evidence directly in `evaluation_report.md`.
+- `standard`: default validation-confidence profile for bounded product/code
+  work, docs, copy, config, and localized mechanical changes. The Evaluator
+  records grouped checklist evidence directly in `evaluation_report.md`.
 - `high`: high-impact side effects, external authoritative state, sensitive
   data, permission/persistence/cross-surface/safety risk, weak coverage on
   risky behavior, hard-to-infer correctness, or confidence that depends on
@@ -153,6 +173,7 @@ Pass every subagent:
 - absolute phase directory;
 - absolute paths to `requirement.md`, `roadmap.md`, `current_state.md`, and
   `run_state.json`;
+- absolute path to `<active-run-dir>/telemetry.jsonl`;
 - failed EV-IDs for fix/recheck.
 
 Subagents must use those paths. They must not infer state from the root
@@ -165,7 +186,9 @@ Role ownership:
 - Evaluator writes `validation_intent.md` when dispatched,
   `validation_plan.md` when used, `evaluation_report.md`, and
   `evaluation_history.md`.
-- Orchestrator owns roadmap/state/changelog/decisions/blockers/commits.
+- Orchestrator owns roadmap/state/changelog/decisions/blockers/commits and
+  Orchestrator wall-time telemetry. Generator and Evaluator append their own
+  command/check/validation telemetry to the shared `telemetry.jsonl`.
 
 ## Phase branches
 
@@ -175,6 +198,8 @@ On `pass`:
 - Update `run_state.json`, `current_state.md`, and `changelog.md`.
 - Create a phase checkpoint commit when git is available and safe. If not,
   record the exact no-commit reason.
+- Append `phase_passed` and `checkpoint` telemetry events with elapsed seconds,
+  outcome, and only safe commit/no-commit context.
 - Before committing, inspect `git status --short`. If there are unrelated
   uncommitted changes, unknown risky files, broken code, or possible secrets,
   stop with a blocker.
@@ -184,6 +209,8 @@ On `fail`:
 - Read failed EV-IDs and concrete next actions.
 - Increment loop metrics and merge failed EV-IDs into
   `current_phase_metrics.failed_ev_ids_seen`.
+- Append a `fix_loop` telemetry event with loop count, failed EV-IDs being
+  addressed, and current verdict/recheck context when known.
 - Dispatch Generator `fix`, then Evaluator `recheck`.
 - Stop as blocked if retry limits are exceeded or the same failure repeats
   without convergence.
@@ -193,6 +220,8 @@ On `blocked`:
 - Write `blockers.md` with interrupted step, resume target, options, and your
   recommendation.
 - Set `run_state.json.blocked = true`.
+- Append a `blocker` telemetry event with blocker id/category, interrupted
+  step, phase when applicable, and outcome `blocked`.
 - Stop and give the user only the blocker, options, recommendation, and resume
   command.
 
@@ -211,9 +240,13 @@ On `blocked`:
 At project completion:
 
 1. Update `changelog.md`, `run_state.json`, and `current_state.md`.
-2. Promote only durable lessons from run-local logs/retrospective to
+2. Derive a concise timing summary from `telemetry.jsonl` when available and
+   write only that summary to human-facing output; keep detailed timing streams
+   out of markdown artifacts. If telemetry is missing or partial, say the
+   timing summary is unavailable rather than parsing markdown as a fallback.
+3. Promote only durable lessons from run-local logs/retrospective to
    `agents_workspace/project_memory.md`.
-3. Report briefly: phases passed, workspace path, changelog path, commits or
+4. Report briefly: phases passed, workspace path, changelog path, commits or
    no-commit reason, and one or two verification steps.
 
 Do not narrate the whole journey; the changelog is for that.

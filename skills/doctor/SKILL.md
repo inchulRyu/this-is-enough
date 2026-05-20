@@ -54,6 +54,7 @@ agents_workspace/
     roadmap.md
     current_state.md
     run_state.json
+    telemetry.jsonl       # optional in older runs
     decisions.md
     changelog.md
     retrospective.md      # run-local memory candidates
@@ -95,7 +96,9 @@ Read state in this order:
 4. `agents_workspace/active_run`, if present.
 5. `agents_workspace/runs/*/run_state.json`, if present.
 6. The active run's state files, if an active run resolves safely.
-7. Old root-layout files directly under `agents_workspace/`, if present.
+7. The active run's `telemetry.jsonl`, if present. Missing telemetry is not a
+   corrupt state signal for older runs.
+8. Old root-layout files directly under `agents_workspace/`, if present.
 
 Classify the workspace as exactly one of:
 
@@ -120,6 +123,8 @@ Diagnose these conditions:
 - `current_state.md` disagrees with `run_state.json`.
 - `blocked = true` but `blockers.md` is missing or has no open blocker.
 - Required active-run files are missing.
+- `telemetry.jsonl` is missing in an otherwise valid current-layout run
+  (informational only; not a blocker and not a reason to reconstruct timing).
 - Old root-layout files exist.
 - Old and new layouts both exist.
 
@@ -202,6 +207,9 @@ Safe repairs:
 - If `blocked = true` and `blockers.md` exists but has no open blocker, stop and
   ask the user for the missing blocker details unless a single open blocker can
   be reconstructed from `current_state.md`, `current_step`, and `next_action`.
+- If `telemetry.jsonl` is missing in an otherwise repairable active run, create
+  an empty file only when doing so is safe. Do not synthesize historical
+  telemetry events; record the repair in `changelog.md`.
 
 Unsafe repairs that must stop:
 
@@ -292,6 +300,7 @@ Migration steps:
    - `blockers.md` -> `blockers.md` if present
    - `phases/` -> `phases/` if present
    - create `retrospective.md` from the standard template if absent
+   - create empty `telemetry.jsonl`; do not reconstruct historical events
 4. Write the run copy of `run_state.json`, adding or correcting:
    - `"run_id": "<run-id>"`
    - `"workspace_dir": "agents_workspace"`

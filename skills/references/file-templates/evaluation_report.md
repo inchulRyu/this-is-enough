@@ -3,7 +3,8 @@
 <!-- Latest verdict. Keep passed evidence concise; write detail for failures,
 blockers, surprising results, and high-risk checks only. In standard profile,
 this report contains the grouped checks and completion audit. In high profile,
-link validation_plan.md when a separate plan was useful. -->
+link validation_plan.md when a separate plan was useful. Detailed timing and
+command/check durations belong in telemetry.jsonl. -->
 
 Verdict: pass | fail | blocked
 Validation profile used: standard | high

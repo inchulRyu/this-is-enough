@@ -9,7 +9,8 @@ Resolve the active run through `agents_workspace/active_run`.
 Continue the existing lean workflow state. Do not create or require
 `validation_intent.md` unless the resume logic determines optional preflight is
 the next risk-based step, and never mark a phase complete without an Evaluator
-`pass`.
+`pass`. Continue run telemetry in `telemetry.jsonl` when present; missing
+telemetry in an older run is not a blocker.
 
 If the active run's `run_state.json` exists and `blocked = false`, invoke
 `tie:resume`. The orchestrator's resume logic will determine the correct next

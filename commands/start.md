@@ -17,13 +17,16 @@ the active run's `requirement.md` and `roadmap.md`.
 Preserve runtime invariants: workflow artifacts stay concise,
 `validation_intent.md` is optional risk preflight for complex or risky phases
 only, validation uses the lightest validation profile and lowest L0-L5 level
-that gives confidence, and no phase is complete without an Evaluator `pass`.
+that gives confidence, no phase is complete without an Evaluator `pass`, and
+run timing belongs in the active run's append-only `telemetry.jsonl` rather
+than markdown artifacts.
 
 Resolve the active run through `agents_workspace/active_run`:
 
 - If no active run exists, create a new run under
   `agents_workspace/runs/<run-id>/`, write `agents_workspace/active_run` to
   `runs/<run-id>`, ensure `agents_workspace/project_memory.md` exists, ensure
+  `<run-dir>/telemetry.jsonl` is initialized for append-only telemetry, ensure
   the default volatile-state `.gitignore` rules exist, replace a broad
   `agents_workspace/` ignore rule unless the user explicitly wants no workflow
   files committed, and bootstrap there.

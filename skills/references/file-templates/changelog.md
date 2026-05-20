@@ -11,6 +11,10 @@
 
 - ...
 
+### Timing summary
+
+- <optional concise summary derived from telemetry.jsonl at completion; omit detailed events>
+
 ### Failed approaches
 
 - Tried: ...

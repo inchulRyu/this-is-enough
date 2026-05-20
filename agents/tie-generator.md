@@ -19,6 +19,12 @@ paths to `requirement.md`, `roadmap.md`, `current_state.md`, and
   append the phase directory's `implementation_log.md`.
 - `fix` → address specific failed EV-IDs from the evaluator.
 
+The orchestrator also passes the active run telemetry path, normally
+`<active-run-dir>/telemetry.jsonl`. Append compact command/check timing events
+there for tests, builds, lint/typecheck, git checks, custom probes, failed
+attempts, and meaningful retries. Keep raw command output and detailed timing
+streams out of `implementation_log.md`.
+
 You implement the *expanded Plan*, not the literal raw user request. Choose the
 simplest repo-native path that satisfies the Plan, read relevant repo context
 before editing, and honestly report implementation issues and limitations.

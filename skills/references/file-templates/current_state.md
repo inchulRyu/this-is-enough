@@ -1,5 +1,7 @@
 # Current State
-<!-- Keep this file to 10-15 lines: status block, one phase metrics line, next action, and at most two context bullets. -->
+<!-- Keep this file to 10-15 lines: status block, one phase metrics line, next
+action, optional concise telemetry-derived timing summary at completion, and at
+most two context bullets. Do not paste detailed telemetry events here. -->
 
 Project status: in_progress
 Current phase: none
