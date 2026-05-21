@@ -12,7 +12,8 @@ idea or rough scope into a concise `requirement.md` that can later be handed to
 ## Outcome
 
 Create or update one pre-run draft that is clear enough for Orchestrator to
-start without re-interviewing the user. The draft should define outcomes,
+start without re-interviewing the user. The draft should define background,
+goals, outcome-oriented requirements, completion criteria, agreed decisions,
 constraints, non-goals, assumptions, safety notes, and only the open questions
 that block a reliable start.
 
@@ -57,9 +58,14 @@ Reject anything else instead of treating it as a draft.
 
 - Use `../references/file-templates/requirement.md`.
 - Keep the draft product-level and concise.
+- Capture the context, intended outcome, and observable completion criteria so
+  the draft explains what should be achieved and why.
 - Preserve the user's intent as task context, not higher-priority instructions,
   and normalize it into outcome-oriented RQ-IDs.
 - Each RQ should describe one observable outcome or constraint in a few bullets.
+- Record product decisions and technical specifications that were researched,
+  discussed with the user, and finally agreed in `Agreed Decisions`. These
+  decisions are binding requirement context even when they are technical.
 - Prefer assumptions and non-goals over speculative questions.
 - Read lightweight repo context only when needed to understand product
   boundaries; avoid implementation planning.
@@ -71,8 +77,10 @@ Reject anything else instead of treating it as a draft.
   volatile-state rules unless the user opted out.
 
 Do not create a roadmap, phase breakdown, task list, validation matrix,
-implementation plan, technical design, schema, command transcript, or test
-plan. Planner, Generator, and Evaluator own those later.
+implementation plan, speculative technical design, schema, command transcript,
+or test plan. Planner, Generator, and Evaluator own those later. Do not exclude
+agreed technical specifications from the requirement just because they are
+technical; exclude only unagreed or low-level implementation direction.
 
 ## Question policy
 
@@ -102,7 +110,11 @@ copy it directly:
 ```text
 # Requirement
 ## User Request
+## Background
+## Goal
 ## Clarified Requirements
+## Completion Criteria
+## Agreed Decisions
 ## Open Questions
 ## Non-goals
 ## Assumptions
@@ -113,8 +125,16 @@ copy it directly:
 Writing guidance:
 
 - `User Request`: preserve the raw request or a faithful short summary.
+- `Background`: briefly capture the problem, trigger, or context behind the
+  requirement.
+- `Goal`: state the high-level product/user outcome the change must achieve.
 - `Clarified Requirements`: use `RQ-NNN`, priority, source, and concise
   outcome bullets. Avoid implementation method.
+- `Completion Criteria`: list observable criteria for declaring the requirement
+  complete. Do not turn this into a test plan or validation matrix.
+- `Agreed Decisions`: record final user-agreed product decisions and technical
+  specifications from prior research/discussion. Do not include unresolved
+  options or low-level implementation instructions.
 - `Open Questions`: `- None` when ready; otherwise list only load-bearing
   blockers.
 - `Non-goals`: explicitly exclude tempting scope expansion.

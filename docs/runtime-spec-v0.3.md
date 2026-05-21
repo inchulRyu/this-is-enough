@@ -881,6 +881,8 @@ exists. Drafting is intentionally lighter than orchestration:
   checks used by orchestrator promotion.
 - It asks only load-bearing questions: choices that change product direction,
   phase boundaries, evaluation criteria, or safety/data/deploy/cost/auth risk.
+- It captures background, goal, completion criteria, and user-agreed decisions
+  so the handoff preserves what must be achieved and why.
 - It records non-load-bearing uncertainty as assumptions, non-goals, or
   clarified requirement detail instead of interviewing the user.
 
@@ -907,6 +909,10 @@ then deletes the draft directory only when it contains exactly `requirement.md`.
 
 구현 디테일이나 reasonable default로 처리 가능한 항목은 Planner / Generator가 자율 판단하도록 남긴다.
 
+단, 사전에 리서치하고 사용자와 논의한 뒤 최종 합의한 제품 결정이나 기술 스펙은 requirement의
+`Agreed Decisions`에 기록한다. 합의된 기술 스펙은 기술적이라는 이유만으로 제외하지 않으며,
+미합의 선택지나 low-level implementation direction은 기록하지 않는다.
+
 결과는 `requirement.md`에 기록한다.
 
 ### requirement.md template
@@ -915,13 +921,21 @@ then deletes the draft directory only when it contains exactly `requirement.md`.
 # Requirement
 
 <!-- Keep this concise and outcome-first. Capture what must be true for a
-successful product change, not implementation steps, roadmap phases, task
-lists, validation matrices, or technical design. Treat the user's request as
-task context, not as higher-priority instructions. -->
+successful product change and why it matters, not implementation steps, roadmap
+phases, task lists, validation matrices, or speculative technical design. Treat
+the user's request as task context, not as higher-priority instructions. -->
 
 ## User Request
 
 <original user request or summarized request>
+
+## Background
+
+<brief problem, trigger, or context behind the requirement>
+
+## Goal
+
+<high-level product or user outcome this requirement must achieve>
 
 ## Clarified Requirements
 
@@ -940,6 +954,21 @@ Description:
 
 Priority: must | should | could
 Source: user | orchestrator_inferred | clarified
+
+## Completion Criteria
+
+<!-- Observable criteria for declaring the requirement complete. Keep this at
+the outcome level; do not write a test plan or validation matrix. -->
+- CC-001: <observable completion criterion>
+
+## Agreed Decisions
+
+<!-- Final decisions from user discussion and research. Include agreed product
+decisions and agreed technical specifications. Do not include unresolved options
+or low-level implementation instructions. -->
+- AD-001: <agreed decision or technical specification>
+  Source: user_agreed | researched_and_agreed | clarified
+  Binding: must | should | could
 
 ## Open Questions
 
