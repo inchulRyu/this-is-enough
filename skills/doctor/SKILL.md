@@ -234,22 +234,13 @@ Project status: <project_status>
 Current phase: <current_phase or none>
 Current phase status: <current_phase_status or not_started>
 Current owner: <current_owner or orchestrator>
+Current step: <current_step or next_action>
 Current loop: <loop_count or 0>
-
-## Last completed step
-
-- Repaired by tie:doctor from run_state.json.
-
-## Next action
-
-- <next_action or current_step>
-
-## Blocked
-
-<Yes | No>
-
-## Important context
-
+Phase metrics: validation_profile=<value or none>; validation_level=<value or none>; intent_used=<yes|no>; fix_loop_count=<N>; failed_ev_ids_seen=<list or none>
+Last completed step: Repaired by tie:doctor from run_state.json.
+Next action: <next_action or current_step>
+Blocked: <yes|no>
+Important context:
 - <preserved context if available, otherwise "None yet.">
 ```
 

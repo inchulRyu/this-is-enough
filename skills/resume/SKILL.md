@@ -39,8 +39,17 @@ The user is continuing a previous workflow run. There should already be an
 
 4. **Process user input passed alongside `/tie:resume` or `$tie:resume`.** If
    the user provided text after the command:
-   - Append the text to the active run's `requirement.md` under `## Updates`,
-     prefixed with an ISO timestamp subheading.
+   - If the text references a draft path shaped exactly like
+     `agents_workspace/drafts/<draft-id>/requirement.md`, treat it as a
+     draft-start request, not as an update to this run. Do not append the draft
+     path to `requirement.md`, do not promote the draft, and do not delete it.
+     If this active run is not completed, tell the user the current active run
+     must be completed or resolved before starting from that draft and stop. If
+     this active run is already completed, tell the user to start from the draft
+     with the platform start command and stop; `tie:resume` never starts a new
+     draft run.
+   - Otherwise append the text to the active run's `requirement.md` under
+     `## Updates`, prefixed with an ISO timestamp subheading.
    - If `blocked = true` and the text answers the open blocker, also treat it
      as the answer (handled in step 5 below — mark the blocker resolved before
      resuming).
@@ -56,8 +65,9 @@ The user is continuing a previous workflow run. There should already be an
      `run_state.json.blocked`, set `current_step` to the blocker's
      `Resume target step`, and resume. If not, re-state the blocker (concise)
      and stop.
-   - Otherwise → invoke `tie:orchestrator`. The orchestrator's resume logic
-     (Section 7 of its skill) will pick up at the right state-machine step.
+   - Otherwise → invoke `tie:orchestrator`. It must read the active run state
+     files and continue from `current_step` / `next_action` without re-running
+     completed steps.
 
 6. **Report briefly to the user before handing off:**
 

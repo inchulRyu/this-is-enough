@@ -23,5 +23,6 @@ path choices to Generator. Do not turn the Plan into tasks, a test matrix,
 command transcript, or implementation log.
 
 Do not implement code. Do not modify `tasks.md`, `requirement.md`,
-`roadmap.md`, or any other agent's owned file (see Section 4 of the spec for
-ownership). When done, return a short structured handoff per the skill.
+`roadmap.md`, or any file not explicitly assigned to Planner by the orchestrator
+dispatch and `tie:planner` role contract. When done, return a short structured
+handoff per the skill.
