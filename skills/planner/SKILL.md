@@ -34,7 +34,10 @@ Write only:
 <active-run-dir>/phases/<this-phase>/plan.md
 ```
 
-Use `../references/file-templates/plan.md` as the structure.
+Use the bundled template `references/file-templates/plan.md` from the installed
+ThisIsEnough skills bundle as the structure. Resolve bundled reference paths
+relative to that skills bundle, not relative to the user's project working
+directory.
 
 ## Planning rules
 

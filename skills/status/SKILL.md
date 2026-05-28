@@ -10,12 +10,15 @@ modify any file. Do not dispatch any subagent.
 
 ## What you do
 
-1. **Resolve the active run.** Read `agents_workspace/active_run`, resolve its
-   text relative to `agents_workspace/`, and treat that directory as the run
-   directory. If `active_run` is missing, unreadable, or points at a run without
-   `run_state.json`, say so plainly: "No ThisIsEnough workflow has been started
-   in this directory. Start one with `/tie:start <requirement>` in Claude Code
-   or `$tie:orchestrator <requirement>` in Codex CLI."
+1. **Resolve the active run.** Read `agents_workspace/active_run`, which stores
+   a workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
+   `agents_workspace/<pointer>` and treat that directory as the run directory.
+   Do not treat the pointer as relative to the project root by itself, and do
+   not prepend another `runs/` segment. If `active_run` is missing, unreadable,
+   or points at a run without `run_state.json`, say so plainly: "No ThisIsEnough
+   workflow has been started in this directory. Start one with `/tie:start
+   <requirement>` in Claude Code or `$tie:orchestrator <requirement>` in Codex
+   CLI."
 
 2. **Read (do not modify):**
    - `<active-run-dir>/run_state.json`

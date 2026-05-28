@@ -56,7 +56,9 @@ Reject anything else instead of treating it as a draft.
 
 ## Drafting rules
 
-- Use `../references/file-templates/requirement.md`.
+- Use the bundled template `references/file-templates/requirement.md` from the
+  installed ThisIsEnough skills bundle. Resolve bundled reference paths relative
+  to that skills bundle, not relative to the user's project working directory.
 - Keep the draft product-level and concise.
 - Capture the context, intended outcome, and observable completion criteria so
   the draft explains what should be achieved and why.

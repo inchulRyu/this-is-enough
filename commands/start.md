@@ -28,7 +28,10 @@ Before bootstrapping, classify `$ARGUMENTS`:
 - Otherwise treat `$ARGUMENTS` as a raw requirement or an update to an active
   incomplete run.
 
-Resolve the active run through `agents_workspace/active_run`:
+Resolve the active run through `agents_workspace/active_run`. Its contents are
+a workspace-relative pointer, normally `runs/<run-id>`; resolve it as
+`agents_workspace/<pointer>`, not as a project-root-relative `runs/<run-id>` path
+and not by adding another `runs/` segment:
 
 - If `$ARGUMENTS` references a draft and either no active run exists or the
   active run's `run_state.json` says `project_status = completed` and

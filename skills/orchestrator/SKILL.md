@@ -75,8 +75,13 @@ summarize.
 
 ## Active run handling
 
-First resolve `agents_workspace/active_run` if it exists. Never start a second
-run while an active run is `in_progress` or `blocked`.
+First resolve `agents_workspace/active_run` if it exists. The file stores a
+workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
+`agents_workspace/<pointer>`. Do not treat the pointer as relative to the
+project root by itself, and do not prepend another `runs/` segment. Reject
+absolute paths, `..`, symlink escapes, and pointers that resolve outside
+`agents_workspace/`. Never start a second run while an active run is
+`in_progress` or `blocked`.
 
 For draft starts, accept only safe paths shaped exactly like:
 
@@ -96,9 +101,11 @@ not safe or fails, leave the draft untouched and record the exact reason in
 `changelog.md` and `current_state.md`.
 
 If there is no active run, or the active run is completed and the user gave a
-new independent requirement, bootstrap a new run from the templates in
-`../references/file-templates/`. Ensure `.gitignore` ignores only volatile run
-state by default:
+new independent requirement, bootstrap a new run from the bundled templates in
+`references/file-templates/` in the installed ThisIsEnough skills bundle.
+Resolve bundled reference paths relative to that skills bundle, not relative to
+the user's project working directory. Ensure `.gitignore` ignores only volatile
+run state by default:
 
 ```gitignore
 agents_workspace/drafts/
@@ -171,7 +178,9 @@ trigger requires `high`.
 ## Delegation contract
 
 Dispatch subagents when the platform supports it; otherwise inline the role and
-warn that context pressure is higher. See `../references/tool-mapping.md`.
+warn that context pressure is higher. Use bundled reference
+`references/tool-mapping.md` from the installed ThisIsEnough skills bundle for
+platform tool-name mapping when needed.
 
 Pass every subagent:
 

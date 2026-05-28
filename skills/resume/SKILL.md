@@ -10,11 +10,14 @@ The user is continuing a previous workflow run. There should already be an
 
 ## What you do
 
-1. **Resolve the active run.** Read `agents_workspace/active_run`, resolve its
-   text relative to `agents_workspace/`, and treat that directory as the run
-   directory. If `active_run` is missing, unreadable, or points at a run without
-   `run_state.json`, this is not a resume. Tell the user no workflow is
-   resumable in this directory and suggest the platform start command:
+1. **Resolve the active run.** Read `agents_workspace/active_run`, which stores
+   a workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
+   `agents_workspace/<pointer>` and treat that directory as the run directory.
+   Do not treat the pointer as relative to the project root by itself, and do
+   not prepend another `runs/` segment. If `active_run` is missing, unreadable,
+   or points at a run without `run_state.json`, this is not a resume. Tell the
+   user no workflow is resumable in this directory and suggest the platform
+   start command:
    - Claude Code: `/tie:start <requirement>`
    - Codex CLI: `$tie:orchestrator <requirement>`
 
