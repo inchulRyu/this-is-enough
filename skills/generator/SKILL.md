@@ -1,6 +1,6 @@
 ---
 name: generator
-description: Use when the orchestrator dispatches you to do the actual implementation work for a Phase. Operates in modes — decompose (write tasks.md from plan.md), implement (write code), or fix (address evaluator failures). Always reads requirement.md and plan.md first; Plan is the spec, not the raw user request.
+description: Use when decomposing, implementing, or fixing a planned workflow phase.
 ---
 
 # tie:generator — implementation in repo context

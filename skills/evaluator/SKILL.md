@@ -1,6 +1,6 @@
 ---
 name: evaluator
-description: Use when the orchestrator dispatches you to validate a Phase's implementation. Operates in modes — intent (optional preflight validation_intent.md for genuinely risky phases), full (choose validation profile standard/high plus level L0-L5, run checks, write evaluation_report.md, and write validation_plan.md when high-risk depth needs it), or recheck (re-run only failed/affected checks after a fix). Evaluates against Requirement + expanded Plan, not just the raw request.
+description: Use when validating a workflow phase implementation against requirement.md and plan.md.
 ---
 
 # tie:evaluator — adaptive validation

@@ -1,6 +1,6 @@
 ---
 name: planner
-description: Use when the orchestrator dispatches you to expand a Phase's raw requirements into a product-level Plan. Reads requirement.md, roadmap.md, current_state.md, and the phase's phase.md, then writes plan.md. Prevents both under-scoping and over-scoping while leaving implementation freedom for the Generator.
+description: Use when expanding a workflow phase into a product-level plan.md before implementation.
 ---
 
 # tie:planner — product-level planning
