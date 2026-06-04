@@ -34,16 +34,16 @@ starts, ThisIsEnough then:
    confirmation.
 
 Before implementation starts, draft requirements can live under
-`agents_workspace/drafts/`. Once a run starts, state for that request lives under
-an isolated run directory in `agents_workspace/runs/<run-id>/`, with
-`agents_workspace/active_run` pointing to the current/latest run. Any session can
+`.tie/drafts/`. Once a run starts, state for that request lives under
+an isolated run directory in `.tie/runs/<run-id>/`, with
+`.tie/active_run` pointing to the current/latest run. Any session can
 resume cleanly with `$tie:resume` or `/tie:resume`.
 Each run also keeps `telemetry.jsonl`, an append-only machine log for timing and
 execution events. It lets you analyze long runs by phase, role, step, command,
 validation, and fix loop without parsing or bloating markdown artifacts.
 
 Volatile workflow state is ignored by git by default. Durable lessons that
-future work should know are promoted to `agents_workspace/project_memory.md`,
+future work should know are promoted to `.tie/project_memory.md`,
 which is intended to be committed.
 
 Workflow artifacts stay concise by default: `current_state.md` stays a short
@@ -189,10 +189,10 @@ Start from an approved draft:
 
 ```text
 # Claude Code
-/tie:start from draft agents_workspace/drafts/<draft-id>/requirement.md
+/tie:start from draft .tie/drafts/<draft-id>/requirement.md
 
 # Codex CLI
-$tie:orchestrator Start from draft agents_workspace/drafts/<draft-id>/requirement.md
+$tie:orchestrator Start from draft .tie/drafts/<draft-id>/requirement.md
 ```
 
 Resume after a stopped session:
@@ -227,19 +227,19 @@ $tie:doctor repair
 
 | Skill              | What it does                                                                |
 | ------------------ | --------------------------------------------------------------------------- |
-| `tie:requirements` | Drafts concise pre-run requirements under `agents_workspace/drafts/`.       |
+| `tie:requirements` | Drafts concise pre-run requirements under `.tie/drafts/`.       |
 | `tie:orchestrator` | Entry point. Drives the entire state machine end-to-end.                    |
 | `tie:planner`      | Expands raw requirement into a rich product-level Plan (subagent role).     |
 | `tie:generator`    | Decomposes / implements / fixes while keeping handoffs short.               |
 | `tie:evaluator`    | Owns validation, evidence, and pass/fail/blocked verdicts.                  |
-| `tie:resume`       | Resumes the run pointed to by `agents_workspace/active_run`.                |
+| `tie:resume`       | Resumes the run pointed to by `.tie/active_run`.                |
 | `tie:status`       | Read-only snapshot of where the run currently stands.                       |
 | `tie:doctor`       | Diagnoses, safely repairs, or migrates workflow state.                      |
 
 ## What the workspace looks like
 
 ```text
-agents_workspace/
+.tie/
   project_memory.md                  # durable notes intended for git
   drafts/
     <draft-id>/
@@ -301,20 +301,20 @@ active run is still `in_progress` or `blocked`, extra start/resume text is
 appended to that run's `requirement.md` under `## Updates` with an ISO timestamp
 instead of creating a second run. Draft paths are the exception: they are not
 appended, promoted, or deleted while another run is incomplete. There is no
-`index.json`; older runs are kept as directories under `agents_workspace/runs/`.
+`index.json`; older runs are kept as directories under `.tie/runs/`.
 
 Run directories, drafts, and `active_run` are volatile state and are gitignored
 by default:
 
 ```gitignore
-agents_workspace/drafts/
-agents_workspace/runs/
-agents_workspace/active_run
+.tie/drafts/
+.tie/runs/
+.tie/active_run
 ```
 
-Do not ignore `agents_workspace/` itself unless you also do not want to commit
-`agents_workspace/project_memory.md`. If an old setup already ignores
-`agents_workspace/`, replace that broad rule with the three rules above. If a
+Do not ignore `.tie/` itself unless you also do not want to commit
+`.tie/project_memory.md`. If an old setup already ignores
+`.tie/`, replace that broad rule with the three rules above. If a
 team wants shared resumability across machines, it can opt into committing the
 volatile state by removing those ignore rules.
 
@@ -324,7 +324,7 @@ into `runs/<run-id>/` when there is no conflicting new layout.
 
 At project completion, the orchestrator reviews the run-local logs and
 `retrospective.md`, then promotes only durable lessons to
-`agents_workspace/project_memory.md`: resolved failed approaches, unusual
+`.tie/project_memory.md`: resolved failed approaches, unusual
 project structure, constraints future changes must respect, and useful follow-up
 cautions. Routine workflow logs stay local. A concise completion timing summary
 may be derived from `telemetry.jsonl`; the detailed event stream stays in the

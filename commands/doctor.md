@@ -1,5 +1,5 @@
 ---
-description: Diagnose, safely repair, or migrate ThisIsEnough workspace state under agents_workspace/. Defaults to auto-diagnose and only edits when the safe action is unambiguous.
+description: Diagnose, safely repair, or migrate ThisIsEnough workspace state under .tie/. Defaults to auto-diagnose and only edits when the safe action is unambiguous.
 ---
 
 Invoke the `tie:doctor` skill now and follow it exactly.
@@ -12,9 +12,9 @@ doctor skill's default mode: diagnose first, then repair or migrate only when
 the safe action is unambiguous.
 
 `diagnose` is read-only. `repair` may only fix inconsistencies inside the
-current `agents_workspace/active_run` plus `agents_workspace/runs/<run-id>/`
+current `.tie/active_run` plus `.tie/runs/<run-id>/`
 schema. `migrate` may only upgrade the old root workflow layout into
-`agents_workspace/runs/<run-id>/` when no conflicting active-run layout exists.
+`.tie/runs/<run-id>/` when no conflicting active-run layout exists.
 Keep repairs concise: `current_state.md` should remain a short handoff, and a
 missing `validation_intent.md` is not an inconsistency unless the machine state
 explicitly requires optional preflight. Missing `telemetry.jsonl` in an older

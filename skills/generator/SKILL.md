@@ -21,7 +21,7 @@ Handle exactly one mode per invocation.
 
 Use only the explicit paths passed by Orchestrator. Write workflow outputs
 under the current phase directory. Do not infer state from root
-`agents_workspace/`.
+`.tie/`.
 Use the telemetry path passed by Orchestrator, normally
 `<active-run-dir>/telemetry.jsonl`, for command/check timing events. If the
 file is absent in an older run but the active run directory is explicit, create

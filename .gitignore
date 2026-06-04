@@ -18,9 +18,9 @@ __pycache__/
 venv/
 
 # ThisIsEnough keeps volatile workflow state out of git by default while still
-# allowing agents_workspace/project_memory.md to be committed as durable notes.
-agents_workspace/drafts/
-agents_workspace/runs/
-agents_workspace/active_run
+# allowing .tie/project_memory.md to be committed as durable notes.
+.tie/drafts/
+.tie/runs/
+.tie/active_run
 
 tmp/*

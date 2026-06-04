@@ -1,5 +1,5 @@
 ---
-description: Start a ThisIsEnough autonomous workflow run for the requirement or draft path that follows. Creates or updates the active run under agents_workspace/runs/ and hands off to the orchestrator.
+description: Start a ThisIsEnough autonomous workflow run for the requirement or draft path that follows. Creates or updates the active run under .tie/runs/ and hands off to the orchestrator.
 ---
 
 The user is starting a new ThisIsEnough workflow.
@@ -21,16 +21,16 @@ than markdown artifacts.
 
 Before bootstrapping, classify `$ARGUMENTS`:
 
-- If it references `agents_workspace/drafts/<draft-id>/requirement.md`, treat it
+- If it references `.tie/drafts/<draft-id>/requirement.md`, treat it
   as a draft start. This command layer must not read draft content, write run
   state, write `active_run`, or delete the draft. Hand the draft path to the
   orchestrator and require the orchestrator's draft promotion sequence.
 - Otherwise treat `$ARGUMENTS` as a raw requirement or an update to an active
   incomplete run.
 
-Resolve the active run through `agents_workspace/active_run`. Its contents are
+Resolve the active run through `.tie/active_run`. Its contents are
 a workspace-relative pointer, normally `runs/<run-id>`; resolve it as
-`agents_workspace/<pointer>`, not as a project-root-relative `runs/<run-id>` path
+`.tie/<pointer>`, not as a project-root-relative `runs/<run-id>` path
 and not by adding another `runs/` segment:
 
 - If `$ARGUMENTS` references a draft and either no active run exists or the
@@ -43,11 +43,11 @@ and not by adding another `runs/` segment:
   directory and verify it no longer exists, or record the concrete no-delete
   reason in the new run.
 - If no active run exists for a non-draft requirement, create a new run under
-  `agents_workspace/runs/<run-id>/`, write `agents_workspace/active_run` to
-  `runs/<run-id>`, ensure `agents_workspace/project_memory.md` exists, ensure
+  `.tie/runs/<run-id>/`, write `.tie/active_run` to
+  `runs/<run-id>`, ensure `.tie/project_memory.md` exists, ensure
   `<run-dir>/telemetry.jsonl` is initialized for append-only telemetry, ensure
   the default volatile-state `.gitignore` rules exist, replace a broad
-  `agents_workspace/` ignore rule unless the user explicitly wants no workflow
+  `.tie/` ignore rule unless the user explicitly wants no workflow
   files committed, and bootstrap there.
 - If the active run's `run_state.json` says `project_status = completed` and
   `current_step` indicates project completion for a non-draft requirement,

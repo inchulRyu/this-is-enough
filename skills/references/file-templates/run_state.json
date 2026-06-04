@@ -1,7 +1,7 @@
 {
   "run_id": "<run-id>",
-  "workspace_dir": "agents_workspace",
-  "run_dir": "agents_workspace/runs/<run-id>",
+  "workspace_dir": ".tie",
+  "run_dir": ".tie/runs/<run-id>",
   "project_status": "in_progress",
   "current_phase": null,
   "current_phase_status": "not_started",

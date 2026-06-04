@@ -1,6 +1,6 @@
 ---
 name: status
-description: Use when the user asks for a quick read on where the active ThisIsEnough workflow run currently stands without taking any action. Resolves agents_workspace/active_run and summarizes that run's state files and any open blocker.
+description: Use when the user asks for a quick read on where the active ThisIsEnough workflow run currently stands without taking any action. Resolves .tie/active_run and summarizes that run's state files and any open blocker.
 ---
 
 # tie:status — read-only snapshot
@@ -10,9 +10,9 @@ modify any file. Do not dispatch any subagent.
 
 ## What you do
 
-1. **Resolve the active run.** Read `agents_workspace/active_run`, which stores
+1. **Resolve the active run.** Read `.tie/active_run`, which stores
    a workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
-   `agents_workspace/<pointer>` and treat that directory as the run directory.
+   `.tie/<pointer>` and treat that directory as the run directory.
    Do not treat the pointer as relative to the project root by itself, and do
    not prepend another `runs/` segment. If `active_run` is missing, unreadable,
    or points at a run without `run_state.json`, say so plainly: "No ThisIsEnough

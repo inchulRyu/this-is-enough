@@ -38,14 +38,14 @@ implementing, or evaluating a phase.
 
 ## Persistence is platform-agnostic
 
-Workspace state lives in plain files. `agents_workspace/active_run` points to
+Workspace state lives in plain files. `.tie/active_run` points to
 the current/latest run, and the run's state is closed under
-`agents_workspace/runs/<run-id>/`. Reading, writing, and editing those files
+`.tie/runs/<run-id>/`. Reading, writing, and editing those files
 works identically on every platform — that is the whole point of the file-first
 design. Those volatile state paths are gitignored by default; durable lessons
-are promoted separately to `agents_workspace/project_memory.md`. If the spawned
+are promoted separately to `.tie/project_memory.md`. If the spawned
 subagent only has read access to part of the tree, ensure
 it at minimum can read the active run directory and current phase directory, and
 write to the files assigned by the orchestrator dispatch and role skill. Pass
 explicit absolute paths; subagents should not infer state from root
-`agents_workspace/`.
+`.tie/`.

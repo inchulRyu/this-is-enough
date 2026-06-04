@@ -1,12 +1,12 @@
 ---
 name: doctor
-description: Use when the user asks to diagnose, repair, or migrate ThisIsEnough workflow state. Auto-diagnoses agents_workspace, supports diagnose/repair/migrate modes, safely repairs active-run layout inconsistencies, and migrates old root workflow state to runs/<run-id>/ only when unambiguous.
+description: Use when the user asks to diagnose, repair, or migrate ThisIsEnough workflow state. Auto-diagnoses .tie, supports diagnose/repair/migrate modes, safely repairs active-run layout inconsistencies, and migrates old root workflow state to runs/<run-id>/ only when unambiguous.
 ---
 
 # tie:doctor — workspace state diagnosis and safe repair
 
 The user wants to inspect, fix, or migrate ThisIsEnough workflow state. Operate
-only on `agents_workspace/`. Do not start or resume workflow work, and do not
+only on `.tie/`. Do not start or resume workflow work, and do not
 dispatch subagents.
 
 ## Modes
@@ -32,10 +32,10 @@ If the requested mode is unclear, use default mode.
   content is preserved in a timestamped backup or summarized in `changelog.md`.
 - Never invent product requirements, roadmap content, user decisions, or phase
   details.
-- Never follow an `active_run` pointer outside `agents_workspace/`.
+- Never follow an `active_run` pointer outside `.tie/`.
 - Resolve candidate run paths canonically before writing. Reject absolute paths,
   `..`, symlinks, or any resolved path outside the canonical
-  `agents_workspace/` directory.
+  `.tie/` directory.
 - Never run ThisIsEnough against the repository while doctoring the state.
 - Stop and ask the user when state is ambiguous, risky, corrupt beyond safe
   parsing, or would require choosing between conflicting runs.
@@ -45,7 +45,7 @@ If the requested mode is unclear, use default mode.
 Current layout:
 
 ```text
-agents_workspace/
+.tie/
   project_memory.md       # durable repo-level memory, optional but recommended
   drafts/                 # pre-run requirement drafts, optional
   active_run
@@ -65,7 +65,7 @@ agents_workspace/
 Old pre-active-run layout:
 
 ```text
-agents_workspace/
+.tie/
   requirements.md
   roadmap.md
   current_state.md
@@ -76,7 +76,7 @@ agents_workspace/
   phases/
 ```
 
-In the current layout, `agents_workspace/active_run` must contain a relative
+In the current layout, `.tie/active_run` must contain a relative
 pointer of the form `runs/<run-id>`.
 
 Run IDs used by Doctor must be safe basenames: only ASCII letters, digits,
@@ -88,17 +88,17 @@ generate a fresh migration run ID.
 
 Read state in this order:
 
-1. `agents_workspace/` existence and direct children.
-2. `agents_workspace/project_memory.md`, if present. It is durable memory, not
+1. `.tie/` existence and direct children.
+2. `.tie/project_memory.md`, if present. It is durable memory, not
    active run state.
-3. `agents_workspace/drafts/*/requirement.md`, if present. Drafts are pre-run
+3. `.tie/drafts/*/requirement.md`, if present. Drafts are pre-run
    state; count them, but do not repair, promote, or delete them.
-4. `agents_workspace/active_run`, if present.
-5. `agents_workspace/runs/*/run_state.json`, if present.
+4. `.tie/active_run`, if present.
+5. `.tie/runs/*/run_state.json`, if present.
 6. The active run's state files, if an active run resolves safely.
 7. The active run's `telemetry.jsonl`, if present. Missing telemetry is not a
    corrupt state signal for older runs.
-8. Old root-layout files directly under `agents_workspace/`, if present.
+8. Old root-layout files directly under `.tie/`, if present.
 
 Classify the workspace as exactly one of:
 
@@ -112,7 +112,7 @@ Diagnose these conditions:
 
 - Missing, empty, malformed, absolute, or path-traversing `active_run`.
 - `active_run` or a candidate run directory resolves outside
-  `agents_workspace/` after canonical path resolution.
+  `.tie/` after canonical path resolution.
 - `active_run` points to a missing directory.
 - Multiple viable runs exist when a single repair target is needed.
 - `run_state.json` is missing or invalid JSON.
@@ -173,7 +173,7 @@ Before changing anything, re-run diagnosis and confirm the workspace is
 
 Safe repairs:
 
-- If `active_run` is missing and `agents_workspace/runs/` contains exactly one
+- If `active_run` is missing and `.tie/runs/` contains exactly one
   viable run directory with parseable `run_state.json`, recreate `active_run`
   with `runs/<run-id>`.
 - If `active_run` points to a missing run and exactly one viable run exists,
@@ -214,7 +214,7 @@ Safe repairs:
 Unsafe repairs that must stop:
 
 - More than one viable run could be the active run.
-- `active_run` points outside `agents_workspace/`, uses `..`, is absolute, is a
+- `active_run` points outside `.tie/`, uses `..`, is absolute, is a
   symlink escape, or fails canonical path containment checks.
 - `run_state.json` is missing after roadmap or phase work has started.
 - `run_state.json` exists but is invalid JSON.
@@ -252,16 +252,16 @@ Migrate mode upgrades the old root layout to the active-run layout.
 
 Automatic migration is safe only when all of these are true:
 
-- `agents_workspace/run_state.json` exists and is parseable JSON.
-- `agents_workspace/requirements.md` exists.
-- `agents_workspace/roadmap.md`, `current_state.md`, `decisions.md`, and
+- `.tie/run_state.json` exists and is parseable JSON.
+- `.tie/requirements.md` exists.
+- `.tie/roadmap.md`, `current_state.md`, `decisions.md`, and
   `changelog.md` exist.
-- `agents_workspace/active_run` does not exist.
-- `agents_workspace/runs/` is absent or contains no run directories.
-- The target `agents_workspace/runs/<run-id>/` does not already exist.
+- `.tie/active_run` does not exist.
+- `.tie/runs/` is absent or contains no run directories.
+- The target `.tie/runs/<run-id>/` does not already exist.
 - No file would be overwritten.
 - The chosen `<run-id>` passes the safe-basename rule and the target run
-  directory resolves under the canonical `agents_workspace/runs/` directory.
+  directory resolves under the canonical `.tie/runs/` directory.
 
 Stop and ask the user when:
 
@@ -279,8 +279,8 @@ Migration steps:
    safe-basename rule and does not collide with an existing run or backup.
    Otherwise generate `YYYY-MM-DD-HHMMSS-migrated-run`.
 2. Resolve the target path canonically and create
-   `agents_workspace/runs/<run-id>/` only if it remains under
-   `agents_workspace/runs/`.
+   `.tie/runs/<run-id>/` only if it remains under
+   `.tie/runs/`.
 3. Copy old root files into the run directory:
    - `requirements.md` -> `requirement.md`
    - `run_state.json` -> `run_state.json`
@@ -294,22 +294,22 @@ Migration steps:
    - create empty `telemetry.jsonl`; do not reconstruct historical events
 4. Write the run copy of `run_state.json`, adding or correcting:
    - `"run_id": "<run-id>"`
-   - `"workspace_dir": "agents_workspace"`
-   - `"run_dir": "agents_workspace/runs/<run-id>"`
+   - `"workspace_dir": ".tie"`
+   - `"run_dir": ".tie/runs/<run-id>"`
 5. Verify the run copy exists, every required file is present, `requirement.md`
    contains the migrated requirement text, `run_state.json` parses, and
    `run_state.json.run_dir` matches the target path. If verification fails, do
    not write `active_run`; leave the original root layout untouched and report
    the partial run directory for manual cleanup.
 6. Create a backup directory named
-   `agents_workspace/legacy-pre-run-layout-<timestamp>/`.
+   `.tie/legacy-pre-run-layout-<timestamp>/`.
 7. Move the original old root workflow files into that backup directory after
    the run copy is complete and verified. Preserve names exactly in the backup.
    If any move fails, do not write `active_run`; report the root/backup split
    and stop for manual recovery.
-8. Verify no old root workflow files remain directly under `agents_workspace/`.
-9. Ensure `agents_workspace/project_memory.md` exists.
-10. Write `agents_workspace/active_run` as `runs/<run-id>`.
+8. Verify no old root workflow files remain directly under `.tie/`.
+9. Ensure `.tie/project_memory.md` exists.
+10. Write `.tie/active_run` as `runs/<run-id>`.
 11. Append a migration summary to the run's `changelog.md`, including the backup
    path and the old-to-new filename mapping.
 

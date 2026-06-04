@@ -1,6 +1,6 @@
 ---
 name: requirements
-description: Use when the user wants help shaping, clarifying, refining, or drafting a ThisIsEnough requirement before starting implementation. Creates or updates concise pre-run requirement drafts under agents_workspace/drafts/.../requirement.md without creating active_run, runs, roadmap, or implementation work.
+description: Use when the user wants help shaping, clarifying, refining, or drafting a ThisIsEnough requirement before starting implementation. Creates or updates concise pre-run requirement drafts under .tie/drafts/.../requirement.md without creating active_run, runs, roadmap, or implementation work.
 ---
 
 # tie:requirements — pre-run requirement drafting
@@ -19,10 +19,10 @@ that block a reliable start.
 
 ## Hard boundaries
 
-- Drafts live under `agents_workspace/drafts/`.
-- Runs live under `agents_workspace/runs/`.
-- Do not create, update, or delete `agents_workspace/active_run`.
-- Do not create `agents_workspace/runs/`, `run_state.json`, `roadmap.md`,
+- Drafts live under `.tie/drafts/`.
+- Runs live under `.tie/runs/`.
+- Do not create, update, or delete `.tie/active_run`.
+- Do not create `.tie/runs/`, `run_state.json`, `roadmap.md`,
   `current_state.md`, phase files, or implementation artifacts.
 - Do not dispatch Planner, Generator, or Evaluator.
 - Do not promote or delete drafts; Orchestrator owns promotion.
@@ -32,7 +32,7 @@ that block a reliable start.
 Store each draft at:
 
 ```text
-agents_workspace/drafts/<draft-id>/requirement.md
+.tie/drafts/<draft-id>/requirement.md
 ```
 
 Generate `draft-id` as `YYYY-MM-DD-NNN-<short-slug>` using the current local
@@ -48,7 +48,7 @@ Before updating an existing draft path, require all of these:
 - relative path;
 - no `..`;
 - no symlink escape;
-- resolves under `agents_workspace/drafts/`;
+- resolves under `.tie/drafts/`;
 - exactly one draft-id segment between `drafts/` and `requirement.md`;
 - basename is `requirement.md`.
 
@@ -72,10 +72,10 @@ Reject anything else instead of treating it as a draft.
 - Read lightweight repo context only when needed to understand product
   boundaries; avoid implementation planning.
 - Ensure default volatile-state `.gitignore` rules exist:
-  `agents_workspace/drafts/`, `agents_workspace/runs/`, and
-  `agents_workspace/active_run`. Do not ignore `agents_workspace/` itself unless
+  `.tie/drafts/`, `.tie/runs/`, and
+  `.tie/active_run`. Do not ignore `.tie/` itself unless
   the user explicitly wants no workflow files committed. If a broad
-  `agents_workspace/` ignore already exists, replace it with the three
+  `.tie/` ignore already exists, replace it with the three
   volatile-state rules unless the user opted out.
 
 Do not create a roadmap, phase breakdown, task list, validation matrix,
@@ -151,8 +151,8 @@ If no load-bearing questions remain, finish with the draft path, readiness, and
 handoff command:
 
 ```text
-Claude Code: /tie:start from draft agents_workspace/drafts/<draft-id>/requirement.md
-Codex CLI:   $tie:orchestrator Start from draft agents_workspace/drafts/<draft-id>/requirement.md
+Claude Code: /tie:start from draft .tie/drafts/<draft-id>/requirement.md
+Codex CLI:   $tie:orchestrator Start from draft .tie/drafts/<draft-id>/requirement.md
 ```
 
 If questions remain, give the draft path and the minimal blocker questions, but

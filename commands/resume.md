@@ -1,5 +1,5 @@
 ---
-description: Resume the active ThisIsEnough workflow run. Reads agents_workspace/active_run, then continues from that run's state.
+description: Resume the active ThisIsEnough workflow run. Reads .tie/active_run, then continues from that run's state.
 ---
 
 Invoke the `tie:resume` skill now and follow it exactly.
@@ -21,7 +21,7 @@ additional context that supplements the existing requirements — append to
 the active run's `requirement.md` under `## Updates` with an ISO timestamp
 before continuing.
 
-If `agents_workspace/active_run` is missing or points at a run without
+If `.tie/active_run` is missing or points at a run without
 `run_state.json`, this is not a resume. Tell the user there is no workflow to
 resume in this directory and suggest `/tie:start <requirement>` instead. Do not
 start a new workflow from the resume command.

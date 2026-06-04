@@ -184,7 +184,7 @@ Evaluator의 핵심 역할은 “마지막에 눌러보는 사람”이 아니�
 
 ### 1.8 Workflow documents are navigation aids
 
-`agents_workspace/active_run`과 active run directory의 문서는 재개와 판단을
+`.tie/active_run`과 active run directory의 문서는 재개와 판단을
 위한 source of truth이지만, 코드 diff, 전체 테스트 출력, 구현 설계서, 검증
 감사 로그를 복제하는 장소가 아니다.
 
@@ -311,7 +311,7 @@ Evaluator가 검증 결과를 pass / fail / blocked로 정리한 최신 보고�
 기본 구조는 다음과 같다.
 
 ```text
-agents_workspace/
+.tie/
   project_memory.md                  # durable repo-level memory
   drafts/
     <draft-id>/
@@ -341,7 +341,7 @@ agents_workspace/
           evaluation_history.md
 ```
 
-`agents_workspace/drafts/`는 아직 구현이 시작되지 않은 requirement draft만
+`.tie/drafts/`는 아직 구현이 시작되지 않은 requirement draft만
 보관한다. Draft가 run으로 승격되면 draft의 `requirement.md`를 새 run의
 `requirement.md`로 복사한다. Draft directory는 안전하게 삭제할 수 있을 때만
 삭제한다. 그 이후 requirement의 source of truth는 run directory이고, detailed
@@ -353,7 +353,7 @@ artifacts를 parse하지 않고 phase / role / step / command / validation /
 fix-loop timing을 집계할 수 있게 한다. 기존 run에 이 파일이 없어도 resume,
 status, doctor는 corrupt state로 보지 않는다.
 
-`agents_workspace/active_run`은 current/latest run을 가리키는 text pointer다.
+`.tie/active_run`은 current/latest run을 가리키는 text pointer다.
 값은 `runs/<run-id>` 형태의 상대 경로다. 완료된 run을 가리킨 채로 남아도
 된다. 완료 여부는 pointer를 비우는 것으로 판단하지 않고, 해당 run의
 `run_state.json.project_status`와 `current_step`으로 판단한다.
@@ -367,12 +367,12 @@ append한다.
 
 `index.json`은 현재 만들지 않는다.
 
-기본 git 정책은 `agents_workspace/` 전체를 ignore하지 않고, volatile state만
-ignore하는 것이다. 기본 ignore 대상은 `agents_workspace/drafts/`,
-`agents_workspace/runs/`, `agents_workspace/active_run`이다.
-`agents_workspace/project_memory.md`는 완료된 run에서 승격된 durable note를 담는
+기본 git 정책은 `.tie/` 전체를 ignore하지 않고, volatile state만
+ignore하는 것이다. 기본 ignore 대상은 `.tie/drafts/`,
+`.tie/runs/`, `.tie/active_run`이다.
+`.tie/project_memory.md`는 완료된 run에서 승격된 durable note를 담는
 파일이며 commit 가능한 파일로 남긴다. 기존 `.gitignore`에 broad
-`agents_workspace/` rule이 있으면 사용자가 모든 workflow 파일을 ignore하기로
+`.tie/` rule이 있으면 사용자가 모든 workflow 파일을 ignore하기로
 명시하지 않은 한 이 세 volatile-state rule로 교체한다.
 
 ### 3.1 Minimal structure
@@ -380,7 +380,7 @@ ignore하는 것이다. 기본 ignore 대상은 `agents_workspace/drafts/`,
 작은 프로젝트에서는 아래 최소 구조로 시작할 수 있다.
 
 ```text
-agents_workspace/
+.tie/
   project_memory.md
   drafts/
   active_run
@@ -409,7 +409,7 @@ agents_workspace/
 장기 실행, 재개 가능성, 반복 검증이 중요한 프로젝트에서는 full structure를 사용한다.
 
 ```text
-agents_workspace/
+.tie/
   project_memory.md
   drafts/
   active_run
@@ -462,10 +462,10 @@ Orchestrator
 - changelog.md
 - retrospective.md
 - phases/*/phase.md
-- promotion/deletion of agents_workspace/drafts/<draft-id>/
+- promotion/deletion of .tie/drafts/<draft-id>/
 
 Requirements
-- agents_workspace/drafts/<draft-id>/requirement.md
+- .tie/drafts/<draft-id>/requirement.md
 
 Doctor (maintenance only)
 - active_run
@@ -678,12 +678,12 @@ Planner writes plan.md
 
 ## 7.0 Active run selection
 
-Workflow start/resume commands must resolve `agents_workspace/active_run` before
+Workflow start/resume commands must resolve `.tie/active_run` before
 reading or writing run state. A start command may validate a referenced draft
 path first, but it must not read draft content, write run state, or delete the
 draft until active-run selection confirms a new run can be created.
 
-1. If `agents_workspace/active_run` is missing, a new run may be created. For
+1. If `.tie/active_run` is missing, a new run may be created. For
    raw requirements, write `active_run` during normal bootstrap. For draft
    starts, first run the draft preflight below, then delay writing `active_run`
    until the draft copy and minimum run state are verified.
@@ -707,9 +707,9 @@ an older run, create it on resume when safe, but do not treat the missing file
 as state corruption or attempt to reconstruct historical events.
 
 If a start request references
-`agents_workspace/drafts/<draft-id>/requirement.md`, validate that the path is
+`.tie/drafts/<draft-id>/requirement.md`, validate that the path is
 relative, does not contain `..`, does not use a symlink escape, resolves under
-`agents_workspace/drafts/`, is named `requirement.md`, and has exactly one
+`.tie/drafts/`, is named `requirement.md`, and has exactly one
 draft-id segment between `drafts/` and `requirement.md`. If an active run is
 `in_progress` or `blocked`, do not append the draft to that run, promote it, or
 delete it; the current run must be completed or resolved first. If a new run can
@@ -734,7 +734,7 @@ Example: `2026-04-27-001-add-dashboard`.
 ## 7.0.1 Doctor diagnostics, repair, and migration
 
 Implementations should expose a Doctor maintenance entry point for workflow
-state. Doctor operates only on `agents_workspace/`. It must not start workflow
+state. Doctor operates only on `.tie/`. It must not start workflow
 work, resume a phase, dispatch Planner / Generator / Evaluator, or infer product
 requirements.
 
@@ -743,9 +743,9 @@ Doctor supports these modes:
 - `diagnose` — read-only. Inspect layout, parse state files, classify health,
   and report safe next actions.
 - `repair` — fix safe inconsistencies inside the current active-run layout:
-  `agents_workspace/active_run` plus `agents_workspace/runs/<run-id>/`.
+  `.tie/active_run` plus `.tie/runs/<run-id>/`.
 - `migrate` — upgrade old pre-active-run root layout into
-  `agents_workspace/runs/<run-id>/`.
+  `.tie/runs/<run-id>/`.
 - default — run `diagnose` first, then automatically choose `repair` or
   `migrate` only when the diagnosis is unambiguous and safe.
 
@@ -765,7 +765,7 @@ Doctor may update non-empty workflow state files only when a safe repair rule
 explicitly allows it, the new content is derived from canonical state, and the
 previous content is preserved in a timestamped backup or summarized in
 `changelog.md`. Doctor must reject absolute paths, `..`, symlinks, and any
-canonical path that resolves outside `agents_workspace/`. Migration run IDs must
+canonical path that resolves outside `.tie/`. Migration run IDs must
 be safe basenames containing only ASCII letters, digits, periods, underscores,
 and hyphens; no slashes, no `..`, no leading dot, and not empty.
 
@@ -803,7 +803,7 @@ Safe current-layout repairs include:
 Unsafe current-layout repairs include:
 
 - more than one viable run could be active
-- `active_run` points outside `agents_workspace/`, is absolute, uses `..`, is a
+- `active_run` points outside `.tie/`, is absolute, uses `..`, is a
   symlink escape, or fails canonical path containment checks
 - `run_state.json` is missing after roadmap or phase work has started
 - `run_state.json` exists but is invalid JSON
@@ -817,7 +817,7 @@ Unsafe current-layout repairs include:
 Old pre-active-run layout:
 
 ```text
-agents_workspace/
+.tie/
   requirements.md
   roadmap.md
   current_state.md
@@ -839,13 +839,13 @@ Migration from the old layout is automatic only when:
 - target `runs/<run-id>/` does not exist
 - a backup directory can be created without collision
 - the chosen `<run-id>` passes the safe-basename rule and resolves under
-  `agents_workspace/runs/`
+  `.tie/runs/`
 
 Migration must:
 
 1. Choose `<run-id>` from `run_state.json.run_id` when present and safe;
    otherwise generate `YYYY-MM-DD-HHMMSS-migrated-run`.
-2. Create `agents_workspace/runs/<run-id>/`.
+2. Create `.tie/runs/<run-id>/`.
 3. Copy old root files into the run directory, renaming
    `requirements.md` -> `requirement.md` and preserving
    `run_state.json` as `run_state.json`.
@@ -856,11 +856,11 @@ Migration must:
    files. If verification fails, do not write `active_run`; leave the old root
    layout untouched and report the partial run directory.
 7. Preserve original root workflow files in
-   `agents_workspace/legacy-pre-run-layout-<timestamp>/`.
+   `.tie/legacy-pre-run-layout-<timestamp>/`.
 8. Move the original root workflow files into that backup so old and new layouts
    do not remain side by side. If any move fails, do not write `active_run`; stop
    for manual recovery.
-9. Write `agents_workspace/active_run` as `runs/<run-id>`.
+9. Write `.tie/active_run` as `runs/<run-id>`.
 10. Append a migration summary to the run's `changelog.md`.
 
 Doctor must stop for user choice when old and new layouts both exist,
@@ -873,7 +873,7 @@ required.
 `tie:requirements` may create requirement drafts before any implementation run
 exists. Drafting is intentionally lighter than orchestration:
 
-- It writes `agents_workspace/drafts/<draft-id>/requirement.md` and may update
+- It writes `.tie/drafts/<draft-id>/requirement.md` and may update
   `.gitignore` to enforce the default volatile-state ignore rules.
 - It does not create or modify `active_run`, `runs/`, `run_state.json`,
   `roadmap.md`, `current_state.md`, or phase artifacts.
@@ -1788,8 +1788,8 @@ A Phase is complete only when:
   `implementation_log.md`
 - if the checkpoint commit cannot be created, `changelog.md` records the
   explicit no-commit reason before the workflow advances
-- volatile workflow state under `agents_workspace/drafts/`,
-  `agents_workspace/runs/`, and `agents_workspace/active_run` is not staged by
+- volatile workflow state under `.tie/drafts/`,
+  `.tie/runs/`, and `.tie/active_run` is not staged by
   default unless the user explicitly chose committed run state
 
 ---
@@ -1852,7 +1852,7 @@ explicit absolute paths. At minimum:
 - failed EV-IDs for fix/recheck, when applicable
 
 Subagents read `requirement.md` from the passed active run path. They must not
-infer state from root `agents_workspace/` or assume there is a root-level
+infer state from root `.tie/` or assume there is a root-level
 requirement file.
 
 ---
@@ -1971,8 +1971,8 @@ run without relying on conversation context.
 ```json
 {
   "run_id": "2026-04-27-001-add-dashboard",
-  "workspace_dir": "agents_workspace",
-  "run_dir": "agents_workspace/runs/2026-04-27-001-add-dashboard",
+  "workspace_dir": ".tie",
+  "run_dir": ".tie/runs/2026-04-27-001-add-dashboard",
   "project_status": "in_progress",
   "current_phase": "phases/02-dashboard",
   "current_phase_status": "fixing",
@@ -2182,7 +2182,7 @@ It should record:
 
 Long-term lessons that should survive after volatile run state is pruned belong
 in `retrospective.md` first and then, at project completion, in
-`agents_workspace/project_memory.md`.
+`.tie/project_memory.md`.
 
 ### changelog.md template
 
@@ -2231,7 +2231,7 @@ worth carrying forward after the run completes:
 - special implementation choices future work must preserve
 - follow-up cautions that are broader than one task
 
-`agents_workspace/project_memory.md` is repo-level durable memory. At project
+`.tie/project_memory.md` is repo-level durable memory. At project
 completion, Orchestrator reviews `retrospective.md`, `changelog.md`,
 `implementation_log.md`, and evaluation history, then promotes only durable
 notes to `project_memory.md`. It must not copy routine progress, diffs, full
@@ -2296,10 +2296,10 @@ Checkpoint rules:
   Evaluator's passing report may satisfy this if it just ran the checks.
 - Update the Phase state files before committing so the local workflow can
   resume correctly. These volatile state files are not staged by default.
-- Do not stage `agents_workspace/drafts/`, `agents_workspace/runs/`, or
-  `agents_workspace/active_run` unless the user explicitly chose shared
+- Do not stage `.tie/drafts/`, `.tie/runs/`, or
+  `.tie/active_run` unless the user explicitly chose shared
   resumability through committed run state.
-- Stage `agents_workspace/project_memory.md` when it changed, because it is the
+- Stage `.tie/project_memory.md` when it changed, because it is the
   default durable workflow artifact.
 - Inspect `git status --short` before staging. If unrelated user changes,
   unknown files, known broken code, or possible secrets are present, stop and
@@ -2337,7 +2337,7 @@ Generator must not:
 
 ## 12. Resume Policy
 
-When resuming work, Orchestrator first reads `agents_workspace/active_run` and
+When resuming work, Orchestrator first reads `.tie/active_run` and
 resolves the active run directory. It then reads active run files in this order:
 
 1. `<active-run-dir>/run_state.json`
@@ -2399,7 +2399,7 @@ Inputs:
 
 Outputs:
 
-- `agents_workspace/drafts/<draft-id>/requirement.md`
+- `.tie/drafts/<draft-id>/requirement.md`
 - essential open questions if the draft is not ready for handoff
 
 This command must not create `active_run` or any run state.
@@ -2407,13 +2407,13 @@ This command must not create `active_run` or any run state.
 ### `/workflow:init`
 
 Create or select the active run. If a new run is needed, create
-`agents_workspace/runs/<run-id>/`, initialize required files there, write initial
+`.tie/runs/<run-id>/`, initialize required files there, write initial
 `requirement.md`, create `retrospective.md`, ensure
-`agents_workspace/project_memory.md` exists, ensure default volatile-state
-`.gitignore` rules exist, replace a broad `agents_workspace/` ignore rule unless
+`.tie/project_memory.md` exists, ensure default volatile-state
+`.gitignore` rules exist, replace a broad `.tie/` ignore rule unless
 the user explicitly wants no workflow files committed, then write
-`agents_workspace/active_run`. If the input is a draft path under
-`agents_workspace/drafts/`, copy that draft's
+`.tie/active_run`. If the input is a draft path under
+`.tie/drafts/`, copy that draft's
 `requirement.md` into the run, verify the copied content and minimum state
 files, then write `active_run`, and remove the draft only after bootstrap
 succeeds and the draft directory contains no files besides `requirement.md`.
@@ -2426,13 +2426,13 @@ Inputs:
 Outputs:
 
 - initialized workspace
-- agents_workspace/project_memory.md
-- agents_workspace/active_run
-- agents_workspace/runs/<run-id>/requirement.md
-- agents_workspace/runs/<run-id>/current_state.md
-- agents_workspace/runs/<run-id>/run_state.json
-- agents_workspace/runs/<run-id>/telemetry.jsonl
-- agents_workspace/runs/<run-id>/retrospective.md
+- .tie/project_memory.md
+- .tie/active_run
+- .tie/runs/<run-id>/requirement.md
+- .tie/runs/<run-id>/current_state.md
+- .tie/runs/<run-id>/run_state.json
+- .tie/runs/<run-id>/telemetry.jsonl
+- .tie/runs/<run-id>/retrospective.md
 
 ### `/workflow:clarify`
 
@@ -2517,7 +2517,7 @@ Let Orchestrator decide and perform the next appropriate workflow step.
 
 ### `/workflow:resume`
 
-Resolve `agents_workspace/active_run`, read the active run files, and resume
+Resolve `.tie/active_run`, read the active run files, and resume
 from the correct step. Extra resume text is appended to the active run's
 `requirement.md` under `## Updates` with an ISO timestamp.
 
@@ -2529,12 +2529,12 @@ timing summary; missing telemetry in older runs is not an error.
 
 ### `/workflow:doctor [diagnose|repair|migrate]`
 
-Diagnose, safely repair, or migrate workflow state under `agents_workspace/`.
+Diagnose, safely repair, or migrate workflow state under `.tie/`.
 With no mode, Doctor runs read-only diagnosis first and automatically chooses
 repair or migration only when the safe action is unambiguous. `diagnose` is
 always read-only. `repair` is limited to safe inconsistencies in the active-run
 layout. `migrate` upgrades the old root workflow layout to
-`agents_workspace/runs/<run-id>/` with a preserved backup.
+`.tie/runs/<run-id>/` with a preserved backup.
 
 ### `/workflow:repair`
 
@@ -2553,7 +2553,7 @@ Mark project as completed when all Phases pass. This must set
 unambiguously create a new run.
 
 Before marking complete, promote durable run lessons to
-`agents_workspace/project_memory.md`. Leave routine run logs in the ignored run
+`.tie/project_memory.md`. Leave routine run logs in the ignored run
 directory. Derive any concise timing summary from `telemetry.jsonl`; if
 telemetry is unavailable, record that the timing summary is unavailable instead
 of reconstructing it from markdown prose.
@@ -2704,7 +2704,7 @@ A Project is complete when:
   unresolved cross-phase or runtime risk
 - changelog includes final summary
 - durable lessons from the run have been promoted to
-  `agents_workspace/project_memory.md`, or the run explicitly records that
+  `.tie/project_memory.md`, or the run explicitly records that
   there were no durable lessons to promote
 - a concise completion timing summary has been derived from `telemetry.jsonl`
   when telemetry is available, or the run records that timing summary is
@@ -2721,16 +2721,16 @@ Recommended defaults:
 
 ```json
 {
-  "workspace_dir": "agents_workspace",
-  "project_memory_file": "agents_workspace/project_memory.md",
-  "draft_dir_template": "agents_workspace/drafts/<draft-id>",
-  "active_run_file": "agents_workspace/active_run",
-  "run_dir_template": "agents_workspace/runs/<run-id>",
+  "workspace_dir": ".tie",
+  "project_memory_file": ".tie/project_memory.md",
+  "draft_dir_template": ".tie/drafts/<draft-id>",
+  "active_run_file": ".tie/active_run",
+  "run_dir_template": ".tie/runs/<run-id>",
   "telemetry_file": "telemetry.jsonl",
   "default_ignored_paths": [
-    "agents_workspace/drafts/",
-    "agents_workspace/runs/",
-    "agents_workspace/active_run"
+    ".tie/drafts/",
+    ".tie/runs/",
+    ".tie/active_run"
   ],
   "max_fix_loops_per_phase": 3,
   "max_same_failure_repeats": 2,
@@ -2752,7 +2752,7 @@ The workflow is:
 
 ```text
 User requirement
-→ Optional tie:requirements draft under agents_workspace/drafts/
+→ Optional tie:requirements draft under .tie/drafts/
 → Start from raw request or approved draft
 → Orchestrator clarifies only essential ambiguity
 → Orchestrator creates Roadmap

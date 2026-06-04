@@ -24,7 +24,7 @@ Read the explicit paths passed by Orchestrator:
 - current phase `phase.md`
 - relevant repo context
 
-Do not infer inputs from root `agents_workspace/`.
+Do not infer inputs from root `.tie/`.
 
 ## Output
 

@@ -28,7 +28,7 @@
   "interface": {
     "displayName": "ThisIsEnough",
     "shortDescription": "Draft requirements or run one skill. The orchestrator drives plan → implement → evaluate → fix loops until done or blocked.",
-    "longDescription": "ThisIsEnough is a file-first workflow runtime. The user can draft a requirement under agents_workspace/drafts/ before implementation, or state a requirement directly. The orchestrator clarifies only when truly necessary, builds a roadmap, then for each phase autonomously runs Planner (rich product spec), Generator (implementation), and Evaluator (adaptive validation), looping fixes until the phase passes. State is isolated per run under agents_workspace/runs/<run-id>/, with agents_workspace/active_run pointing to the current/latest run so any session can resume cleanly. The doctor skill diagnoses, safely repairs, and migrates workflow state without starting workflow work.",
+    "longDescription": "ThisIsEnough is a file-first workflow runtime. The user can draft a requirement under .tie/drafts/ before implementation, or state a requirement directly. The orchestrator clarifies only when truly necessary, builds a roadmap, then for each phase autonomously runs Planner (rich product spec), Generator (implementation), and Evaluator (adaptive validation), looping fixes until the phase passes. State is isolated per run under .tie/runs/<run-id>/, with .tie/active_run pointing to the current/latest run so any session can resume cleanly. The doctor skill diagnoses, safely repairs, and migrates workflow state without starting workflow work.",
     "developerName": "inchulryu",
     "category": "Coding",
     "capabilities": [
@@ -39,7 +39,7 @@
     "defaultPrompt": [
       "Help me draft this requirement before starting implementation:",
       "Build this for me end-to-end:",
-      "Resume the workflow from agents_workspace/active_run.",
+      "Resume the workflow from .tie/active_run.",
       "Diagnose this workflow state with tie:doctor."
     ],
     "brandColor": "#0EA5E9"

@@ -4,9 +4,9 @@ description: Manually nudge the orchestrator to perform the next workflow step. 
 
 The user wants the orchestrator to perform the next workflow step.
 
-Resolve the active run through `agents_workspace/active_run`. Its contents are
+Resolve the active run through `.tie/active_run`. Its contents are
 a workspace-relative pointer, normally `runs/<run-id>`; resolve it as
-`agents_workspace/<pointer>`, not as a project-root-relative `runs/<run-id>` path
+`.tie/<pointer>`, not as a project-root-relative `runs/<run-id>` path
 and not by adding another `runs/` segment.
 
 Continue the existing lean workflow state. Do not create or require

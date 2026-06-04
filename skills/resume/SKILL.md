@@ -1,18 +1,18 @@
 ---
 name: resume
-description: Use when the user wants to continue a previously-interrupted ThisIsEnough workflow run. Resolves agents_workspace/active_run, reads that run's state files, then hands control to the orchestrator at the correct step.
+description: Use when the user wants to continue a previously-interrupted ThisIsEnough workflow run. Resolves .tie/active_run, reads that run's state files, then hands control to the orchestrator at the correct step.
 ---
 
 # tie:resume — pick up where the workflow left off
 
 The user is continuing a previous workflow run. There should already be an
-`agents_workspace/active_run` pointer from a prior session.
+`.tie/active_run` pointer from a prior session.
 
 ## What you do
 
-1. **Resolve the active run.** Read `agents_workspace/active_run`, which stores
+1. **Resolve the active run.** Read `.tie/active_run`, which stores
    a workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
-   `agents_workspace/<pointer>` and treat that directory as the run directory.
+   `.tie/<pointer>` and treat that directory as the run directory.
    Do not treat the pointer as relative to the project root by itself, and do
    not prepend another `runs/` segment. If `active_run` is missing, unreadable,
    or points at a run without `run_state.json`, this is not a resume. Tell the
@@ -43,7 +43,7 @@ The user is continuing a previous workflow run. There should already be an
 4. **Process user input passed alongside `/tie:resume` or `$tie:resume`.** If
    the user provided text after the command:
    - If the text references a draft path shaped exactly like
-     `agents_workspace/drafts/<draft-id>/requirement.md`, treat it as a
+     `.tie/drafts/<draft-id>/requirement.md`, treat it as a
      draft-start request, not as an update to this run. Do not append the draft
      path to `requirement.md`, do not promote the draft, and do not delete it.
      If this active run is not completed, tell the user the current active run
@@ -90,7 +90,7 @@ Then hand off to the orchestrator (or stop if blocked).
 - ❌ Re-running steps that already completed. Trust the files.
 - ❌ Re-asking clarification questions that are already answered in the active
   run's `requirement.md`.
-- ❌ Discarding `agents_workspace/active_run` or the active run directory and
+- ❌ Discarding `.tie/active_run` or the active run directory and
   starting fresh because something
   "looks off." Investigate first; if state is genuinely corrupted, write
   what you found to `changelog.md` and ask the user before reset.

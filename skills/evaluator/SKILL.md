@@ -26,7 +26,7 @@ major unresolved issue.
 
 Use only the explicit active-run and phase paths passed by Orchestrator. Write
 all validation outputs under the current phase directory. Do not infer state
-from root `agents_workspace/`.
+from root `.tie/`.
 Use the telemetry path passed by Orchestrator, normally
 `<active-run-dir>/telemetry.jsonl`, for validation command/check and verdict
 events. If the file is absent in an older run but the active run directory is

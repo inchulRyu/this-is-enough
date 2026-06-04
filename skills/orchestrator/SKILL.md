@@ -31,7 +31,7 @@ no-commit reason was recorded.
 
 **Files are the source of truth. Agents are temporary.**
 
-Read state from `agents_workspace/active_run` and the active run directory
+Read state from `.tie/active_run` and the active run directory
 before every decision. Write state after every completed step. If a fact,
 decision, blocker, phase status, or verdict is not written to the active run
 files, it does not exist.
@@ -75,18 +75,18 @@ summarize.
 
 ## Active run handling
 
-First resolve `agents_workspace/active_run` if it exists. The file stores a
+First resolve `.tie/active_run` if it exists. The file stores a
 workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
-`agents_workspace/<pointer>`. Do not treat the pointer as relative to the
+`.tie/<pointer>`. Do not treat the pointer as relative to the
 project root by itself, and do not prepend another `runs/` segment. Reject
 absolute paths, `..`, symlink escapes, and pointers that resolve outside
-`agents_workspace/`. Never start a second run while an active run is
+`.tie/`. Never start a second run while an active run is
 `in_progress` or `blocked`.
 
 For draft starts, accept only safe paths shaped exactly like:
 
 ```text
-agents_workspace/drafts/<draft-id>/requirement.md
+.tie/drafts/<draft-id>/requirement.md
 ```
 
 Do not promote or delete a draft until a new run can be created, the draft has
@@ -108,12 +108,12 @@ the user's project working directory. Ensure `.gitignore` ignores only volatile
 run state by default:
 
 ```gitignore
-agents_workspace/drafts/
-agents_workspace/runs/
-agents_workspace/active_run
+.tie/drafts/
+.tie/runs/
+.tie/active_run
 ```
 
-Keep `agents_workspace/project_memory.md` trackable unless the user explicitly
+Keep `.tie/project_memory.md` trackable unless the user explicitly
 chooses otherwise.
 
 For every new run, create `<run-dir>/telemetry.jsonl` and append a compact
@@ -195,7 +195,7 @@ Pass every subagent:
 - failed EV-IDs for fix/recheck.
 
 Subagents must use those paths. They must not infer state from the root
-`agents_workspace/` directory.
+`.tie/` directory.
 
 Role ownership:
 
@@ -263,7 +263,7 @@ At project completion:
    out of markdown artifacts. If telemetry is missing or partial, say the
    timing summary is unavailable rather than parsing markdown as a fallback.
 3. Promote only durable lessons from run-local logs/retrospective to
-   `agents_workspace/project_memory.md`.
+   `.tie/project_memory.md`.
 4. Report briefly: phases passed, workspace path, changelog path, commits or
    no-commit reason, and one or two verification steps.
 
