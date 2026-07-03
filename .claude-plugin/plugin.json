@@ -1,7 +1,7 @@
 {
   "name": "tie",
-  "description": "ThisIsEnough — autonomous file-first workflow runtime. Draft requirements before a run, or run one skill so the orchestrator drives planning, implementation, evaluation, and fix loops until project completion or a real blocker.",
-  "version": "0.2.0",
+  "description": "ThisIsEnough — lightweight file-first workflow that keeps the user's mental model, the agent's understanding, and the codebase in sync. A user-approved checklist gates implementation, a committed ARCHITECTURE.md (constitution + map) replaces per-session codebase re-scanning, and each run is five files driven through plan, implement, verify, and fix loops.",
+  "version": "0.4.0",
   "author": {
     "name": "inchulryu",
     "email": "65108642+inchulRyu@users.noreply.github.com"
@@ -12,14 +12,14 @@
   "keywords": [
     "workflow",
     "requirements",
-    "draft",
+    "checklist",
+    "sync",
+    "architecture",
+    "map",
     "orchestrator",
     "planner",
     "generator",
     "evaluator",
-    "doctor",
-    "repair",
-    "migration",
     "agent",
     "autonomous",
     "file-first"

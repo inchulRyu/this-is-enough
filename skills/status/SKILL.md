@@ -1,78 +1,64 @@
 ---
 name: status
-description: Use when the user asks for a quick read on where the active ThisIsEnough workflow run currently stands without taking any action. Resolves .tie/active_run and summarizes that run's state files and any open blocker.
+description: Use when the user asks where the active ThisIsEnough workflow run currently stands, without taking any action. Resolves .tie/active_run and summarizes the run's state and any open blocker. Read-only.
 ---
 
 # tie:status — read-only snapshot
 
-The user wants to know where things stand. Do not take any action. Do not
-modify any file. Do not dispatch any subagent.
+The user wants to know where things stand. Take no action: no file writes, no
+repairs, no subagent dispatches.
 
 ## What you do
 
-1. **Resolve the active run.** Read `.tie/active_run`, which stores
-   a workspace-relative pointer, normally `runs/<run-id>`. Resolve it as
-   `.tie/<pointer>` and treat that directory as the run directory.
-   Do not treat the pointer as relative to the project root by itself, and do
-   not prepend another `runs/` segment. If `active_run` is missing, unreadable,
-   or points at a run without `run_state.json`, say so plainly: "No ThisIsEnough
-   workflow has been started in this directory. Start one with `/tie:start
-   <requirement>` in Claude Code or `$tie:orchestrator <requirement>` in Codex
-   CLI."
+1. **Resolve the active run.** Read `.tie/active_run`. It stores a
+   workspace-relative pointer, normally `runs/<run-id>`; resolve it as
+   `.tie/<pointer>`. Reject absolute paths, `..` segments, or anything that
+   resolves outside `.tie/`, and never prepend an extra `runs/` segment.
+   - No `.tie/` workflow state at all → say plainly: "No ThisIsEnough
+     workflow has been started in this directory. Start one with
+     `/tie:start <requirement>` in Claude Code or
+     `$tie:orchestrator <requirement>` in Codex CLI."
+   - `active_run` exists but is unreadable, invalid, or points at a run
+     without `state.json` → that is recoverable state, not a fresh start:
+     report the invalid pointer and suggest `/tie:doctor` (Claude Code) or
+     `$tie:doctor` (Codex CLI), not a start command.
 
-2. **Read (do not modify):**
-   - `<active-run-dir>/run_state.json`
-   - `<active-run-dir>/current_state.md`
-   - `<active-run-dir>/roadmap.md`
-   - latest `evaluation_report.md` of the current phase (if any)
-   - `<active-run-dir>/changelog.md`
-   - `<active-run-dir>/telemetry.jsonl` if present, only enough to report a
-     concise timing summary when straightforward
-   - `blockers.md` (if blocked)
+2. **Read (never modify):**
+   - `<run-dir>/state.json` — `run_id`, `status`, `step`, `owner`,
+     `current_item`, `approved_at`, `blocked`, `next_action`
+   - `<run-dir>/requirement.md` — `## 승인` state and C-n checkbox progress
+   - `<run-dir>/plan.md` (if present) — W-n checkbox progress and stage state
+     (which stage is detailed vs goal-only)
+   - `<run-dir>/evaluation.md` (if present) — latest `Verdict`
+   - last entry of `<run-dir>/log.md`
 
-3. **Output a single status block:**
+3. **Output one status block:**
 
 ```
-ThisIsEnough — workflow status
+ThisIsEnough — status
 
-Project:   <project_status>
-Run:       <run_id>
-Phase:     <current_phase> — <current_phase_status>  (loop <loop_count>)
-Owner:     <current_owner>
-Step:      <current_step>
-Blocked:   <yes/no>   <if yes: one-line reason>
+Run:          <run_id>  (<status>)
+Step:         <step> — owner: <owner>   current: <current_item or ->
+Approval:     대기 | 승인됨 (<approved_at>)
+Checklist:    <n> of <m> C-n passed
+Work items:   <n> of <m> W-n done  <current stage, if staged>
+Last verdict: <pass | fail | blocked | none yet>
+Last log:     <one line from the last log.md entry>
 
-Roadmap progress:
-  ✅ Phase 1: <name>          passed
-  🔄 Phase 2: <name>          <status>
-  ⏳ Phase 3: <name>          pending
-  ⏳ Phase 4: <name>          pending
-
-Last evaluation: <verdict> (L<N>)   <if any>
-Last log entry:  <one line from changelog>
-Timing:         <concise telemetry-derived summary, or "unavailable" if no telemetry>
-
-Next action: <next_action from run_state.json>
+Next: <next_action>
 ```
 
 4. **If blocked**, append:
 
 ```
-🚧 Open blocker: <B-ID> — <title>
-   Question: <user decision needed?>
-   Options: <brief list>
-   To answer and continue: `/tie:resume <your answer>` in Claude Code or
-   `$tie:resume <your answer>` in Codex CLI
+Open blocker: <one-line summary of the last [블로커] log entry>
+To answer and continue: `/tie:resume <your answer>` in Claude Code or
+`$tie:resume <your answer>` in Codex CLI
 ```
-
-5. **Do not** suggest improvements, do not start work, do not edit files.
-   Status is read-only.
 
 ## Anti-patterns
 
-- ❌ Modifying any file (including `current_state.md` repairs — leave that to
-  `tie:resume` or `tie:orchestrator`).
+- ❌ Editing or repairing any file, even when state looks inconsistent — leave
+  that to `tie:resume` or `tie:doctor`.
 - ❌ Dispatching subagents.
 - ❌ Long narratives. The status block is the answer.
-- ❌ Treating missing telemetry in older runs as an error or parsing markdown
-  artifacts to reconstruct detailed timing.

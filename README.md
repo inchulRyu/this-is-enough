@@ -1,63 +1,49 @@
 # ThisIsEnough (`tie`)
 
-> Run one skill. The orchestrator drives **plan → implement → evaluate → fix**
-> loops until the project is done or hits a real blocker.
+> Light by design. The name is the philosophy: only what is needed, nothing more.
 
-ThisIsEnough is a **file-first autonomous workflow runtime** for coding agents.
-It implements the spec in
-[`docs/runtime-spec-v0.3.md`](./docs/runtime-spec-v0.3.md)
-as a cross-platform plugin that works in both **Claude Code** and **Codex CLI**.
+ThisIsEnough is a **file-first workflow plugin** for coding agents on
+**Claude Code** and **Codex CLI**. It keeps your mental model, the agent's
+understanding, and the code's actual behavior in sync.
 
-## What it does
+## Why
 
-You can draft a requirement first, or state a requirement directly. Once a run
-starts, ThisIsEnough then:
+Agent work without a workflow has three recurring problems:
 
-1. **Clarifies only essential ambiguities** (no busywork questions).
-2. **Builds a Roadmap**, defaulting to one phase unless dependency or risk
-   boundaries justify a split.
-3. For each phase, autonomously:
-   - **Planner** expands the raw requirement into a rich product-level Plan
-     (prevents under-scoping).
-   - **Generator** decomposes into tasks, implements them in your repo's
-     existing conventions, and leaves a short implementation handoff.
-   - **Evaluator** picks `standard` or `high` validation plus the lowest L0-L5
-     validation level that gives confidence, actually runs the checks, maps
-     requirements to artifacts and evidence, and returns pass / fail / blocked.
-   - Complex or risky phases may get optional pre-validation guidance in
-     `validation_intent.md`; simpler phases skip it.
-   - On pass, **Orchestrator** records phase completion and creates a git
-     checkpoint commit when git is available and safe.
-   - On fail, fix loop runs until pass or blocker.
-4. **Stops only on**: project complete, user decision needed, environment
-   broken, repeated unrecoverable failure, or risky operation requiring
-   confirmation.
+1. **Agreements evaporate** — decisions made in conversation dilute and
+   disappear as the context grows.
+2. **Every session re-scans the codebase** — slow, and often misread anyway.
+3. **Inconsistent work style** — results are hard to trust.
 
-Before implementation starts, draft requirements can live under
-`.tie/drafts/`. Once a run starts, state for that request lives under
-an isolated run directory in `.tie/runs/<run-id>/`, with
-`.tie/active_run` pointing to the current/latest run. Any session can
-resume cleanly with `$tie:resume` or `/tie:resume`.
-Each run also keeps `telemetry.jsonl`, an append-only machine log for timing and
-execution events. It lets you analyze long runs by phase, role, step, command,
-validation, and fix loop without parsing or bloating markdown artifacts.
+Popular harnesses attack these but are heavy: tokens, time, ceremony. TIE
+keeps exactly the pieces that solve the three problems — written agreements, a
+persistent map, fixed roles in a fixed order — and nothing else.
 
-Volatile workflow state is ignored by git by default. Durable lessons that
-future work should know are promoted to `.tie/project_memory.md`,
-which is intended to be committed.
+## How it works
 
-Workflow artifacts stay concise by default: `current_state.md` stays a short
-handoff pointer, Generator logs stay phase-level, and validation reports keep
-routine pass evidence concise. Detailed timing stays in `telemetry.jsonl`, with
-only short derived summaries appearing in human-facing artifacts when useful.
-`standard` is the default validation profile. `high` is
-reserved for phases where risk, blast radius, or runtime/system evidence needs
-more ceremony. Lean artifacts do not loosen the phase gate: no phase is
-complete until the Evaluator returns `pass`.
+1. **Sync conversation** (`tie:requirements`) — grounded in the map, the agent
+   presents the current system flow and the expected flow after your change;
+   agreements are written down the moment they happen.
+2. **Approval gate** — the core checklist (핵심 체크리스트) of observable
+   "when X, Y happens" flows is confirmed with you once before any implementation.
+3. **The run** — plan (direction only; large work is staged, later stages
+   detailed just before they start) → implement (the Generator judges the
+   details at the code) → verify (each checklist flow actually exercised,
+   plus adjacent flows from the map) → map update (automatic, incremental)
+   → checkpoint commit, per stage. No verify pass, no completion.
+4. **Complete** — failed approaches and new invariants are promoted to the
+   constitution, then a final report.
 
-Role prompts are kept outcome-first: they define ownership, success criteria,
-stop conditions, and handoff shape, while the full runtime spec and templates
-remain the detailed reference for state schemas and edge-case procedure.
+## ARCHITECTURE.md — constitution + map
+
+The answer to re-scanning: one committed file at the repo root. The
+**constitution** holds what code alone cannot tell you — invariants, design
+rationale and rejected alternatives, failed approaches. The **map** holds what
+happens where — the system's flows, each step a sentence or two plus a backtick
+`symbol` pointer. Values never go in the map; they stay in code, so literal
+changes need no doc update and stale pointers are caught with a grep. In-run
+updates are automatic and incremental; `tie:map` is the manual entry point for
+initial creation, resync after work done outside TIE, and restructuring.
 
 ## Install
 
@@ -90,8 +76,8 @@ Then inside Claude Code:
 ```
 
 After install you can verify with `/plugin` → **Installed** tab. The slash
-commands (`/tie:requirements`, `/tie:start`, `/tie:resume`, `/tie:status`,
-`/tie:next`, `/tie:doctor`) appear in the command picker.
+commands (`/tie:requirements`, `/tie:start`, `/tie:map`, `/tie:resume`,
+`/tie:status`, `/tie:doctor`) appear in the command picker.
 
 To pull updates later:
 
@@ -133,7 +119,7 @@ $tie:
 ```
 
 You should see `tie:requirements`, `tie:orchestrator`, `tie:planner`,
-`tie:generator`, `tie:evaluator`, `tie:resume`, `tie:status`, and
+`tie:generator`, `tie:evaluator`, `tie:map`, `tie:resume`, `tie:status`, and
 `tie:doctor`.
 
 To uninstall:
@@ -165,197 +151,79 @@ rm -rf ~/.codex/thisisenough   # optional, removes the clone
 
 ## Use
 
-Draft a requirement before implementation:
-
 ```text
-# Claude Code
-/tie:requirements Help me shape a dashboard requirement before we start.
+# Sync conversation → requirement draft → checklist approval
+/tie:requirements Help me shape a dashboard requirement.      # Claude Code
+$tie:requirements Help me shape a dashboard requirement.      # Codex CLI
 
-# Codex CLI
-$tie:requirements Help me shape a dashboard requirement before we start.
-```
+# Start a run — raw requirements work too; the checklist is confirmed first
+/tie:start from draft .tie/drafts/<draft-id>.md               # Claude Code
+$tie:orchestrator Start from draft .tie/drafts/<draft-id>.md  # Codex CLI
 
-Start a workflow:
-
-```text
-# Claude Code
-/tie:start I want to add a dashboard with empty/error states and …
-
-# Codex CLI
-$tie:orchestrator I want to add a dashboard with empty/error states and …
-```
-
-Start from an approved draft:
-
-```text
-# Claude Code
-/tie:start from draft .tie/drafts/<draft-id>/requirement.md
-
-# Codex CLI
-$tie:orchestrator Start from draft .tie/drafts/<draft-id>/requirement.md
-```
-
-Resume after a stopped session:
-
-```text
-/tie:resume          # Claude Code
-$tie:resume          # Codex CLI
-```
-
-Read-only status snapshot:
-
-```text
-/tie:status
-$tie:status
-```
-
-Diagnose or safely repair workflow state:
-
-```text
-# Claude Code
-/tie:doctor           # auto-diagnose, then repair/migrate only when safe
-/tie:doctor diagnose  # read-only
-/tie:doctor repair
-
-# Codex CLI
-$tie:doctor
-$tie:doctor diagnose
-$tie:doctor repair
+# Bootstrap/resync ARCHITECTURE.md · resume · status · diagnose & repair
+/tie:map    /tie:resume    /tie:status    /tie:doctor         # Claude Code
+$tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 ```
 
 ## Skills
 
-| Skill              | What it does                                                                |
-| ------------------ | --------------------------------------------------------------------------- |
-| `tie:requirements` | Drafts concise pre-run requirements under `.tie/drafts/`.       |
-| `tie:orchestrator` | Entry point. Drives the entire state machine end-to-end.                    |
-| `tie:planner`      | Expands raw requirement into a rich product-level Plan (subagent role).     |
-| `tie:generator`    | Decomposes / implements / fixes while keeping handoffs short.               |
-| `tie:evaluator`    | Owns validation, evidence, and pass/fail/blocked verdicts.                  |
-| `tie:resume`       | Resumes the run pointed to by `.tie/active_run`.                |
-| `tie:status`       | Read-only snapshot of where the run currently stands.                       |
-| `tie:doctor`       | Diagnoses, safely repairs, or migrates workflow state.                      |
+| Skill              | What it does                                                              |
+| ------------------ | ------------------------------------------------------------------------- |
+| `tie:requirements` | Sync conversation; writes the draft under `.tie/drafts/` as agreements happen. |
+| `tie:orchestrator` | Entry point (`/tie:start`). Drives the run state machine end-to-end.      |
+| `tie:planner`      | Technical direction and W-n work items; staged detailing for large work.  |
+| `tie:generator`    | Implements; judges details on the ground; logs decisions and failed approaches. |
+| `tie:evaluator`    | Exercises checklist flows + adjacent mapped flows; pass/fail/blocked.     |
+| `tie:map`          | Creates, resyncs, or restructures `ARCHITECTURE.md` (with your confirmation). |
+| `tie:resume`       | Resumes the run pointed to by `.tie/active_run`.                          |
+| `tie:status`       | Read-only snapshot of the active run.                                     |
+| `tie:doctor`       | Diagnoses, safely repairs, and migrates v0.3 workspaces.                  |
 
 ## What the workspace looks like
 
 ```text
-.tie/
-  project_memory.md                  # durable notes intended for git
+ARCHITECTURE.md            # constitution + map — committed
+.tie/                      # volatile workflow state — gitignored entirely
+  active_run               # pointer: runs/<run-id>
   drafts/
-    <draft-id>/
-      requirement.md                    # pre-run only
-  active_run                       # e.g. runs/2026-04-27-001-add-dashboard
+    <draft-id>.md          # requirement draft, pre-approval
   runs/
     <run-id>/
-      requirement.md
-      roadmap.md
-      current_state.md              # concise human-readable handoff
-      run_state.json
-      telemetry.jsonl               # append-only timing / execution events
-      decisions.md
-      changelog.md
-      retrospective.md              # run-local memory candidates
-      blockers.md                  (only when blocked)
-      phases/
-        01-<phase-slug>/
-          phase.md
-          plan.md
-          tasks.md
-          validation_intent.md       (optional risk preflight)
-          implementation_log.md
-          validation_plan.md         (used when high-risk depth needs it)
-          evaluation_report.md
-          evaluation_history.md      # concise snapshots
+      requirement.md       # 요구사항 명세: agreements (A-n), checklist (C-n), approval
+      plan.md              # technical direction + work items (W-n)
+      evaluation.md        # latest verification report (overwritten)
+      log.md               # append-only journal of tagged events
+      state.json           # machine resume state
 ```
 
-`drafts/` contains only requirements whose implementation has not started. When
-you start from a draft, ThisIsEnough copies its `requirement.md` into the new
-run, verifies the copy, then removes the draft directory only if it contains no
-files besides `requirement.md`. From that point on, the run's `requirement.md`
-is the source of truth for the requirement, and detailed run history stays in
-the local run directory.
-
-Validation uses profiles, not a one-size-fits-all checklist: `standard` or
-`high`. Separately, the Evaluator chooses the lowest validation level that gives
-confidence: `L0_static_review`, `L1_static_plus_build`,
-`L2_unit_or_integration`, `L3_runtime_scenario`, `L4_e2e_or_system`, or
-`L5_reference_or_benchmark`. The Evaluator raises the profile and level only
-when risk requires it.
-`validation_intent.md` is truly optional preflight guidance for complex or risky
-phases; when present, it names representative risks and success oracles, not an
-exhaustive EV-ID matrix.
-
-Telemetry is separate from validation profiles. `standard` and `high` describe
-confidence and evidence depth, not expected runtime or speed. Generator and
-Evaluator command/check durations are recorded separately from Orchestrator
-wall-time events so slow agent work, tests, validation, fix loops, and
-checkpoint overhead can be attributed independently. Older runs without
-`telemetry.jsonl` remain resumable and diagnosable.
-
-One independent requirement creates one run. `active_run` may continue pointing
-at a completed run; completion is read from that run's
-`run_state.json.project_status` and `current_step`, not by clearing the pointer.
-If the active run is completed and a new start request includes a new
-requirement, ThisIsEnough creates a new run and overwrites `active_run`. If the
-active run is still `in_progress` or `blocked`, extra start/resume text is
-appended to that run's `requirement.md` under `## Updates` with an ISO timestamp
-instead of creating a second run. Draft paths are the exception: they are not
-appended, promoted, or deleted while another run is incomplete. There is no
-`index.json`; older runs are kept as directories under `.tie/runs/`.
-
-Run directories, drafts, and `active_run` are volatile state and are gitignored
-by default:
-
-```gitignore
-.tie/drafts/
-.tie/runs/
-.tie/active_run
-```
-
-Do not ignore `.tie/` itself unless you also do not want to commit
-`.tie/project_memory.md`. If an old setup already ignores
-`.tie/`, replace that broad rule with the three rules above. If a
-team wants shared resumability across machines, it can opt into committing the
-volatile state by removing those ignore rules.
-
-If a workspace was created before active-run isolation, `/tie:doctor` in Claude
-Code or `$tie:doctor` in Codex can diagnose it and migrate the old root layout
-into `runs/<run-id>/` when there is no conflicting new layout.
-
-At project completion, the orchestrator reviews the run-local logs and
-`retrospective.md`, then promotes only durable lessons to
-`.tie/project_memory.md`: resolved failed approaches, unusual
-project structure, constraints future changes must respect, and useful follow-up
-cautions. Routine workflow logs stay local. A concise completion timing summary
-may be derived from `telemetry.jsonl`; the detailed event stream stays in the
-ignored run directory.
+Five files per run, and the gitignore is a single rule — `.tie/` — because
+everything worth committing lives in `ARCHITECTURE.md` from the start.
 
 ## When NOT to use
 
-- One-line bug fixes. Just fix it.
-- Pure refactors with no product-level change. The Planner has nothing to
-  expand.
-- Throwaway scripts. The workspace overhead isn't worth it.
+One-line bug fixes (just fix them), pure refactors with no behavior change
+(nothing to checklist), throwaway scripts (the workspace is not worth it).
+Even then the map stays authoritative: if behavior or structure changed
+without a run, update it by hand or via `tie:map`.
+
+## Migrating from v0.3
+
+Run `/tie:doctor` (or `$tie:doctor`). It detects v0.3 layouts (phase
+directories, `project_memory.md`, the three-rule gitignore), advises finishing
+in-progress v0.3 runs under v0.3 rules, and offers — with your confirmation —
+to promote `project_memory.md` into the `ARCHITECTURE.md` constitution.
 
 ## Safety
 
-The orchestrator never:
-
-- modifies system or network configuration,
-- touches files outside the project working directory,
-- runs destructive git operations without confirmation,
-- commits secrets,
-- silently skips a phase-pass checkpoint commit,
-- marks a phase complete without an Evaluator `pass`,
-- continues past a destructive/risky step without an explicit user OK.
-
-If any of those come up, it stops with a clear blocker.
+No role modifies files outside the project, changes system or network config,
+runs destructive git without confirmation, touches secrets, declares
+completion without an Evaluator pass, or proceeds past risky/irreversible
+steps without your OK. In those situations it stops with a clear blocker.
 
 ## Spec
 
-The full design rationale and template details live in
-[`docs/runtime-spec-v0.3.md`](./docs/runtime-spec-v0.3.md).
-The skills in this plugin implement that spec faithfully.
+Design rationale and contracts: [`docs/runtime-spec-v0.4.md`](./docs/runtime-spec-v0.4.md).
+The skills derive from that spec and never read it at runtime.
 
 ## License
 

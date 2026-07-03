@@ -1,0 +1,11 @@
+{
+  "run_id": "",
+  "status": "not_started",
+  "step": "plan",
+  "owner": "orchestrator",
+  "current_item": null,
+  "approved_at": null,
+  "fix_loops": 0,
+  "blocked": false,
+  "next_action": ""
+}

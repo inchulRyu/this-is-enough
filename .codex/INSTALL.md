@@ -40,6 +40,7 @@ tie:orchestrator
 tie:planner
 tie:generator
 tie:evaluator
+tie:map
 tie:resume
 tie:status
 tie:doctor

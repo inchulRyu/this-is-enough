@@ -1,27 +1,27 @@
 ---
-description: Resume the active ThisIsEnough workflow run. Reads .tie/active_run, then continues from that run's state.
+description: Resume the active ThisIsEnough run from its recorded state. Continues from state.json's step; never starts a new run or a draft.
 ---
 
 Invoke the `tie:resume` skill now and follow it exactly.
 
-Resume in lean mode: keep `current_state.md` as a short handoff, do not treat
-a missing `validation_intent.md` as a problem unless `run_state.json` explicitly
-says optional preflight is the current step, and preserve the rule that only an
-Evaluator `pass` can complete a phase. Continue appending to
-`telemetry.jsonl`; if an older run lacks telemetry, let resume/orchestrator
-create it when safe and do not treat the missing file as corruption.
+Resolve the run through `.tie/active_run` (a workspace-relative pointer
+`runs/<run-id>`, resolved as `.tie/<pointer>`), read `state.json` for the
+current `step` and `owner`, read the last `log.md` entry for context, then
+continue from that step. If `state.json` and the artifacts disagree,
+`state.json` is the machine-state baseline; log the mismatch as `[복구]` and
+correct it.
 
-If the user provided text after the command (`$ARGUMENTS`), treat it as their
-answer to any open blocker recorded in the active run's `blockers.md`. The
-resume skill will mark the blocker resolved and continue from the interrupted
-step when the answer resolves the blocker.
+If the user provided text after the command (`$ARGUMENTS`):
 
-If there is no open blocker and the user provided arguments, treat them as
-additional context that supplements the existing requirements — append to
-the active run's `requirement.md` under `## Updates` with an ISO timestamp
-before continuing.
+- If the run is blocked, treat it as the answer to the open blocker recorded
+  in `log.md`; resolve it and continue from the interrupted step.
+- Otherwise — when the run is not `completed` and the text is not a draft
+  path — treat it as an added agreement or context: append it to the run's
+  `requirement.md` under `## 갱신 기록` with an ISO timestamp before
+  continuing. A `completed` run never gets appends (new text is a new
+  requirement — point at `/tie:start`), and draft paths are never promoted
+  from resume.
 
-If `.tie/active_run` is missing or points at a run without
-`run_state.json`, this is not a resume. Tell the user there is no workflow to
-resume in this directory and suggest `/tie:start <requirement>` instead. Do not
-start a new workflow from the resume command.
+If `.tie/active_run` is missing or points at a run without `state.json`, this
+is not a resume. Say there is nothing to resume here and suggest
+`/tie:start <requirement>`. Never start a new run or a draft from this command.

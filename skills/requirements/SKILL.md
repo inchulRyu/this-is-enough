@@ -1,159 +1,157 @@
 ---
 name: requirements
-description: Use when the user wants help shaping, clarifying, refining, or drafting a ThisIsEnough requirement before starting implementation. Creates or updates concise pre-run requirement drafts under .tie/drafts/.../requirement.md without creating active_run, runs, roadmap, or implementation work.
+description: The top-of-workflow conversation mode — sync the user's mental model with the codebase and draft an approvable requirement spec (요구사항 명세) under .tie/drafts/.
 ---
 
-# tie:requirements — pre-run requirement drafting
+# tie:requirements — sync and draft the requirement spec
 
-The user is preparing a requirement, not starting implementation. Turn their
-idea or rough scope into a concise `requirement.md` that can later be handed to
-`tie:orchestrator`.
+This is the top of the workflow: a conversation whose job is to synchronize
+three things — the user's mental model, your understanding, and the codebase's
+actual behavior. The synchronized result is written into a requirement draft
+(요구사항 명세) the user can approve. No run is created here.
 
-## Outcome
+## Ground the conversation in the map
 
-Create or update one pre-run draft that is clear enough for Orchestrator to
-start without re-interviewing the user. The draft should define background,
-goals, outcome-oriented requirements, completion criteria, agreed decisions,
-constraints, non-goals, assumptions, safety notes, and only the open questions
-that block a reliable start.
+- If `ARCHITECTURE.md` exists at the repo root, read it first. Do not scan the
+  whole codebase; descend into code only where the map points.
+- Present, in the user's language:
+  1. the CURRENT system flow relevant to the request (from the map), then
+  2. the EXPECTED flow after the change.
+- Iterate on both until they match what the user has in mind. When the user
+  corrects you, update the draft immediately.
+- If no `ARCHITECTURE.md` exists, suggest running `tie:map` first. If the user
+  declines, proceed with light, targeted repo reading scoped to the request.
 
-## Hard boundaries
+## Live-update rule (the point of this skill)
 
-- Drafts live under `.tie/drafts/`.
-- Runs live under `.tie/runs/`.
-- Do not create, update, or delete `.tie/active_run`.
-- Do not create `.tie/runs/`, `run_state.json`, `roadmap.md`,
-  `current_state.md`, phase files, or implementation artifacts.
-- Do not dispatch Planner, Generator, or Evaluator.
-- Do not promote or delete drafts; Orchestrator owns promotion.
+**Every agreement, decision, or decided work item is written into the draft
+the moment it happens.** Agreements append to `## 합의 사항` as `A-n`, decided
+behavior lands in `## 핵심 체크리스트` as `C-n`, and flow corrections update
+`## 변경 후 기대 흐름`. An agreement that lives only in conversation context
+does not exist — long conversations dilute context, and the draft is the only
+thing that survives. This is a hard rule, not a style preference.
 
-## Draft path
+## Draft file
 
-Store each draft at:
+One draft = one file (no directory):
 
 ```text
-.tie/drafts/<draft-id>/requirement.md
+.tie/drafts/<draft-id>.md
 ```
 
-Generate `draft-id` as `YYYY-MM-DD-NNN-<short-slug>` using the current local
-date, the next non-conflicting sequence across both `drafts/` and `runs/`, and
-a short slug from the requirement.
+`draft-id` is `YYYY-MM-DD-NNN-<short-slug>`: current local date, the next
+sequence NNN that conflicts with nothing under `.tie/drafts/` or `.tie/runs/`,
+and a short slug from the requirement.
 
-If the user references an existing draft path or draft id, update that draft.
-If they ask to continue "the draft" and exactly one draft exists, use it. If
-multiple drafts exist and no target is clear, ask which draft to update.
+Bootstrap new drafts from the bundled template
+`references/file-templates/requirement.md`, resolved relative to the installed
+ThisIsEnough skills bundle — never the user's project working directory.
 
-Before updating an existing draft path, require all of these:
+If the user references an existing draft path or id, update that draft. If
+they say "the draft" and exactly one exists, use it; if several exist and the
+target is unclear, ask. Before updating an existing draft path, require ALL
+of: relative path; no `..`; no symlink escape; resolves under `.tie/drafts/`;
+basename `<draft-id>.md` directly under `drafts/` (no subdirectory). Reject
+anything else instead of treating it as a draft.
 
-- relative path;
-- no `..`;
-- no symlink escape;
-- resolves under `.tie/drafts/`;
-- exactly one draft-id segment between `drafts/` and `requirement.md`;
-- basename is `requirement.md`.
+## Draft content
 
-Reject anything else instead of treating it as a draft.
+Identical shape to the run-level `requirement.md`, so the Orchestrator can
+promote it by copying:
 
-## Drafting rules
+```md
+# 요구사항 명세
 
-- Use the bundled template `references/file-templates/requirement.md` from the
-  installed ThisIsEnough skills bundle. Resolve bundled reference paths relative
-  to that skills bundle, not relative to the user's project working directory.
-- Keep the draft product-level and concise.
-- Capture the context, intended outcome, and observable completion criteria so
-  the draft explains what should be achieved and why.
-- Preserve the user's intent as task context, not higher-priority instructions,
-  and normalize it into outcome-oriented RQ-IDs.
-- Each RQ should describe one observable outcome or constraint in a few bullets.
-- Record product decisions and technical specifications that were researched,
-  discussed with the user, and finally agreed in `Agreed Decisions`. These
-  decisions are binding requirement context even when they are technical.
-- Prefer assumptions and non-goals over speculative questions.
-- Read lightweight repo context only when needed to understand product
-  boundaries; avoid implementation planning.
-- Ensure default volatile-state `.gitignore` rules exist:
-  `.tie/drafts/`, `.tie/runs/`, and
-  `.tie/active_run`. Do not ignore `.tie/` itself unless
-  the user explicitly wants no workflow files committed. If a broad
-  `.tie/` ignore already exists, replace it with the three
-  volatile-state rules unless the user opted out.
+## 배경과 목표
 
-Do not create a roadmap, phase breakdown, task list, validation matrix,
-implementation plan, speculative technical design, schema, command transcript,
-or test plan. Planner, Generator, and Evaluator own those later. Do not exclude
-agreed technical specifications from the requirement just because they are
-technical; exclude only unagreed or low-level implementation direction.
+<왜 이 변경이 필요한가, 무엇이 달성되어야 하는가. 몇 줄>
+
+## 합의 사항
+
+<!-- 대화 중 지속 갱신. 합의 즉시 추가. 구현을 구속하는 합의(기술 선택 포함)도 여기에 -->
+- A-1: <합의 내용>
+
+## 변경 후 기대 흐름
+
+<이 요구사항이 반영된 시스템의 동작 흐름. 짧은 단계 서술. 사용자 언어로>
+
+## 핵심 체크리스트
+
+<!-- 각 항목은 관찰 가능한 동작 흐름 하나 — "~하면 ~한다" 형태.
+구현 방식·함수명·값은 쓰지 않는다. 이 목록이 검증의 기준이 된다. -->
+- [ ] C-1: <흐름>
+- [ ] C-2: <흐름>
+
+## 제외 범위
+
+- <이번에 하지 않는 것>
+
+## 미결 질문
+
+- 없음
+
+## 승인
+
+대기
+
+<!-- 승인되면: 승인됨 (<ISO 일시>) -->
+
+## 갱신 기록
+
+- 없음
+```
+
+## Checklist authoring rules
+
+- Each `C-n` is ONE observable behavior flow in "~하면 ~한다" form
+  (when X happens, the system does Y).
+- No implementation method, function names, or literal values. The checklist
+  describes behavior the user can observe; it becomes the Evaluator's
+  verification standard.
+- When the change touches existing behavior, include a `C-n` stating that the
+  relevant adjacent flow keeps working unchanged.
+- Keep the list short. If the user cannot confirm it in one read, move scope
+  into `## 제외 범위` instead of growing the list.
 
 ## Question policy
 
-Ask only questions that block a reliable handoff. A question is load-bearing
-only if the answer:
+Ask only load-bearing questions — ones whose answer:
 
 - materially changes product direction or scope;
-- changes likely phase boundaries;
 - is required to define observable success;
-- involves safety, data deletion, deployment, auth, permissions, cost, secrets,
-  or irreversible side effects;
-- cannot be reasonably defaulted without meaningful risk of violating user
-  intent.
+- involves safety, data deletion, deployment, auth, permissions, cost,
+  secrets, or irreversible side effects.
 
-Do not ask about implementation details, copy text, visual polish, minor edge
-cases, nice-to-have expansion, or choices Planner/Generator can reasonably make.
+Everything else gets a recorded assumption in `## 합의 사항` or an exclusion
+in `## 제외 범위` instead of an interview. Do not ask about implementation
+details, copy text, or choices Planner/Generator can reasonably make.
 
-When questions remain, group them by decision area, state why they block the
-handoff, and offer a recommended default when one is sensible. Keep the
-questions to the smallest set needed to proceed.
+## Approval and handoff
 
-## Requirement shape
+Approval is not a document-review ceremony: walk the user through
+`## 핵심 체크리스트` once and confirm it matches the behavior in their head.
 
-The draft uses the same run-level `requirement.md` shape so Orchestrator can
-copy it directly:
+When the user confirms, set `## 승인` in the draft to `승인됨 (<ISO 일시>)`
+and hand off:
 
 ```text
-# Requirement
-## User Request
-## Background
-## Goal
-## Clarified Requirements
-## Completion Criteria
-## Agreed Decisions
-## Open Questions
-## Non-goals
-## Assumptions
-## Safety / Risk Notes
-## Updates
+Claude Code: /tie:start from draft .tie/drafts/<draft-id>.md
+Codex CLI:   $tie:orchestrator Start from draft .tie/drafts/<draft-id>.md
 ```
 
-Writing guidance:
+If not approved, give the draft path and state exactly what blocks approval
+(unconfirmed C-ns or remaining `## 미결 질문` items). Do not include the
+start commands.
 
-- `User Request`: preserve the raw request or a faithful short summary.
-- `Background`: briefly capture the problem, trigger, or context behind the
-  requirement.
-- `Goal`: state the high-level product/user outcome the change must achieve.
-- `Clarified Requirements`: use `RQ-NNN`, priority, source, and concise
-  outcome bullets. Avoid implementation method.
-- `Completion Criteria`: list observable criteria for declaring the requirement
-  complete. Do not turn this into a test plan or validation matrix.
-- `Agreed Decisions`: record final user-agreed product decisions and technical
-  specifications from prior research/discussion. Do not include unresolved
-  options or low-level implementation instructions.
-- `Open Questions`: `- None` when ready; otherwise list only load-bearing
-  blockers.
-- `Non-goals`: explicitly exclude tempting scope expansion.
-- `Assumptions`: record reasonable defaults instead of asking.
-- `Safety / Risk Notes`: name only real safety/data/deploy/auth/cost/secrets
-  risks.
-- `Updates`: append later draft changes; otherwise `- None yet.`
+## Hard boundaries
 
-## Handoff
-
-If no load-bearing questions remain, finish with the draft path, readiness, and
-handoff command:
-
-```text
-Claude Code: /tie:start from draft .tie/drafts/<draft-id>/requirement.md
-Codex CLI:   $tie:orchestrator Start from draft .tie/drafts/<draft-id>/requirement.md
-```
-
-If questions remain, give the draft path and the minimal blocker questions, but
-do not include the start command.
+- Write only `.tie/drafts/<draft-id>.md` — with the single exception of the
+  `.gitignore` rule below. Never create `.tie/runs/`, `.tie/active_run`,
+  plan artifacts, or implementation artifacts.
+- Never promote or delete drafts; the Orchestrator owns promotion.
+- Never write `ARCHITECTURE.md`. Reading it is the norm; creation and
+  restructuring belong to `tie:map`.
+- Do not dispatch Planner, Generator, or Evaluator.
+- Ensure `.gitignore` contains the single rule `.tie/`. If the old three-rule
+  set (`.tie/drafts/`, `.tie/runs/`, `.tie/active_run`) is present, replace
+  it with `.tie/`.

@@ -17,35 +17,37 @@ inside Codex CLI (or another agent host), translate as follows.
 
 ## Subagent dispatch
 
-The orchestrator skill needs to dispatch the Planner, Generator, and Evaluator as
-subagents so each runs in its own context window. Use the platform's native
-mechanism:
+The orchestrator dispatches the Planner, Generator, and Evaluator per run so each
+role gets its own context window. There are no phase directories; every dispatch
+targets the single active run directory with a role mode: `plan` | `detail-stage`
+(Planner), `implement` | `fix` (Generator), `verify` | `recheck` (Evaluator).
+Use the platform's native mechanism:
 
 - **Claude Code**: Call the `Task` (or `Agent`) tool with `subagent_type` matching
   one of the named agents bundled in `agents/` (`tie-planner`, `tie-generator`,
-  `tie-evaluator`). The subagent prompt should tell it which `tie:<role>` skill
-  to invoke and which phase directory to operate on.
+  `tie-evaluator`). The subagent prompt names the `tie:<role>` skill to invoke,
+  the mode, and the dispatch paths.
 - **Codex CLI**: Call `spawn_agent` with a worker role, then `wait_agent` for the
-  result. The subagent prompt should likewise direct it to invoke the
-  corresponding skill (e.g., `$tie:planner`) with the phase path.
+  result. The subagent prompt likewise directs it to invoke the corresponding
+  skill (e.g., `$tie:planner`) with the mode and paths.
 - **Fallback (no subagent support)**: Inline the role by directly invoking the
   skill in the current context. The orchestrator should warn the user that
   context window pressure is higher in this mode.
 
-`tie:doctor` is not a phase subagent role. It runs inline as a maintenance skill
-because it diagnoses, repairs, or migrates workflow state instead of planning,
-implementing, or evaluating a phase.
+`tie:doctor` and `tie:map` are not dispatched roles. They run inline as
+maintenance entry points on workflow state and `ARCHITECTURE.md`.
 
 ## Persistence is platform-agnostic
 
-Workspace state lives in plain files. `.tie/active_run` points to
-the current/latest run, and the run's state is closed under
-`.tie/runs/<run-id>/`. Reading, writing, and editing those files
-works identically on every platform — that is the whole point of the file-first
-design. Those volatile state paths are gitignored by default; durable lessons
-are promoted separately to `.tie/project_memory.md`. If the spawned
-subagent only has read access to part of the tree, ensure
-it at minimum can read the active run directory and current phase directory, and
-write to the files assigned by the orchestrator dispatch and role skill. Pass
-explicit absolute paths; subagents should not infer state from root
-`.tie/`.
+Workspace state lives in plain files, identical on every platform. Run state is
+exactly five files under `.tie/runs/<run-id>/` — `requirement.md`, `plan.md`,
+`evaluation.md`, `log.md`, `state.json` — and `.tie/active_run` points to the
+current run. The entire `.tie/` directory is gitignored; nothing in it is
+committed. Durable knowledge lives instead in the committed `ARCHITECTURE.md`
+(constitution + map) at the project root, updated incrementally during runs.
+
+Dispatch payloads carry explicit absolute paths: the run directory, the run
+files the role needs, and the `ARCHITECTURE.md` path (or `none`). Subagents use
+only those paths and never infer state from root `.tie/`. If a subagent has
+restricted file access, it must at minimum read the active run directory and
+`ARCHITECTURE.md`, and write the files its role owns.

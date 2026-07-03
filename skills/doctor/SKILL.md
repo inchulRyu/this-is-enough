@@ -1,328 +1,143 @@
 ---
 name: doctor
-description: Use when the user asks to diagnose, repair, or migrate ThisIsEnough workflow state. Auto-diagnoses .tie, supports diagnose/repair/migrate modes, safely repairs active-run layout inconsistencies, and migrates old root workflow state to runs/<run-id>/ only when unambiguous.
+description: Diagnose and safely repair TIE workflow state under .tie/; detects v0.3-era state and advises migration; read-only unless a repair is unambiguous.
 ---
 
-# tie:doctor — workspace state diagnosis and safe repair
+# tie:doctor — state diagnosis and safe repair
 
-The user wants to inspect, fix, or migrate ThisIsEnough workflow state. Operate
-only on `.tie/`. Do not start or resume workflow work, and do not
+The user wants to inspect or fix ThisIsEnough workflow state. Operate only on
+`.tie/`, plus two named exceptions: the `.gitignore` rule and a user-confirmed
+ARCHITECTURE.md promotion. Do not start or resume workflow work, and do not
 dispatch subagents.
+
+## Ground rules
+
+- `diagnose` is always read-only. Never delete workflow state; never overwrite
+  non-empty content except via a safe repair below, previous content preserved.
+- Never invent requirements, plan content, verdicts, or user decisions. When
+  state is ambiguous, stop and ask — ambiguity is not a judgment call.
 
 ## Modes
 
-Accept these modes from the user's prompt or command arguments:
+| Mode       | Behavior                                                                  |
+| ---------- | ------------------------------------------------------------------------- |
+| default    | Diagnose, then repair only what is unambiguous and safe. Use this when the requested mode is unclear. |
+| `diagnose` | Read-only. Report classification, findings, and safe next actions.         |
+| `repair`   | Apply the safe repairs below. Re-diagnose first; stop if not repairable.   |
 
-| Mode       | Behavior                                                                 |
-| ---------- | ------------------------------------------------------------------------ |
-| default    | Run `diagnose` first, then choose `repair` or `migrate` only when safe.   |
-| `diagnose` | Read-only. Report health, layout, inconsistencies, and safe next actions. |
-| `repair`   | Fix only safe inconsistencies inside the active-run layout.               |
-| `migrate`  | Upgrade an old pre-active-run layout into the active-run layout.          |
-
-If the requested mode is unclear, use default mode.
-
-## Non-negotiable safety rules
-
-- `diagnose` is always read-only.
-- Never delete workflow state.
-- Never overwrite a non-empty file or directory with unrelated content. Repairs
-  may update known workflow state files only when the rule below explicitly
-  allows it, the new content is derived from canonical state, and the previous
-  content is preserved in a timestamped backup or summarized in `changelog.md`.
-- Never invent product requirements, roadmap content, user decisions, or phase
-  details.
-- Never follow an `active_run` pointer outside `.tie/`.
-- Resolve candidate run paths canonically before writing. Reject absolute paths,
-  `..`, symlinks, or any resolved path outside the canonical
-  `.tie/` directory.
-- Never run ThisIsEnough against the repository while doctoring the state.
-- Stop and ask the user when state is ambiguous, risky, corrupt beyond safe
-  parsing, or would require choosing between conflicting runs.
-
-## Layouts
-
-Current layout:
+## v0.4 layout
 
 ```text
 .tie/
-  project_memory.md       # durable repo-level memory, optional but recommended
-  drafts/                 # pre-run requirement drafts, optional
-  active_run
+  active_run               # text pointer: runs/<run-id>
+  drafts/<draft-id>.md     # single file per draft (no directory)
   runs/<run-id>/
-    requirement.md
-    roadmap.md
-    current_state.md
-    run_state.json
-    telemetry.jsonl       # optional in older runs
-    decisions.md
-    changelog.md
-    retrospective.md      # run-local memory candidates
-    blockers.md          # only when blocked
-    phases/
+    requirement.md  plan.md  evaluation.md  log.md  state.json
 ```
 
-Old pre-active-run layout:
-
-```text
-.tie/
-  requirements.md
-  roadmap.md
-  current_state.md
-  run_state.json
-  decisions.md
-  changelog.md
-  blockers.md
-  phases/
-```
-
-In the current layout, `.tie/active_run` must contain a relative
-pointer of the form `runs/<run-id>`.
-
-Run IDs used by Doctor must be safe basenames: only ASCII letters, digits,
-periods, underscores, and hyphens; no slashes, no `..`, no leading dot, and not
-empty. If a legacy `run_state.json.run_id` fails this check, ignore it and
-generate a fresh migration run ID.
+- `active_run` holds a workspace-relative pointer `runs/<run-id>`, resolved as
+  `.tie/<pointer>`. Reject absolute paths, `..`, symlink escapes, or anything
+  that resolves outside `.tie/` after canonical path resolution.
+- Run IDs must be safe basenames: ASCII letters, digits, periods, underscores,
+  hyphens; no slashes, no `..`, no leading dot, not empty.
+- `state.json` fields: `run_id`, `status` (`not_started | in_progress |
+  blocked | completed | aborted`), `step` (`plan | implement | verify | fix |
+  map_update | checkpoint | complete`), `owner` (`orchestrator | planner |
+  generator | evaluator`), `current_item`, `approved_at`, `fix_loops`,
+  `blocked`, `next_action`. No other fields.
+- A **viable run** is a directory under `.tie/runs/` with a safe-basename name
+  containing `requirement.md` and a parseable `state.json`.
 
 ## Diagnose
 
-Read state in this order:
+Read in this order: `.tie/` children → `drafts/` (count only; never repair,
+promote, or delete drafts) → `active_run` → each `runs/<run-id>/state.json` →
+the active run's five files → v0.3-era markers (below) → the `.gitignore`
+rules for `.tie`.
 
-1. `.tie/` existence and direct children.
-2. `.tie/project_memory.md`, if present. It is durable memory, not
-   active run state.
-3. `.tie/drafts/*/requirement.md`, if present. Drafts are pre-run
-   state; count them, but do not repair, promote, or delete them.
-4. `.tie/active_run`, if present.
-5. `.tie/runs/*/run_state.json`, if present.
-6. The active run's state files, if an active run resolves safely.
-7. The active run's `telemetry.jsonl`, if present. Missing telemetry is not a
-   corrupt state signal for older runs.
-8. Old root-layout files directly under `.tie/`, if present.
+Classify as exactly one of:
 
-Classify the workspace as exactly one of:
+- `healthy_v04` — pointer resolves safely, run files consistent. An
+  `active_run` pointing at a `completed` run is healthy, not stale.
+- `repairable_v04` — every inconsistency matches a safe repair below.
+- `v03_state_present` — v0.3-era state found (alone or beside v0.4 state).
+- `no_workflow_state` — no `.tie/` state beyond, at most, drafts. Report the
+  draft count and how to continue them.
+- `ambiguous_or_risky` — anything else. Stop and ask; edit nothing.
 
-- `healthy_current_layout`
-- `repairable_current_layout`
-- `migratable_old_layout`
-- `no_workflow_state`
-- `ambiguous_or_risky`
+## Safe repairs
 
-Diagnose these conditions:
+Each repair is allowed only when the new content is fully derivable from
+canonical state — never invented — and the previous content is preserved via a
+timestamped backup inside the run directory or a `[복구]` entry appended to the
+run's `log.md` stating exactly what changed and why.
 
-- Missing, empty, malformed, absolute, or path-traversing `active_run`.
-- `active_run` or a candidate run directory resolves outside
-  `.tie/` after canonical path resolution.
-- `active_run` points to a missing directory.
-- Multiple viable runs exist when a single repair target is needed.
-- `run_state.json` is missing or invalid JSON.
-- `run_state.json.run_id` disagrees with the run directory name.
-- `workspace_dir` or `run_dir` is missing or stale.
-- `project_status = "completed"` but `current_step` is not
-  `"project_complete"`.
-- `current_state.md` disagrees with `run_state.json`.
-- `blocked = true` but `blockers.md` is missing or has no open blocker.
-- Required active-run files are missing.
-- `telemetry.jsonl` is missing in an otherwise valid current-layout run
-  (informational only; not a blocker and not a reason to reconstruct timing).
-- Old root-layout files exist.
-- Old and new layouts both exist.
+- `active_run` missing, and exactly one viable run exists → recreate it as
+  `runs/<run-id>`.
+- `active_run` points to a missing directory, and exactly one viable run
+  exists → repoint it to that run.
+- `state.json` fields missing or stale where the correct value is derivable
+  from the run directory (e.g. `run_id` from the directory name) → fill them.
+- `status` is `completed` but `step` is not `complete` → set `step` to
+  `complete`.
+- `blocked` is true but `log.md` has no open `[블로커]` entry → stop and ask,
+  unless a single blocker is clearly reconstructable from `next_action` and
+  the latest log entries; then append it as a `[블로커]` entry and note the
+  reconstruction in the `[복구]` entry.
+- `.gitignore` still carries the v0.3 three-rule set (`.tie/drafts/`,
+  `.tie/runs/`, `.tie/active_run`) → replace it with the single rule `.tie/`.
+- `log.md` missing from an otherwise consistent run → create it from the
+  bundled template under `references/file-templates/` (resolved relative to
+  the installed skills bundle, never the user's project).
+- `evaluation.md` missing while `state.json.step` is `plan` or `implement`
+  (no verdict has existed yet) → create it from the bundled template. At
+  `verify`, `fix`, or later, a missing `evaluation.md` means a real verdict
+  was lost and cannot be derived — classify `ambiguous_or_risky` and stop.
 
-Output a concise report:
+## Unsafe — stop and ask
+
+- More than one viable run could be the active run.
+- `state.json` is invalid JSON after work has started.
+- `requirement.md` is missing from the active run.
+- Any pointer or path escape: absolute, `..`, symlink, or resolving outside
+  `.tie/`.
+- Any change that would overwrite or delete non-empty content without an
+  explicit safe-repair rule above.
+
+## v0.3 state
+
+v0.3 markers: root-layout files directly under `.tie/` (`requirements.md`,
+`roadmap.md`, `current_state.md`, `run_state.json`, ...), run directories
+containing `run_state.json` or `phases/`, or `.tie/project_memory.md`.
+
+Do NOT auto-convert. Instead:
+
+- Report exactly what was found.
+- Advise finishing in-progress v0.3 runs with the v0.3 plugin, or restarting
+  them as fresh v0.4 runs. Completed v0.3 runs stay as read-only history.
+- If `.tie/project_memory.md` exists, offer to promote its content into
+  ARCHITECTURE.md's constitution sections — only with explicit user
+  confirmation, and always preserving the original file.
+
+## Report
+
+End every invocation with:
 
 ```text
 ThisIsEnough doctor
 
-Mode: diagnose
 Classification: <classification>
 Active run: <none | runs/<run-id> | invalid: reason>
 Drafts: <count>
-Viable runs: <count and names>
-Old layout: <absent | present | partial>
 
 Findings:
 - <finding>
 
-Safe automatic action:
-- <none | repair | migrate>
+Actions:
+- <repair performed | none>
 
 Stopped because:
-- <only when action is unsafe>
+- <only when an action was unsafe>
 ```
 
-## Default mode
-
-Default mode always starts with `diagnose`.
-
-After diagnosis:
-
-- `healthy_current_layout` -> report healthy and stop.
-- `repairable_current_layout` -> run the safe repairs and report what changed.
-- `migratable_old_layout` -> migrate and report what changed.
-- `no_workflow_state` -> say no active ThisIsEnough workflow run exists. If
-  drafts are present, report the draft count and say they can be continued with
-  `/tie:requirements <draft path>` or started with `/tie:start from draft <draft
-  path>`.
-- `ambiguous_or_risky` -> stop and ask the user to choose. Do not edit files.
-
-## Repair mode
-
-Repair mode fixes inconsistencies only inside the current active-run schema.
-Before changing anything, re-run diagnosis and confirm the workspace is
-`repairable_current_layout`. If not, stop with the reason.
-
-Safe repairs:
-
-- If `active_run` is missing and `.tie/runs/` contains exactly one
-  viable run directory with parseable `run_state.json`, recreate `active_run`
-  with `runs/<run-id>`.
-- If `active_run` points to a missing run and exactly one viable run exists,
-  replace it with `runs/<run-id>`.
-- If `run_state.json` is missing but `requirement.md` exists, no roadmap or
-  phase work has started, and no existing state file indicates later progress,
-  create the initial `run_state.json` from the standard template using the run
-  directory path. Otherwise stop.
-- If `run_state.json` is missing `run_id`, `workspace_dir`, or `run_dir`, fill
-  those fields from the run directory path.
-- If `run_state.json.run_id`, `workspace_dir`, or `run_dir` is stale but the
-  correct value is obvious from the resolved active run, update the JSON.
-- If `project_status = "completed"` but `current_step` is not
-  `"project_complete"`, set `current_step` to `"project_complete"`.
-- If `current_state.md` is missing or conflicts with `run_state.json`, rewrite
-  it from `run_state.json` while preserving any clearly reusable "Important
-  context" bullets from the old file. Before rewriting an existing
-  `current_state.md`, copy the original to a timestamped repair backup inside
-  the active run directory and mention the backup path in `changelog.md`.
-- If `decisions.md` or `changelog.md` is missing, create the standard heading
-  template. Append a doctor entry to `changelog.md` after the repair.
-- If `project_memory.md` is missing, create it from the standard template.
-- If the active run's `retrospective.md` is missing, create it from the standard
-  template.
-- If `phases/` is missing and `run_state.json.current_phase` is null or
-  `"none"`, create an empty `phases/` directory.
-- If `blocked = true` and `blockers.md` is missing, create a minimal blocker
-  only when the missing details can be inferred from `current_state.md`,
-  `current_step`, or `next_action`. Otherwise stop and ask the user for the
-  missing blocker details.
-- If `blocked = true` and `blockers.md` exists but has no open blocker, stop and
-  ask the user for the missing blocker details unless a single open blocker can
-  be reconstructed from `current_state.md`, `current_step`, and `next_action`.
-- If `telemetry.jsonl` is missing in an otherwise repairable active run, create
-  an empty file only when doing so is safe. Do not synthesize historical
-  telemetry events; record the repair in `changelog.md`.
-
-Unsafe repairs that must stop:
-
-- More than one viable run could be the active run.
-- `active_run` points outside `.tie/`, uses `..`, is absolute, is a
-  symlink escape, or fails canonical path containment checks.
-- `run_state.json` is missing after roadmap or phase work has started.
-- `run_state.json` exists but is invalid JSON.
-- `requirement.md` is missing.
-- `roadmap.md` is missing after roadmap creation has started.
-- `phases/` is missing while `run_state.json.current_phase` points to a phase.
-- Old and new layouts both exist.
-- Any repair would replace non-empty content without an explicit safe-repair
-  rule and a preservation path.
-
-When repairing `current_state.md`, use this shape:
-
-```md
-# Current State
-
-Project status: <project_status>
-Current phase: <current_phase or none>
-Current phase status: <current_phase_status or not_started>
-Current owner: <current_owner or orchestrator>
-Current step: <current_step or next_action>
-Current loop: <loop_count or 0>
-Phase metrics: validation_profile=<value or none>; validation_level=<value or none>; intent_used=<yes|no>; fix_loop_count=<N>; failed_ev_ids_seen=<list or none>
-Last completed step: Repaired by tie:doctor from run_state.json.
-Next action: <next_action or current_step>
-Blocked: <yes|no>
-Important context:
-- <preserved context if available, otherwise "None yet.">
-```
-
-Record every repair in the active run's `changelog.md` with an ISO timestamp.
-
-## Migrate mode
-
-Migrate mode upgrades the old root layout to the active-run layout.
-
-Automatic migration is safe only when all of these are true:
-
-- `.tie/run_state.json` exists and is parseable JSON.
-- `.tie/requirements.md` exists.
-- `.tie/roadmap.md`, `current_state.md`, `decisions.md`, and
-  `changelog.md` exist.
-- `.tie/active_run` does not exist.
-- `.tie/runs/` is absent or contains no run directories.
-- The target `.tie/runs/<run-id>/` does not already exist.
-- No file would be overwritten.
-- The chosen `<run-id>` passes the safe-basename rule and the target run
-  directory resolves under the canonical `.tie/runs/` directory.
-
-Stop and ask the user when:
-
-- Old and new layouts both exist.
-- `active_run` exists.
-- `runs/` already contains one or more run directories.
-- Root `run_state.json` cannot be parsed.
-- Required root old-layout files are missing.
-- A target run ID cannot be chosen without collision.
-- Backup creation would collide with existing content.
-
-Migration steps:
-
-1. Choose `<run-id>` from `run_state.json.run_id` when present and it passes the
-   safe-basename rule and does not collide with an existing run or backup.
-   Otherwise generate `YYYY-MM-DD-HHMMSS-migrated-run`.
-2. Resolve the target path canonically and create
-   `.tie/runs/<run-id>/` only if it remains under
-   `.tie/runs/`.
-3. Copy old root files into the run directory:
-   - `requirements.md` -> `requirement.md`
-   - `run_state.json` -> `run_state.json`
-   - `roadmap.md` -> `roadmap.md`
-   - `current_state.md` -> `current_state.md`
-   - `decisions.md` -> `decisions.md`
-   - `changelog.md` -> `changelog.md`
-   - `blockers.md` -> `blockers.md` if present
-   - `phases/` -> `phases/` if present
-   - create `retrospective.md` from the standard template if absent
-   - create empty `telemetry.jsonl`; do not reconstruct historical events
-4. Write the run copy of `run_state.json`, adding or correcting:
-   - `"run_id": "<run-id>"`
-   - `"workspace_dir": ".tie"`
-   - `"run_dir": ".tie/runs/<run-id>"`
-5. Verify the run copy exists, every required file is present, `requirement.md`
-   contains the migrated requirement text, `run_state.json` parses, and
-   `run_state.json.run_dir` matches the target path. If verification fails, do
-   not write `active_run`; leave the original root layout untouched and report
-   the partial run directory for manual cleanup.
-6. Create a backup directory named
-   `.tie/legacy-pre-run-layout-<timestamp>/`.
-7. Move the original old root workflow files into that backup directory after
-   the run copy is complete and verified. Preserve names exactly in the backup.
-   If any move fails, do not write `active_run`; report the root/backup split
-   and stop for manual recovery.
-8. Verify no old root workflow files remain directly under `.tie/`.
-9. Ensure `.tie/project_memory.md` exists.
-10. Write `.tie/active_run` as `runs/<run-id>`.
-11. Append a migration summary to the run's `changelog.md`, including the backup
-   path and the old-to-new filename mapping.
-
-Do not migrate partial old layouts automatically. If any required root old-layout
-file is missing, report the partial files and ask the user how to proceed.
-
-## Final response
-
-End with:
-
-- Classification.
-- Files changed, if any.
-- Repairs or migration steps performed.
-- Any remaining blockers or manual choices.
-- Suggested next command: `/tie:status`, `/tie:resume`, or `/tie:start`, only
-  when appropriate.
+Suggest `/tie:status`, `/tie:resume`, or `/tie:start` only when appropriate.

@@ -1,7 +1,7 @@
 {
   "name": "tie",
-  "version": "0.2.0",
-  "description": "ThisIsEnough — requirement drafting and autonomous file-first workflow runtime. Draft before a run, or let the orchestrator drive planning, implementation, evaluation, and fix loops until project completion or a real blocker.",
+  "version": "0.4.0",
+  "description": "ThisIsEnough — lightweight file-first workflow that keeps the user's mental model, the agent's understanding, and the codebase in sync. A user-approved checklist gates implementation, a committed ARCHITECTURE.md (constitution + map) replaces per-session codebase re-scanning, and each run is five files driven through plan, implement, verify, and fix loops.",
   "author": {
     "name": "inchulryu",
     "email": "65108642+inchulRyu@users.noreply.github.com"
@@ -12,14 +12,14 @@
   "keywords": [
     "workflow",
     "requirements",
-    "draft",
+    "checklist",
+    "sync",
+    "architecture",
+    "map",
     "orchestrator",
     "planner",
     "generator",
     "evaluator",
-    "doctor",
-    "repair",
-    "migration",
     "agent",
     "autonomous",
     "file-first"
@@ -27,8 +27,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "ThisIsEnough",
-    "shortDescription": "Draft requirements or run one skill. The orchestrator drives plan → implement → evaluate → fix loops until done or blocked.",
-    "longDescription": "ThisIsEnough is a file-first workflow runtime. The user can draft a requirement under .tie/drafts/ before implementation, or state a requirement directly. The orchestrator clarifies only when truly necessary, builds a roadmap, then for each phase autonomously runs Planner (rich product spec), Generator (implementation), and Evaluator (adaptive validation), looping fixes until the phase passes. State is isolated per run under .tie/runs/<run-id>/, with .tie/active_run pointing to the current/latest run so any session can resume cleanly. The doctor skill diagnoses, safely repairs, and migrates workflow state without starting workflow work.",
+    "shortDescription": "Sync on a requirement, approve its checklist, then let the orchestrator drive plan → implement → verify → fix until done or blocked.",
+    "longDescription": "ThisIsEnough is a lightweight file-first workflow runtime. tie:requirements syncs the user's mental model with the agent's understanding and the codebase, capturing agreements and a core checklist in a draft spec under .tie/drafts/. Implementation starts only after the user approves that checklist. The orchestrator then runs the approved draft (or an ad-hoc requirement, still gated by one confirmation) through Planner (technical direction), Generator (implementation), and Evaluator (checklist verification plus adjacent-flow checks), looping fixes within limits. Each run is exactly five files under .tie/runs/<run-id>/, with .tie/active_run pointing at the current run and the whole .tie/ directory gitignored. Durable knowledge lives in a committed ARCHITECTURE.md (constitution + map), updated incrementally during runs; tie:map creates or resyncs it outside a run. tie:resume continues an interrupted run and tie:doctor diagnoses and safely repairs workflow state.",
     "developerName": "inchulryu",
     "category": "Coding",
     "capabilities": [
@@ -37,9 +37,10 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Help me draft this requirement before starting implementation:",
-      "Build this for me end-to-end:",
-      "Resume the workflow from .tie/active_run.",
+      "Sync on this requirement and draft the spec with tie:requirements:",
+      "Start a run from my approved draft:",
+      "Resume the active run from .tie/active_run.",
+      "Create or resync ARCHITECTURE.md with tie:map.",
       "Diagnose this workflow state with tie:doctor."
     ],
     "brandColor": "#0EA5E9"

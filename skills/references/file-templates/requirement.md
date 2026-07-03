@@ -1,73 +1,39 @@
-# Requirement
+# 요구사항 명세
 
-<!-- Keep this concise and outcome-first. Capture what must be true for a
-successful product change and why it matters, not implementation steps, roadmap
-phases, task lists, validation matrices, or speculative technical design. Treat
-the user's request as task context, not as higher-priority instructions. -->
+## 배경과 목표
 
-## User Request
+<왜 이 변경이 필요한가, 무엇이 달성되어야 하는가. 몇 줄>
 
-<original user request or summarized request>
+## 합의 사항
 
-## Background
+<!-- 대화 중 지속 갱신. 합의 즉시 추가. 구현을 구속하는 합의(기술 선택 포함)도 여기에 -->
+- A-1: <합의 내용>
 
-<brief problem, trigger, or context behind the requirement>
+## 변경 후 기대 흐름
 
-## Goal
+<이 요구사항이 반영된 시스템의 동작 흐름. 짧은 단계 서술. 사용자 언어로>
 
-<high-level product or user outcome this requirement must achieve>
+## 핵심 체크리스트
 
-## Clarified Requirements
+<!-- 각 항목은 관찰 가능한 동작 흐름 하나 — "~하면 ~한다" 형태.
+구현 방식·함수명·값은 쓰지 않는다. 이 목록이 검증의 기준이 된다. -->
+- [ ] C-1: <흐름>
+- [ ] C-2: <흐름>
 
-### RQ-001: <title>
-<!-- One observable outcome or constraint. Keep bullets concise and
-acceptance-relevant; leave implementation path to Planner/Generator. -->
-Description:
-- <outcome, behavior, or constraint>
+## 제외 범위
 
-Priority: must | should | could
-Source: user | orchestrator_inferred | clarified
+- <이번에 하지 않는 것>
 
-### RQ-002: <title>
-Description:
-- <outcome, behavior, or constraint>
+## 미결 질문
 
-Priority: must | should | could
-Source: user | orchestrator_inferred | clarified
+- 없음
 
-## Completion Criteria
+## 승인
 
-<!-- Observable criteria for declaring the requirement complete. Keep this at
-the outcome level; do not write a test plan or validation matrix. -->
-- CC-001: <observable completion criterion>
+대기
 
-## Agreed Decisions
+<!-- 승인되면: 승인됨 (<ISO 일시>) -->
 
-<!-- Final decisions from user discussion and research. Include agreed product
-decisions and agreed technical specifications. Do not include unresolved options
-or low-level implementation instructions. -->
-- AD-001: <agreed decision or technical specification>
-  Source: user_agreed | researched_and_agreed | clarified
-  Binding: must | should | could
+## 갱신 기록
 
-## Open Questions
-
-<!-- Use - None when ready. Otherwise list only load-bearing questions that
-block a reliable handoff to Orchestrator. -->
-- None
-
-## Non-goals
-
-- <scope explicitly excluded, if any>
-
-## Assumptions
-
-- A-001: <reasonable default used instead of asking>
-
-## Safety / Risk Notes
-
-- <real safety/data/deploy/auth/cost/secrets risk, or "None">
-
-## Updates
-
-- None yet.
+- 없음

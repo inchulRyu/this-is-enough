@@ -1,85 +1,29 @@
 # Plan
 
-<!-- Keep this product-level and proportionate. Do not paste schemas, route
-tables, test matrices, or task lists when they can be referenced from
-requirement.md, decisions.md, or code. -->
+## 기술 방향
 
-## Requirement coverage
+<조사 요약과 선택 이유. 시스템 전체 흐름(지도) 기준. 구현 상세 금지>
 
-- RQ-001: <briefly describe how this plan reflects it>
-- RQ-002: <how this plan reflects it>
+## 흐름 접목 지점
 
-## Feature summary
+<지도의 어느 흐름·어느 단계에 접목되는지. `심볼` 포인터>
 
-<product-level summary>
+## 합의된 구현 방법
 
-## Product context
+<A-n 중 구현을 구속하는 것. 없으면 "없음">
 
-<why this feature/change belongs in the current product>
+## 작업 항목
 
-## Why this should not be under-scoped
+<!-- 작은 작업: W-n을 한 번에 나열. 큰 작업: 단계 제목 아래 묶고 첫 단계만
+상세화하며, 다음 단계는 목표 한 줄(covers: C-n 표기 포함)만 남겼다가
+시작 직전에 상세화해 append한다. -->
+- [ ] W-1: <굵은 단위 작업> (covers: C-1, C-2)
+- [ ] W-2: <...> (covers: C-3)
 
-<the most important things that would likely be missed if Generator implemented
-only the raw request>
+## Generator 판단에 맡기는 것
 
-## Expanded product spec
+- <파일 구조, 함수 경계, 테스트 방식 등>
 
-### User-facing behavior
+## 검증 힌트
 
-- ...
-
-### Main interaction flow
-
-1. ...
-2. ...
-3. ...
-
-### Functional depth
-
-- <behavioral depth and user-visible/system guarantees; avoid enumerating every
-  field/function/test>
-
-### Edge cases / empty states / failure states
-
-- ...
-
-### Consistency expectations
-
-- ...
-
-## High-level technical design
-
-- <direction and integration points only; leave exact file/function boundaries
-  to Generator unless fixed by requirement.md or decisions>
-
-## Implementation freedom left for Generator
-
-The Generator should decide:
-- exact file structure
-- exact component/function boundaries
-- exact data fetching mechanism
-- exact test implementation
-- repo-specific integration details
-
-## Validation sizing
-
-Recommended validation profile: standard | high
-
-Why this profile is proportionate:
-- <phase risk/blast radius and why this does not need a heavier or lighter profile>
-
-Validation notes:
-- <success oracle or risk area for Evaluator; do not write EV-IDs or test matrix>
-
-## Constraints and edge considerations
-
-- ...
-
-## Out of scope
-
-- ...
-
-## Acceptance intent
-
-This phase should feel complete when:
-- ...
+- <위험 지점, 영향 가능성 있는 인접 흐름>
