@@ -2,6 +2,8 @@
 
 > Light by design. The name is the philosophy: only what is needed, nothing more.
 
+**한국어**: [README.ko.md](./README.ko.md)
+
 ThisIsEnough is a **file-first workflow plugin** for coding agents on
 **Claude Code** and **Codex CLI**. It keeps your mental model, the agent's
 understanding, and the code's actual behavior in sync.
@@ -25,7 +27,10 @@ persistent map, fixed roles in a fixed order — and nothing else.
    presents the current system flow and the expected flow after your change;
    agreements are written down the moment they happen.
 2. **Approval gate** — the core checklist (핵심 체크리스트) of observable
-   "when X, Y happens" flows is confirmed with you once before any implementation.
+   "when X, Y happens" flows is confirmed with you once before any
+   implementation. Approving is just replying in the conversation — the
+   agent records it in the requirement's `## 승인` section and
+   `state.json`; you never edit workflow files by hand.
 3. **The run** — plan (direction only; large work is staged, later stages
    detailed just before they start) → implement (the Generator judges the
    details at the code) → verify (each checklist flow actually exercised,
@@ -165,6 +170,79 @@ $tie:orchestrator Start from draft .tie/drafts/<draft-id>.md  # Codex CLI
 $tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 ```
 
+## A typical run
+
+Say you want to add a `subtract` command to a small CLI calculator.
+(Examples use Claude Code syntax; on Codex, replace `/tie:` with `$tie:`
+per the table above.)
+
+**1. Shape the requirement.**
+
+```text
+/tie:requirements I want a subtract command, same interface as add.
+```
+
+The agent reads `ARCHITECTURE.md` instead of scanning the repo, shows the
+current flow and the expected flow after your change, and writes each
+agreement into `.tie/drafts/<draft-id>.md` the moment it happens. The draft
+converges on a core checklist of observable flows:
+
+```md
+## 핵심 체크리스트
+- [ ] C-1: `calc.py subtract 5 3`을 실행하면 2.0을 출력하고 종료 코드 0으로 끝난다
+- [ ] C-2: 기존 add 명령은 이전과 완전히 동일하게 동작한다
+- [ ] C-3: 알 수 없는 명령을 주면 subtract를 포함한 usage를 보여주고 종료 코드 1로 끝난다
+```
+
+**2. Approve and start.**
+
+```text
+/tie:start from draft .tie/drafts/2026-07-03-001-calc-subtract.md
+```
+
+Approval is a conversational reply — "approve", or "C-2 should also cover
+…" to renegotiate first. The agent records it in `requirement.md`'s
+`## 승인` and `state.json.approved_at`. A draft approved during the
+requirements conversation starts immediately. You can also skip drafting
+and pass raw requirements straight to `/tie:start`; the agent writes the
+requirement itself and shows you the checklist for one confirmation before
+anything else happens.
+
+**3. The run does the rest.**
+
+- **Planner** writes `plan.md`: technical direction and coarse work items
+  (W-n), each naming the C-ns it covers. Large work is split into stages;
+  only the first is detailed, later stages get detailed just before they
+  start, with the knowledge gained so far.
+- **Generator** implements W-n by W-n, judging details at the code, logging
+  decisions and failed approaches to `log.md`.
+- **Evaluator** actually exercises every checklist flow (reading is not
+  verification), plus adjacent flows from the map as a regression list,
+  and writes the verdict to `evaluation.md`. On `fail`, the Generator gets
+  a fix round with concrete next actions — bounded, never endless.
+- On `pass` the orchestrator ticks the C-n boxes, updates the map
+  incrementally if behavior or structure changed, and makes a checkpoint
+  commit (`tie: <run-id> …`, never staging `.tie/`).
+
+**4. Interruptions don't matter.**
+
+Every decision lives in files, not context. Close the terminal mid-run,
+come back tomorrow, and:
+
+```text
+/tie:resume
+```
+
+picks up exactly where the run stopped. This includes a pending approval:
+a headless or unattended start stops as blocked with the checklist shown,
+and replying through `/tie:resume` with your approval records it and
+continues.
+
+**5. Complete.** Failed approaches and newly discovered invariants are
+promoted into the `ARCHITECTURE.md` constitution, and you get a short
+report: verdict, commit, map updates, and a command or two to verify with
+your own hands.
+
 ## Skills
 
 | Skill              | What it does                                                              |
@@ -178,6 +256,17 @@ $tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 | `tie:resume`       | Resumes the run pointed to by `.tie/active_run`.                          |
 | `tie:status`       | Read-only snapshot of the active run.                                     |
 | `tie:doctor`       | Diagnoses, safely repairs, and migrates v0.3 workspaces.                  |
+
+## Models and effort
+
+TIE never pins a model or reasoning effort. Model choice solves none of the
+three problems TIE exists for, model names differ per host and go stale,
+and a plugin should not silently decide your costs. Every role inherits
+your session settings — `/model` and `/effort` in Claude Code, `model` /
+`model_reasoning_effort` in Codex's `~/.codex/config.toml`. To pin a
+per-role override in Claude Code, add a `model:` line to the agent
+frontmatter in `agents/` — the Planner, which does deep research, benefits
+most from a high-reasoning model. Codex applies its config globally.
 
 ## What the workspace looks like
 
