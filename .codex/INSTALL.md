@@ -36,7 +36,7 @@ You should see:
 
 ```text
 tie:requirements
-tie:orchestrator
+tie:start
 tie:planner
 tie:implementer
 tie:verifier

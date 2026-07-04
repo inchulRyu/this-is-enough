@@ -17,7 +17,8 @@ repairs, no subagent dispatches.
    - No `.tie/` workflow state at all → say plainly: "No ThisIsEnough
      workflow has been started in this directory. Start one with
      `/tie:start <requirement>` in Claude Code or
-     `$tie:orchestrator <requirement>` in Codex CLI."
+     `$tie:start <requirement>` in Codex CLI, or shape the
+     requirement first with `tie:requirements`."
    - `active_run` exists but is unreadable, invalid, or points at a run
      without `state.json` → that is recoverable state, not a fresh start:
      report the invalid pointer and suggest `/tie:doctor` (Claude Code) or

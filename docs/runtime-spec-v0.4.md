@@ -1,6 +1,6 @@
 # ThisIsEnough Workflow Spec v0.4
 
-Status: 구현 반영 완료 — skills/commands/agents/templates가 이 문서에서 파생된다(v0.4.1).
+Status: 구현 반영 완료 — skills/agents/templates가 이 문서에서 파생된다(v0.4.2).
 v0.3(`runtime-spec-v0.3.md`)을 대체한다.
 
 ---
@@ -345,7 +345,7 @@ Verdict: pass | fail | blocked
 
 ```text
 [대화]  동기화 → 명세 작성 → 핵심 체크리스트 승인          (tie:requirements)
-[실행]  run 생성 → 지도 확인(없으면 생성 제안)              (tie:start / orchestrator)
+[실행]  run 생성 → 지도 확인(없으면 생성 제안)              (tie:start)
         → plan (Planner)
         → implement (Implementer, W-n 단위)
         → verify (Verifier)
@@ -364,7 +364,9 @@ Verdict: pass | fail | blocked
   다음 단계는 앞 단계가 끝난 뒤, 그 시점의 지식으로 상세화한다.
 - **체크포인트 커밋**: git이 있고 커밋이 허용되면 verify pass 후에 커밋한다.
   커밋 전 `git status --short`를 확인하고, 무관한 변경·의심 파일·시크릿이 보이면 멈춘다.
-  volatile 상태(`.tie/`)는 스테이징하지 않는다. 커밋 불가 사유는 log에 남긴다.
+  volatile 상태(`.tie/`)는 스테이징하지 않는다. 이 run의 제품 변경과 지도 갱신은
+  같은 체크포인트 커밋에 담는다 — 지도를 미커밋 상태로 남기지 않는다.
+  커밋 불가 사유는 log에 남긴다.
 - **fix 한도**: verify 사이클당 fix 루프 3회(verify pass마다 0으로 리셋 —
   단계별 run에서 앞 단계가 뒤 단계의 예산을 소진하지 않는다), 동일 실패
   2회 반복 시 블로커로 전환. 한도 도달은 포기가 아니라 에스컬레이션이다:
@@ -451,16 +453,23 @@ draft 승격 시 draft 파일을 run의 `requirement.md`로 복사·확인 후 d
 
 ---
 
-## 8. 명령
+## 8. 진입점
 
-| 명령 | 역할 |
+진입점은 스킬 단일 계층이다. 별도의 커맨드(어댑터) 계층을 두지 않으며,
+Claude Code(`/tie:...`)와 Codex(`$tie:...`)에서 이름이 동일하다.
+
+| 진입점 | 역할 |
 | --- | --- |
 | `tie:requirements` | 대화·동기화·명세 작성·승인 (§4). run을 만들지 않는다 |
-| `tie:start` / `tie:orchestrator` | 승인된 명세(또는 즉석 요구사항)로 run 시작·완주 |
-| `tie:map` | `ARCHITECTURE.md` 최초 생성 · run 밖 변경 후 재동기화 · 지도 재구성. 사용자 확인을 거친다. run 중 갱신은 자동·증분(§3.3, §6)이므로 이 명령이 필요 없다 |
+| `tie:start` | 승인된 명세(또는 즉석 요구사항)로 run 시작·완주. Orchestrator(§5.1)가 맡는다 |
+| `tie:map` | `ARCHITECTURE.md` 최초 생성 · run 밖 변경 후 재동기화 · 지도 재구성. 사용자 확인을 거친다. run 중 갱신은 자동·증분(§3.3, §6)이므로 이 진입점이 필요 없다 |
 | `tie:resume` | active run 재개 (§6.1) |
 | `tie:status` | 읽기 전용 상태 요약 |
 | `tie:doctor` | 상태 진단·안전 복구·v0.3 레이아웃 마이그레이션 |
+
+역할 스킬(`tie:planner` · `tie:implementer` · `tie:verifier`)은 디스패치되는
+역할 계약의 배달 수단이지 사용자 진입점이 아니다. Claude Code에서는
+`user-invocable: false`로 피커에서 숨긴다(서브에이전트 호출은 유지된다).
 
 즉석 요구사항으로 `tie:start`를 부른 경우에도 승인 게이트는 생략되지 않는다.
 Orchestrator가 명세와 체크리스트를 만들어 **한 번** 확인받고 진행한다.

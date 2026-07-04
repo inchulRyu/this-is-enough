@@ -1,6 +1,7 @@
 ---
 name: verifier
-description: Verifies the system behaves as the user's approved checklist says and that the rest of the mapped system is unharmed. Modes: verify | recheck.
+user-invocable: false
+description: "Verifies the system behaves as the user's approved checklist says and that the rest of the mapped system is unharmed. Modes: verify | recheck."
 ---
 
 # tie:verifier — verification

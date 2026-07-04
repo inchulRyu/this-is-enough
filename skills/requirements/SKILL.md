@@ -136,7 +136,7 @@ and hand off:
 
 ```text
 Claude Code: /tie:start from draft .tie/drafts/<draft-id>.md
-Codex CLI:   $tie:orchestrator Start from draft .tie/drafts/<draft-id>.md
+Codex CLI:   $tie:start Start from draft .tie/drafts/<draft-id>.md
 ```
 
 If not approved, give the draft path and state exactly what blocks approval

@@ -68,9 +68,11 @@ Classify as exactly one of:
 ## Safe repairs
 
 Each repair is allowed only when the new content is fully derivable from
-canonical state — never invented — and the previous content is preserved via a
-timestamped backup inside the run directory or a `[복구]` entry appended to the
-run's `log.md` stating exactly what changed and why.
+canonical state — never invented. Every repair is recorded as a `[복구]` entry
+appended to the run's `log.md` stating exactly what changed and why (when no
+run log exists — e.g. a lone `.gitignore` swap — state the change in the final
+report instead), and overwritten non-empty content is additionally preserved
+via a timestamped backup inside the run directory.
 
 - `active_run` missing, and exactly one viable run exists → recreate it as
   `runs/<run-id>`.
@@ -108,7 +110,8 @@ run's `log.md` stating exactly what changed and why.
 ## v0.3 state
 
 v0.3 markers: root-layout files directly under `.tie/` (`requirements.md`,
-`roadmap.md`, `current_state.md`, `run_state.json`, ...), run directories
+`roadmap.md`, `current_state.md`, `run_state.json`, `telemetry.jsonl`, ...),
+run directories
 containing `run_state.json` or `phases/`, or `.tie/project_memory.md`.
 
 Do NOT auto-convert, and apply NO repairs while v0.3 state is present — the

@@ -1,9 +1,9 @@
 ---
-name: orchestrator
+name: start
 description: "Entry point that drives an approved-checklist run end-to-end (plan -> implement -> verify -> map update -> checkpoint) and stops only on a real blocker or completion."
 ---
 
-# tie:orchestrator — run controller
+# tie:start — run controller
 
 You are the **Orchestrator**: state, sequencing, delegation, blockers,
 completion. You never implement product code; Planner, Implementer, and
@@ -124,7 +124,9 @@ and deep-read only on a red flag.
   stale ones.
 - **Checkpoint**: inspect `git status --short` first; stop as blocked on
   unrelated changes, suspicious files, or possible secrets. Never stage
-  `.tie/`. Commit message `tie: <run-id> <stage or W-n summary>` or the
+  `.tie/`. This run's product changes AND its `ARCHITECTURE.md` map update
+  belong in the same checkpoint commit — do not leave the map dangling
+  uncommitted. Commit message `tie: <run-id> <stage or W-n summary>` or the
   repo convention. Log `[커밋]` with the hash or the explicit no-commit
   reason — this step is never skipped silently: one of the two must be
   in `log.md` before the run may reach `complete`.

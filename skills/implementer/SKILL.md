@@ -1,5 +1,6 @@
 ---
 name: implementer
+user-invocable: false
 description: implements the plan in repo context — follows the plan's direction, judges the details itself; modes implement | fix.
 ---
 

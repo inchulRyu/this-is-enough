@@ -1,5 +1,6 @@
 ---
 name: planner
+user-invocable: false
 description: Writes plan.md — technology direction grounded in the system map, staged work items; no implementation detail.
 ---
 

@@ -123,7 +123,7 @@ Restart Codex, then type:
 $tie:
 ```
 
-You should see `tie:requirements`, `tie:orchestrator`, `tie:planner`,
+You should see `tie:requirements`, `tie:start`, `tie:planner`,
 `tie:implementer`, `tie:verifier`, `tie:map`, `tie:resume`, `tie:status`, and
 `tie:doctor`.
 
@@ -157,17 +157,16 @@ rm -rf ~/.codex/thisisenough   # optional, removes the clone
 ## Use
 
 ```text
-# Sync conversation → requirement draft → checklist approval
-/tie:requirements Help me shape a dashboard requirement.      # Claude Code
-$tie:requirements Help me shape a dashboard requirement.      # Codex CLI
+# Same names on both platforms: /tie:... in Claude Code, $tie:... in Codex CLI
 
-# Start a run — raw requirements work too; the checklist is confirmed first
-/tie:start from draft .tie/drafts/<draft-id>.md               # Claude Code
-$tie:orchestrator Start from draft .tie/drafts/<draft-id>.md  # Codex CLI
+# Sync conversation → requirement draft → checklist approval
+/tie:requirements Help me shape a dashboard requirement.
+
+# Start a run — from an approved draft, or raw requirements (checklist confirmed first)
+/tie:start from draft .tie/drafts/<draft-id>.md
 
 # Bootstrap/resync ARCHITECTURE.md · resume · status · diagnose & repair
-/tie:map    /tie:resume    /tie:status    /tie:doctor         # Claude Code
-$tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
+/tie:map    /tie:resume    /tie:status    /tie:doctor
 ```
 
 ## A typical run
@@ -248,7 +247,7 @@ your own hands.
 | Skill              | What it does                                                              |
 | ------------------ | ------------------------------------------------------------------------- |
 | `tie:requirements` | Sync conversation; writes the draft under `.tie/drafts/` as agreements happen. |
-| `tie:orchestrator` | Entry point (`/tie:start`). Drives the run state machine end-to-end.      |
+| `tie:start`        | Entry point. Drives the run state machine end-to-end.                     |
 | `tie:planner`      | Technical direction and W-n work items; staged detailing for large work.  |
 | `tie:implementer`  | Implements; judges details on the ground; logs decisions and failed approaches. |
 | `tie:verifier`     | Exercises checklist flows + adjacent mapped flows; pass/fail/blocked.     |
@@ -256,6 +255,11 @@ your own hands.
 | `tie:resume`       | Resumes the run pointed to by `.tie/active_run`.                          |
 | `tie:status`       | Read-only snapshot of the active run.                                     |
 | `tie:doctor`       | Diagnoses, safely repairs, and migrates v0.3 workspaces.                  |
+
+The role skills (`tie:planner`, `tie:implementer`, `tie:verifier`) carry the
+dispatched roles' contracts; you never invoke them directly. In Claude Code
+they are hidden from the command picker (`user-invocable: false`); in Codex
+they are visible under `$tie:` but are meant for dispatched subagents.
 
 ## Models and effort
 

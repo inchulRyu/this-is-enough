@@ -119,7 +119,7 @@ Codex를 재시작한 뒤 입력:
 $tie:
 ```
 
-`tie:requirements`, `tie:orchestrator`, `tie:planner`, `tie:implementer`,
+`tie:requirements`, `tie:start`, `tie:planner`, `tie:implementer`,
 `tie:verifier`, `tie:map`, `tie:resume`, `tie:status`, `tie:doctor`가
 보여야 합니다.
 
@@ -154,17 +154,16 @@ rm -rf ~/.codex/thisisenough   # 선택, 클론까지 제거
 ## 사용법
 
 ```text
-# 대화 동기화 → 요구사항 초안 → 체크리스트 승인
-/tie:requirements 대시보드 요구사항을 정리하고 싶어.                  # Claude Code
-$tie:requirements 대시보드 요구사항을 정리하고 싶어.                  # Codex CLI
+# 양 플랫폼에서 이름이 같습니다: Claude Code는 /tie:..., Codex CLI는 $tie:...
 
-# 런 시작 — 날 것의 요구사항도 OK; 체크리스트를 먼저 확인받음
-/tie:start from draft .tie/drafts/<draft-id>.md               # Claude Code
-$tie:orchestrator Start from draft .tie/drafts/<draft-id>.md  # Codex CLI
+# 대화 동기화 → 요구사항 초안 → 체크리스트 승인
+/tie:requirements 대시보드 요구사항을 정리하고 싶어.
+
+# 런 시작 — 승인된 초안으로, 또는 날 것의 요구사항으로(체크리스트 먼저 확인)
+/tie:start from draft .tie/drafts/<draft-id>.md
 
 # ARCHITECTURE.md 생성/재동기화 · 재개 · 상태 · 진단/복구
-/tie:map    /tie:resume    /tie:status    /tie:doctor         # Claude Code
-$tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
+/tie:map    /tie:resume    /tie:status    /tie:doctor
 ```
 
 ## 런 하나의 흐름 — 시나리오
@@ -241,7 +240,7 @@ $tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 | 스킬               | 역할                                                                       |
 | ------------------ | -------------------------------------------------------------------------- |
 | `tie:requirements` | 대화 동기화; 합의가 이루어질 때마다 `.tie/drafts/` 아래 초안에 기록.        |
-| `tie:orchestrator` | 진입점(`/tie:start`). 런 상태 머신을 끝까지 운전.                          |
+| `tie:start`        | 진입점. 런 상태 머신을 끝까지 운전.                                         |
 | `tie:planner`      | 기술 방향과 W-n 작업 항목; 큰 작업은 단계별 지연 상세화.                    |
 | `tie:implementer`  | 구현; 세부는 현장에서 판단; 결정과 실패 접근을 기록.                        |
 | `tie:verifier`     | 체크리스트 흐름 + 지도의 인접 흐름을 실행; pass/fail/blocked 판정.          |
@@ -249,6 +248,11 @@ $tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 | `tie:resume`       | `.tie/active_run`이 가리키는 런을 재개.                                     |
 | `tie:status`       | 활성 런의 읽기 전용 스냅샷.                                                 |
 | `tie:doctor`       | 진단, 안전한 복구, v0.3 워크스페이스 마이그레이션.                          |
+
+역할 스킬(`tie:planner`, `tie:implementer`, `tie:verifier`)은 디스패치되는
+역할의 계약을 담는 것으로, 직접 호출할 일은 없습니다. Claude Code에서는
+피커에서 숨겨지고(`user-invocable: false`), Codex에서는 `$tie:` 아래 보이지만
+디스패치된 서브에이전트용입니다.
 
 ## 모델과 effort
 

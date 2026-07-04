@@ -16,7 +16,7 @@ The user is continuing a previous run. There should already be a
    resolves outside `.tie/`, and never prepend an extra `runs/` segment.
    If there is no `.tie/` workflow state at all, this is not a resume: say
    so and suggest the platform start command (`/tie:start <requirement>` in
-   Claude Code, `$tie:orchestrator <requirement>` in Codex CLI). If
+   Claude Code, `$tie:start <requirement>` in Codex CLI). If
    `active_run` exists but is unreadable, invalid, or points at a run
    without `state.json`, that is recoverable state — report it and suggest
    `/tie:doctor` or `$tie:doctor` instead of starting a new run.
@@ -57,7 +57,7 @@ The user is continuing a previous run. There should already be a
    - `completed` → say the run is already complete, point at `log.md`, stop.
    - `blocked` with no answer given → restate the open `[블로커]` concisely
      (options, recommendation, resume condition) and stop.
-   - Otherwise → hand off to `tie:orchestrator`, which continues from
+   - Otherwise → hand off to `tie:start`, which continues from
      `state.json.step` / `next_action` without re-running finished steps.
 
 6. **Report briefly before handing off:**
@@ -73,6 +73,8 @@ Next:   <next_action>
 
 ## Anti-patterns
 
+- ❌ Starting a new run or creating/promoting a draft from resume — resume
+  only continues the run `active_run` already points at.
 - ❌ Re-running steps that already completed. Trust the files.
 - ❌ Discarding `.tie/active_run` or the run directory and starting fresh
   because something "looks off." Investigate first; if state is genuinely
