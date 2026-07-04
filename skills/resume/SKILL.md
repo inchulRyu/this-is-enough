@@ -26,7 +26,7 @@ The user is continuing a previous run. There should already be a
      `current_item`, `approved_at`, `blocked`, `next_action`
    - last few entries of `<run-dir>/log.md` — what just happened
    - the artifact for the current step: `plan.md` (plan/implement),
-     `evaluation.md` (verify/fix), plus `requirement.md` (always, for
+     `verification.md` (verify/fix), plus `requirement.md` (always, for
      approval state)
 
    If `state.json` and an artifact disagree, `state.json` is the machine

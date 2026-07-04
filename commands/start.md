@@ -23,4 +23,4 @@ workspace-relative pointer `runs/<run-id>`, resolved as `.tie/<pointer>`.
 
 Two gates are never skipped, even for raw requirements: no implementation
 before the requirement's `## 승인` says `승인됨` (the core checklist confirmed
-once with the user), and no completion without an Evaluator `pass`.
+once with the user), and no completion without a Verifier `pass`.

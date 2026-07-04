@@ -29,7 +29,7 @@ repairs, no subagent dispatches.
    - `<run-dir>/requirement.md` — `## 승인` state and C-n checkbox progress
    - `<run-dir>/plan.md` (if present) — W-n checkbox progress and stage state
      (which stage is detailed vs goal-only)
-   - `<run-dir>/evaluation.md` (if present) — latest `Verdict`
+   - `<run-dir>/verification.md` (if present) — latest `Verdict`
    - last entry of `<run-dir>/log.md`
 
 3. **Output one status block:**

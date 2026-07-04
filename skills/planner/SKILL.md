@@ -40,8 +40,8 @@ state from root `.tie/`:
 - Do NOT fix implementation detail: no function names, file layouts, schemas,
   or component trees. The only exception is a method already bound by an A-n
   agreement — quote it in `## 합의된 구현 방법`.
-- List everything you deliberately leave to Generator's on-the-ground judgment
-  under `## Generator 판단에 맡기는 것`.
+- List everything you deliberately leave to Implementer's on-the-ground judgment
+  under `## Implementer 판단에 맡기는 것`.
 - Grep spot-check the backtick pointers you cite in `## 흐름 접목 지점`; fix
   or flag stale ones instead of copying them.
 
@@ -89,7 +89,7 @@ bundle, never the user's project):
 - [ ] W-1: <굵은 단위 작업> (covers: C-1, C-2)
 - [ ] W-2: <...> (covers: C-3)
 
-## Generator 판단에 맡기는 것
+## Implementer 판단에 맡기는 것
 
 - <파일 구조, 함수 경계, 테스트 방식 등>
 

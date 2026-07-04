@@ -106,7 +106,7 @@ promote it by copying:
 - Each `C-n` is ONE observable behavior flow in "~하면 ~한다" form
   (when X happens, the system does Y).
 - No implementation method, function names, or literal values. The checklist
-  describes behavior the user can observe; it becomes the Evaluator's
+  describes behavior the user can observe; it becomes the Verifier's
   verification standard.
 - When the change touches existing behavior, include a `C-n` stating that the
   relevant adjacent flow keeps working unchanged.
@@ -124,7 +124,7 @@ Ask only load-bearing questions — ones whose answer:
 
 Everything else gets a recorded assumption in `## 합의 사항` or an exclusion
 in `## 제외 범위` instead of an interview. Do not ask about implementation
-details, copy text, or choices Planner/Generator can reasonably make.
+details, copy text, or choices Planner/Implementer can reasonably make.
 
 ## Approval and handoff
 
@@ -151,7 +151,7 @@ start commands.
 - Never promote or delete drafts; the Orchestrator owns promotion.
 - Never write `ARCHITECTURE.md`. Reading it is the norm; creation and
   restructuring belong to `tie:map`.
-- Do not dispatch Planner, Generator, or Evaluator.
+- Do not dispatch Planner, Implementer, or Verifier.
 - Ensure `.gitignore` contains the single rule `.tie/`. If the old three-rule
   set (`.tie/drafts/`, `.tie/runs/`, `.tie/active_run`) is present, replace
   it with `.tie/`.

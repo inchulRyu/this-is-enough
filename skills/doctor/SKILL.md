@@ -32,7 +32,7 @@ dispatch subagents.
   active_run               # text pointer: runs/<run-id>
   drafts/<draft-id>.md     # single file per draft (no directory)
   runs/<run-id>/
-    requirement.md  plan.md  evaluation.md  log.md  state.json
+    requirement.md  plan.md  verification.md  log.md  state.json
 ```
 
 - `active_run` holds a workspace-relative pointer `runs/<run-id>`, resolved as
@@ -43,7 +43,7 @@ dispatch subagents.
 - `state.json` fields: `run_id`, `status` (`not_started | in_progress |
   blocked | completed | aborted`), `step` (`plan | implement | verify | fix |
   map_update | checkpoint | complete`), `owner` (`orchestrator | planner |
-  generator | evaluator`), `current_item`, `approved_at`, `fix_loops`,
+  implementer | verifier`), `current_item`, `approved_at`, `fix_loops`,
   `blocked`, `next_action`. No other fields.
 - A **viable run** is a directory under `.tie/runs/` with a safe-basename name
   containing `requirement.md` and a parseable `state.json`.
@@ -90,9 +90,9 @@ run's `log.md` stating exactly what changed and why.
 - `log.md` missing from an otherwise consistent run → create it from the
   bundled template under `references/file-templates/` (resolved relative to
   the installed skills bundle, never the user's project).
-- `evaluation.md` missing while `state.json.step` is `plan` or `implement`
+- `verification.md` missing while `state.json.step` is `plan` or `implement`
   (no verdict has existed yet) → create it from the bundled template. At
-  `verify`, `fix`, or later, a missing `evaluation.md` means a real verdict
+  `verify`, `fix`, or later, a missing `verification.md` means a real verdict
   was lost and cannot be derived — classify `ambiguous_or_risky` and stop.
 
 ## Unsafe — stop and ask

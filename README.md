@@ -32,7 +32,7 @@ persistent map, fixed roles in a fixed order — and nothing else.
    agent records it in the requirement's `## 승인` section and
    `state.json`; you never edit workflow files by hand.
 3. **The run** — plan (direction only; large work is staged, later stages
-   detailed just before they start) → implement (the Generator judges the
+   detailed just before they start) → implement (the Implementer judges the
    details at the code) → verify (each checklist flow actually exercised,
    plus adjacent flows from the map) → map update (automatic, incremental)
    → checkpoint commit, per stage. No verify pass, no completion.
@@ -124,7 +124,7 @@ $tie:
 ```
 
 You should see `tie:requirements`, `tie:orchestrator`, `tie:planner`,
-`tie:generator`, `tie:evaluator`, `tie:map`, `tie:resume`, `tie:status`, and
+`tie:implementer`, `tie:verifier`, `tie:map`, `tie:resume`, `tie:status`, and
 `tie:doctor`.
 
 To uninstall:
@@ -137,7 +137,7 @@ rm -rf ~/.codex/thisisenough
 Full reference in [`.codex/INSTALL.md`](./.codex/INSTALL.md).
 
 > Codex tip: subagent dispatch requires `multi_agent = true` in
-> `~/.codex/config.toml`. Without it, Planner/Generator/Evaluator run inline
+> `~/.codex/config.toml`. Without it, Planner/Implementer/Verifier run inline
 > in the orchestrator's context (works, but uses more tokens).
 
 ### Uninstalling
@@ -214,11 +214,11 @@ anything else happens.
   (W-n), each naming the C-ns it covers. Large work is split into stages;
   only the first is detailed, later stages get detailed just before they
   start, with the knowledge gained so far.
-- **Generator** implements W-n by W-n, judging details at the code, logging
+- **Implementer** implements W-n by W-n, judging details at the code, logging
   decisions and failed approaches to `log.md`.
-- **Evaluator** actually exercises every checklist flow (reading is not
+- **Verifier** actually exercises every checklist flow (reading is not
   verification), plus adjacent flows from the map as a regression list,
-  and writes the verdict to `evaluation.md`. On `fail`, the Generator gets
+  and writes the verdict to `verification.md`. On `fail`, the Implementer gets
   a fix round with concrete next actions — bounded, never endless.
 - On `pass` the orchestrator ticks the C-n boxes, updates the map
   incrementally if behavior or structure changed, and makes a checkpoint
@@ -250,8 +250,8 @@ your own hands.
 | `tie:requirements` | Sync conversation; writes the draft under `.tie/drafts/` as agreements happen. |
 | `tie:orchestrator` | Entry point (`/tie:start`). Drives the run state machine end-to-end.      |
 | `tie:planner`      | Technical direction and W-n work items; staged detailing for large work.  |
-| `tie:generator`    | Implements; judges details on the ground; logs decisions and failed approaches. |
-| `tie:evaluator`    | Exercises checklist flows + adjacent mapped flows; pass/fail/blocked.     |
+| `tie:implementer`  | Implements; judges details on the ground; logs decisions and failed approaches. |
+| `tie:verifier`     | Exercises checklist flows + adjacent mapped flows; pass/fail/blocked.     |
 | `tie:map`          | Creates, resyncs, or restructures `ARCHITECTURE.md` (with your confirmation). |
 | `tie:resume`       | Resumes the run pointed to by `.tie/active_run`.                          |
 | `tie:status`       | Read-only snapshot of the active run.                                     |
@@ -280,7 +280,7 @@ ARCHITECTURE.md            # constitution + map — committed
     <run-id>/
       requirement.md       # 요구사항 명세: agreements (A-n), checklist (C-n), approval
       plan.md              # technical direction + work items (W-n)
-      evaluation.md        # latest verification report (overwritten)
+      verification.md      # latest verification report (overwritten)
       log.md               # append-only journal of tagged events
       state.json           # machine resume state
 ```
@@ -306,7 +306,7 @@ to promote `project_memory.md` into the `ARCHITECTURE.md` constitution.
 
 No role modifies files outside the project, changes system or network config,
 runs destructive git without confirmation, touches secrets, declares
-completion without an Evaluator pass, or proceeds past risky/irreversible
+completion without a Verifier pass, or proceeds past risky/irreversible
 steps without your OK. In those situations it stops with a clear blocker.
 
 ## Spec

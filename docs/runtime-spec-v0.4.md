@@ -1,6 +1,6 @@
 # ThisIsEnough Workflow Spec v0.4
 
-Status: 구현 반영 완료 — skills/commands/agents/templates가 이 문서에서 파생된다(v0.4.0).
+Status: 구현 반영 완료 — skills/commands/agents/templates가 이 문서에서 파생된다(v0.4.1).
 v0.3(`runtime-spec-v0.3.md`)을 대체한다.
 
 ---
@@ -61,7 +61,7 @@ v0.3(`runtime-spec-v0.3.md`)을 대체한다.
    그 자리에서 요구사항 명세(또는 run log)에 기록한다.
 2. **승인 없이 구현 없다.** 핵심 체크리스트가 사용자 승인을 받기 전에는
    구현을 시작하지 않는다.
-3. **검증 pass 없이 완료 없다.** Evaluator의 pass 없이는 어떤 작업도 완료가 아니다.
+3. **검증 pass 없이 완료 없다.** Verifier의 pass 없이는 어떤 작업도 완료가 아니다.
 4. **동작·불변식·구조가 바뀌면, 지도 갱신 없이는 완료가 아니다.**
    값(리터럴)만 바뀐 변경은 지도를 건드리지 않는다.
 5. **지도에 값을 적지 않는다.** 상수·임계값·필드 목록은 코드 포인터로만 가리킨다.
@@ -211,14 +211,16 @@ v0.3(`runtime-spec-v0.3.md`)을 대체한다.
 - 사용자는 구현 명세를 검토하지 않는다. 기술적인 면은 에이전트가
   리서치와 테스트로 스스로 검증할 수 있기 때문이다.
 - 반드시 지켜야 할 구현 방법이 사용자와 합의됐다면 그것만 `합의 사항`에 명시한다.
-- 나머지 구현 판단은 Planner의 방향 제시와 Generator의 현장 판단에 맡긴다.
+- 나머지 구현 판단은 Planner의 방향 제시와 Implementer의 현장 판단에 맡긴다.
 
 ---
 
 ## 5. 역할
 
 문제 3(작업 방식 비일관)을 푸는 장치. 네 역할이 고정된 순서로 일한다.
-역할 이름은 v0.3을 계승한다: Orchestrator, Planner, Generator, Evaluator.
+역할 이름은 상태 머신 단계와 정합한다: Planner(plan), Implementer(implement),
+Verifier(verify), 그리고 Orchestrator. v0.3의 Generator·Evaluator는
+실체에 맞게 개명했다 — 이름이 곧 단계다.
 
 ### 5.1 Orchestrator — 상태와 순서
 
@@ -271,16 +273,16 @@ v0.3(`runtime-spec-v0.3.md`)을 대체한다.
 - [ ] W-1: <굵은 단위 작업> (covers: C-1, C-2)
 - [ ] W-2: <...> (covers: C-3)
 
-## Generator 판단에 맡기는 것
+## Implementer 판단에 맡기는 것
 - <파일 구조, 함수 경계, 테스트 방식 등>
 
 ## 검증 힌트
 - <위험 지점, 영향 가능성 있는 인접 흐름>
 ```
 
-### 5.3 Generator — 구현
+### 5.3 Implementer — 구현
 
-**코드를 가장 가까이서 마주하는 역할.** 세부 흐름을 전부 마주하는 것은 Generator뿐이므로,
+**코드를 가장 가까이서 마주하는 역할.** 세부 흐름을 전부 마주하는 것은 Implementer뿐이므로,
 계획을 바탕으로 어떻게 구현할지 직접 판단하고 구현한다.
 
 - Planner의 기술 방향은 따르되, 세부 구현은 스스로 더 나은 방향으로 진행한다.
@@ -290,10 +292,10 @@ v0.3(`runtime-spec-v0.3.md`)을 대체한다.
   기록한다. 승인 없이 대규모 구조 변경을 하지 않는다(불변식 7).
 - 작업 항목(W-n)을 진행하며 plan.md의 체크박스를 갱신하고,
   결정·실패한 접근·리스크를 log에 짧게 남긴다.
-- 구현 요약과 Evaluator가 봐야 할 지점을 log에 한 항목으로 남기고 넘긴다.
+- 구현 요약과 Verifier가 봐야 할 지점을 log에 한 항목으로 남기고 넘긴다.
   diff·코드 블록·명령 출력 전문은 남기지 않는다.
 
-### 5.4 Evaluator — 검증
+### 5.4 Verifier — 검증
 
 핵심 역할: **사용자 머릿속의 동작 흐름대로 현재 코드가 동작하는지 체크하는 것.**
 사용자 머릿속의 흐름은 이미 승인된 핵심 체크리스트에 있다.
@@ -305,6 +307,13 @@ v0.3(`runtime-spec-v0.3.md`)을 대체한다.
 2. **전체 시스템 관점의 영향 점검.** 이 변경이 시스템의 다른 동작 흐름들을 깨지 않았는지
    확인한다. 지도의 흐름 목록이 점검 후보다. 접목 지점과 인접한 흐름을 우선 본다.
 3. 결국 확인하는 것은 하나다: **전체 시스템이 사용자 머릿속의 동작 흐름과 일치하는가.**
+
+**자세는 적대적, 앵커는 승인 범위.** 확인하려 하지 말고 깨뜨리려 해본다 —
+각 C-n 흐름의 경계 입력과 그럴듯한 오용까지 실행해보고, 누락(모든 A-n 준수,
+모든 C-n의 문자 그대로의 실행, 제외 범위 준수)을 사냥한다. 단 판정은 승인된
+범위에만 앵커한다: C-n·A-n 위반과 인접 흐름 회귀만 fail 사유이고, 범위 밖
+발견(리스크·개선 아이디어)은 `[제안]`으로 log에 남기며 판정에 섞지 않는다.
+앵커 없는 적대적 리뷰는 매 run을 추측성 우려 더미로 끝낸다 — 그게 §0.2의 무거움이다.
 
 ```md
 # 검증 보고
@@ -322,7 +331,7 @@ Verdict: pass | fail | blocked
 <!-- fail일 때만. 항목별로: 기대 / 실제 / 다음 조치 -->
 
 ## 다음 조치
-- 없음 | <Generator가 할 일>
+- 없음 | <Implementer가 할 일>
 ```
 
 - `fail`: 체크리스트 미충족, 인접 흐름 회귀, 관련 테스트/빌드 실패, 신뢰 불가한 통합.
@@ -338,9 +347,9 @@ Verdict: pass | fail | blocked
 [대화]  동기화 → 명세 작성 → 핵심 체크리스트 승인          (tie:requirements)
 [실행]  run 생성 → 지도 확인(없으면 생성 제안)              (tie:start / orchestrator)
         → plan (Planner)
-        → implement (Generator, W-n 단위)
-        → verify (Evaluator)
-            fail → fix (Generator) → recheck (Evaluator)   * 한도 내 반복
+        → implement (Implementer, W-n 단위)
+        → verify (Verifier)
+            fail → fix (Implementer) → recheck (Verifier)   * 한도 내 반복
             pass ↓
         → 지도 갱신 (동작·불변식·구조가 바뀐 경우만)
         → checkpoint commit
@@ -356,7 +365,10 @@ Verdict: pass | fail | blocked
 - **체크포인트 커밋**: git이 있고 커밋이 허용되면 verify pass 후에 커밋한다.
   커밋 전 `git status --short`를 확인하고, 무관한 변경·의심 파일·시크릿이 보이면 멈춘다.
   volatile 상태(`.tie/`)는 스테이징하지 않는다. 커밋 불가 사유는 log에 남긴다.
-- **fix 한도**: run당 fix 루프 3회, 동일 실패 2회 반복 시 블로커로 전환.
+- **fix 한도**: verify 사이클당 fix 루프 3회(verify pass마다 0으로 리셋 —
+  단계별 run에서 앞 단계가 뒤 단계의 예산을 소진하지 않는다), 동일 실패
+  2회 반복 시 블로커로 전환. 한도 도달은 포기가 아니라 에스컬레이션이다:
+  블로커 후 사용자가 계속을 지시하면 카운터를 리셋한다(동의가 예산을 갱신한다).
 - **멈춤 조건**: 완료 / 사용자 결정 필요 / 환경 신뢰 불가 / 한도 초과 반복 실패 /
   위험·비가역 작업의 확인 필요. 이 다섯 가지뿐이다.
 
@@ -384,7 +396,7 @@ ARCHITECTURE.md            # 헌법 + 지도. 커밋 대상 (§3)
     <run-id>/
       requirement.md       # 요구사항 명세 (§4) — 승인 상태 포함
       plan.md              # 기술 방향 + 작업 항목 (§5.2)
-      evaluation.md        # 최신 검증 보고 (§5.4) — 덮어쓴다
+      verification.md      # 최신 검증 보고 (§5.4) — 덮어쓴다
       log.md               # append-only 저널 (아래)
       state.json           # 기계 재개 상태 (아래)
 ```
@@ -410,12 +422,12 @@ run 파일은 다섯 개뿐이다.
   "run_id": "2026-07-02-001-add-dashboard",
   "status": "in_progress",
   "step": "implement",
-  "owner": "generator",
+  "owner": "implementer",
   "current_item": "W-2",
   "approved_at": "2026-07-02T10:00:00+09:00",
   "fix_loops": 0,
   "blocked": false,
-  "next_action": "W-2 구현 후 Evaluator 디스패치"
+  "next_action": "W-2 구현 후 Verifier 디스패치"
 }
 ```
 
@@ -464,7 +476,7 @@ Orchestrator가 명세와 체크리스트를 만들어 **한 번** 확인받고 
 | --- | --- | --- |
 | `roadmap.md` + `phases/` 디렉토리 트리 | plan.md의 작업 항목(W-n) + 단계적 상세화(§5.2) | phase마다 디렉토리와 8개 파일은 구조 유지 비용이 효익을 넘는다. 단계별 계획·검증·커밋 경계 기능은 plan.md 안에서 유지된다 |
 | `tasks.md` | plan.md의 체크박스 | 별도 파일이 필요할 만큼의 내용이 없다 |
-| `validation_intent.md`, `validation_plan.md`, `evaluation_history.md` | `evaluation.md` 하나 | 검증 문서 3종은 검증을 좋게 만들지 않고 무겁게 만든다 |
+| `validation_intent.md`, `validation_plan.md`, `verification_history.md` | `verification.md` 하나 | 검증 문서 3종은 검증을 좋게 만들지 않고 무겁게 만든다 |
 | validation profile(`standard/high`) + L0–L5 enum | 원칙 한 줄: 증거는 위험에 비례, 실행 가능한 흐름은 실행해서 확인 | 분류 체계의 관리 비용 > 판단 보조 효과 |
 | `decisions.md`, `changelog.md`, `retrospective.md`, `blockers.md` | `log.md` 단일 저널 | 네 파일의 구분 자체가 기록 비용. 유형 태그로 충분 |
 | `current_state.md` + `run_state.json` | `state.json` | 인간용 요약은 log 마지막 항목이 대신한다 |
@@ -494,7 +506,7 @@ run 없이도 지도를 갱신한다.
 
 Orchestrator와 모든 역할은 다음을 하지 않는다: 프로젝트 밖 파일 수정,
 시스템/네트워크 설정 변경, 확인 없는 파괴적 git 작업, 시크릿 읽기·기록·커밋,
-Evaluator pass 없는 완료 선언, 위험·비가역 작업의 무확인 진행.
+Verifier pass 없는 완료 선언, 위험·비가역 작업의 무확인 진행.
 해당 상황에서는 블로커로 멈춘다.
 
 ---

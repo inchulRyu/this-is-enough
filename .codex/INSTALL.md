@@ -38,8 +38,8 @@ You should see:
 tie:requirements
 tie:orchestrator
 tie:planner
-tie:generator
-tie:evaluator
+tie:implementer
+tie:verifier
 tie:map
 tie:resume
 tie:status

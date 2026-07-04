@@ -17,19 +17,19 @@ inside Codex CLI (or another agent host), translate as follows.
 
 ## Subagent dispatch
 
-The orchestrator dispatches the Planner, Generator, and Evaluator per run so each
-role gets its own context window. Dispatching is the default whenever the
+The orchestrator dispatches the Planner, Implementer, and Verifier per run so
+each role gets its own context window. Dispatching is the default whenever the
 platform supports it — the user invoking the workflow is itself the delegation
 request; do not wait for a separate explicit ask. There are no phase
 directories; every dispatch
 targets the single active run directory with a role mode: `plan` | `detail-stage`
-(Planner), `implement` | `fix` (Generator), `verify` | `recheck` (Evaluator).
+(Planner), `implement` | `fix` (Implementer), `verify` | `recheck` (Verifier).
 Use the platform's native mechanism:
 
 - **Claude Code**: Call the `Task` (or `Agent`) tool with `subagent_type` matching
-  one of the named agents bundled in `agents/` (`tie-planner`, `tie-generator`,
-  `tie-evaluator`). The subagent prompt names the `tie:<role>` skill to invoke,
-  the mode, and the dispatch paths.
+  one of the named agents bundled in `agents/` (`tie-planner`,
+  `tie-implementer`, `tie-verifier`). The subagent prompt names the `tie:<role>`
+  skill to invoke, the mode, and the dispatch paths.
 - **Codex CLI**: Call `spawn_agent` with a worker role, then `wait_agent` for the
   result. The subagent prompt likewise directs it to invoke the corresponding
   skill (e.g., `$tie:planner`) with the mode and paths.
@@ -45,7 +45,7 @@ maintenance entry points on workflow state and `ARCHITECTURE.md`.
 
 Workspace state lives in plain files, identical on every platform. Run state is
 exactly five files under `.tie/runs/<run-id>/` — `requirement.md`, `plan.md`,
-`evaluation.md`, `log.md`, `state.json` — and `.tie/active_run` points to the
+`verification.md`, `log.md`, `state.json` — and `.tie/active_run` points to the
 current run. The entire `.tie/` directory is gitignored; nothing in it is
 committed. Durable knowledge lives instead in the committed `ARCHITECTURE.md`
 (constitution + map) at the project root, updated incrementally during runs.

@@ -31,7 +31,7 @@ TIE는 세 문제를 푸는 조각만 남깁니다: 문서화된 합의, 지속�
    것으로 끝 — 에이전트가 요구사항의 `## 승인`과 `state.json`에 대신
    기록하며, 워크플로우 파일을 직접 편집할 일은 없습니다.
 3. **런(run)** — 계획(방향만; 큰 작업은 단계로 나누고 뒷 단계는 시작 직전에
-   상세화) → 구현(Generator가 코드 앞에서 세부를 스스로 판단) → 검증(체크리스트의
+   상세화) → 구현(Implementer가 코드 앞에서 세부를 스스로 판단) → 검증(체크리스트의
    흐름을 실제로 실행 + 지도의 인접 흐름 확인) → 지도 갱신(자동·증분) →
    체크포인트 커밋, 단계마다 반복. 검증 통과 없이는 완료도 없습니다.
 4. **완료** — 실패한 접근과 새로 발견한 불변식을 헌법으로 승격하고 최종 보고.
@@ -119,8 +119,8 @@ Codex를 재시작한 뒤 입력:
 $tie:
 ```
 
-`tie:requirements`, `tie:orchestrator`, `tie:planner`, `tie:generator`,
-`tie:evaluator`, `tie:map`, `tie:resume`, `tie:status`, `tie:doctor`가
+`tie:requirements`, `tie:orchestrator`, `tie:planner`, `tie:implementer`,
+`tie:verifier`, `tie:map`, `tie:resume`, `tie:status`, `tie:doctor`가
 보여야 합니다.
 
 제거는:
@@ -133,7 +133,7 @@ rm -rf ~/.codex/thisisenough
 전체 레퍼런스: [`.codex/INSTALL.md`](./.codex/INSTALL.md).
 
 > Codex 팁: 서브에이전트 디스패치에는 `~/.codex/config.toml`의
-> `multi_agent = true`가 필요합니다. 없으면 Planner/Generator/Evaluator가
+> `multi_agent = true`가 필요합니다. 없으면 Planner/Implementer/Verifier가
 > 오케스트레이터의 컨텍스트 안에서 인라인으로 실행됩니다(동작은 하지만
 > 토큰을 더 씁니다).
 
@@ -209,11 +209,11 @@ $tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 - **Planner**가 `plan.md`를 씁니다: 기술 방향과 굵은 작업 항목(W-n), 각
   항목이 커버하는 C-n 표기. 큰 작업은 단계로 나누되 첫 단계만 상세화하고,
   뒷 단계는 그때까지 얻은 지식으로 시작 직전에 상세화합니다.
-- **Generator**가 W-n 단위로 구현합니다. 세부는 코드 앞에서 스스로 판단하고,
+- **Implementer**가 W-n 단위로 구현합니다. 세부는 코드 앞에서 스스로 판단하고,
   결정과 실패한 접근을 `log.md`에 남깁니다.
-- **Evaluator**가 체크리스트의 모든 흐름을 실제로 실행합니다(읽기만 하는 것은
+- **Verifier**가 체크리스트의 모든 흐름을 실제로 실행합니다(읽기만 하는 것은
   검증이 아닙니다). 지도의 인접 흐름을 회귀 목록으로 함께 확인하고, 판정을
-  `evaluation.md`에 씁니다. `fail`이면 Generator가 구체적 다음 행동과 함께
+  `verification.md`에 씁니다. `fail`이면 Implementer가 구체적 다음 행동과 함께
   수정 라운드를 받습니다 — 횟수 제한이 있어 무한 루프는 없습니다.
 - `pass`가 나오면 오케스트레이터가 C-n 체크박스를 채우고, 동작이나 구조가
   바뀌었다면 지도를 증분 갱신하고, 체크포인트 커밋을 만듭니다
@@ -243,8 +243,8 @@ $tie:map    $tie:resume    $tie:status    $tie:doctor         # Codex CLI
 | `tie:requirements` | 대화 동기화; 합의가 이루어질 때마다 `.tie/drafts/` 아래 초안에 기록.        |
 | `tie:orchestrator` | 진입점(`/tie:start`). 런 상태 머신을 끝까지 운전.                          |
 | `tie:planner`      | 기술 방향과 W-n 작업 항목; 큰 작업은 단계별 지연 상세화.                    |
-| `tie:generator`    | 구현; 세부는 현장에서 판단; 결정과 실패 접근을 기록.                        |
-| `tie:evaluator`    | 체크리스트 흐름 + 지도의 인접 흐름을 실행; pass/fail/blocked 판정.          |
+| `tie:implementer`  | 구현; 세부는 현장에서 판단; 결정과 실패 접근을 기록.                        |
+| `tie:verifier`     | 체크리스트 흐름 + 지도의 인접 흐름을 실행; pass/fail/blocked 판정.          |
 | `tie:map`          | `ARCHITECTURE.md` 생성·재동기화·재구성(사용자 확인 하에).                   |
 | `tie:resume`       | `.tie/active_run`이 가리키는 런을 재개.                                     |
 | `tie:status`       | 활성 런의 읽기 전용 스냅샷.                                                 |
@@ -273,7 +273,7 @@ ARCHITECTURE.md            # 헌법 + 지도 — 커밋됨
     <run-id>/
       requirement.md       # 요구사항 명세: 합의(A-n), 체크리스트(C-n), 승인
       plan.md              # 기술 방향 + 작업 항목(W-n)
-      evaluation.md        # 최신 검증 보고 (덮어씀)
+      verification.md      # 최신 검증 보고 (덮어씀)
       log.md               # 태그된 이벤트의 append-only 저널
       state.json           # 기계용 재개 상태
 ```
@@ -298,7 +298,7 @@ v0.3 규칙으로 끝내라고 안내하며, 확인을 받아 `project_memory.md
 ## 안전
 
 어떤 역할도 프로젝트 밖 파일을 수정하거나, 시스템/네트워크 설정을 바꾸거나,
-확인 없이 파괴적 git을 실행하거나, 시크릿을 건드리거나, Evaluator의 pass 없이
+확인 없이 파괴적 git을 실행하거나, 시크릿을 건드리거나, Verifier의 pass 없이
 완료를 선언하거나, 위험하고 되돌릴 수 없는 단계를 사용자 OK 없이 지나가지
 않습니다. 그런 상황에서는 명확한 블로커와 함께 멈춥니다.
 

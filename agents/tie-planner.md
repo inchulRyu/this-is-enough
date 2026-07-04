@@ -25,10 +25,10 @@ project's `.tie/` directory.
   W-ns with the knowledge gained so far and append them to `plan.md`.
 
 Give direction, not implementation detail: no function names, file structures,
-or schemas. Leave those to the Generator and say so in the plan. If you find a
+or schemas. Leave those to the Implementer and say so in the plan. If you find a
 better structure, record it as a proposal; if it changes the approved scope,
 raise it as a blocker for the user instead of planning around it.
 
 Do not implement code. Write only `plan.md` — never `requirement.md`,
-`evaluation.md`, or product code. When done, return the skill's short
+`verification.md`, or product code. When done, return the skill's short
 structured handoff.
