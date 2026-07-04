@@ -86,6 +86,7 @@ run's `log.md` stating exactly what changed and why.
   reconstruction in the `[복구]` entry.
 - `.gitignore` still carries the v0.3 three-rule set (`.tie/drafts/`,
   `.tie/runs/`, `.tie/active_run`) → replace it with the single rule `.tie/`.
+  v0.4 classifications only — never while v0.3 state is present (see below).
 - `log.md` missing from an otherwise consistent run → create it from the
   bundled template under `references/file-templates/` (resolved relative to
   the installed skills bundle, never the user's project).
@@ -110,7 +111,9 @@ v0.3 markers: root-layout files directly under `.tie/` (`requirements.md`,
 `roadmap.md`, `current_state.md`, `run_state.json`, ...), run directories
 containing `run_state.json` or `phases/`, or `.tie/project_memory.md`.
 
-Do NOT auto-convert. Instead:
+Do NOT auto-convert, and apply NO repairs while v0.3 state is present — the
+three-rule `.gitignore` is part of the v0.3 layout, so even that swap is
+advice here, not a repair. Instead:
 
 - Report exactly what was found.
 - Advise finishing in-progress v0.3 runs with the v0.3 plugin, or restarting

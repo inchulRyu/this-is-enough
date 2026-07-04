@@ -32,9 +32,13 @@ Raw start (requirement given with no approved draft): draft
 `requirement.md` yourself — including `## 핵심 체크리스트` (C-n items, each
 one observable flow in "~하면 ~한다" form, no implementation detail) — show
 the checklist to the user, and get ONE confirmation. On confirmation set
-`## 승인` and `approved_at`, then proceed. If the user cannot answer
-(non-interactive session), stop as blocked with the checklist displayed
-and instructions to confirm it and resume via `tie:resume`.
+`## 승인` and `approved_at`, then proceed. If instead you end your turn
+still waiting for confirmation — interactive or not; you cannot reliably
+tell whether anyone will answer — record the block BEFORE ending: apply
+the full on-block procedure (`[블로커]` entry, `state.json.blocked =
+true`, `status = "blocked"`), show the checklist, and note that a reply
+here or via `tie:resume` continues the run. Asking the question without
+writing the block leaves `state.json` lying about the run.
 
 Mid-run checklist changes: append the agreement to `## 합의 사항` /
 `## 갱신 기록`, then re-confirm only the changed C-ns — never the whole list.
@@ -136,11 +140,14 @@ command.
 
 ## Dispatch
 
-Claude Code: dispatch bundled subagents `tie-planner`, `tie-generator`,
-`tie-evaluator`. Codex CLI: `spawn_agent`/`wait_agent` when
-`multi_agent = true`. Otherwise inline the role yourself and warn that
-context pressure is higher. See bundled `references/tool-mapping.md` for
-platform tool names.
+Dispatching is the default, not an optimization: each role gets its own
+context window, and the user invoking this workflow IS the delegation
+request — never inline because the user "didn't explicitly ask for
+subagents". Claude Code: dispatch bundled subagents `tie-planner`,
+`tie-generator`, `tie-evaluator`. Codex CLI: `spawn_agent`/`wait_agent`
+when `multi_agent = true`. Inline a role yourself ONLY when subagent
+tooling is unavailable, and warn that context pressure is higher. See
+bundled `references/tool-mapping.md` for platform tool names.
 
 Pass every subagent (absolute paths only):
 

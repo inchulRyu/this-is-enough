@@ -18,7 +18,10 @@ inside Codex CLI (or another agent host), translate as follows.
 ## Subagent dispatch
 
 The orchestrator dispatches the Planner, Generator, and Evaluator per run so each
-role gets its own context window. There are no phase directories; every dispatch
+role gets its own context window. Dispatching is the default whenever the
+platform supports it — the user invoking the workflow is itself the delegation
+request; do not wait for a separate explicit ask. There are no phase
+directories; every dispatch
 targets the single active run directory with a role mode: `plan` | `detail-stage`
 (Planner), `implement` | `fix` (Generator), `verify` | `recheck` (Evaluator).
 Use the platform's native mechanism:
@@ -30,9 +33,10 @@ Use the platform's native mechanism:
 - **Codex CLI**: Call `spawn_agent` with a worker role, then `wait_agent` for the
   result. The subagent prompt likewise directs it to invoke the corresponding
   skill (e.g., `$tie:planner`) with the mode and paths.
-- **Fallback (no subagent support)**: Inline the role by directly invoking the
-  skill in the current context. The orchestrator should warn the user that
-  context window pressure is higher in this mode.
+- **Fallback (no subagent support only)**: Inline the role by directly invoking
+  the skill in the current context. This fallback is for missing tooling (e.g.
+  Codex without `multi_agent = true`), never a judgment call. The orchestrator
+  should warn the user that context window pressure is higher in this mode.
 
 `tie:doctor` and `tie:map` are not dispatched roles. They run inline as
 maintenance entry points on workflow state and `ARCHITECTURE.md`.
