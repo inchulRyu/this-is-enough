@@ -54,7 +54,15 @@ TIE는 세 문제를 푸는 조각만 남깁니다: 문서화된 합의, 지속�
 (`.claude-plugin/marketplace.json`). 한 번 추가하면 모든 세션·프로젝트에서
 기억됩니다 — `--plugin-dir` 플래그도, 세션마다의 설정도 필요 없습니다.
 
-**방법 A: 로컬 클론에서** (레포가 이미 디스크에 있다면 가장 빠름):
+**방법 A: GitHub에서 바로** (클론 불필요 — 권장):
+
+```text
+/plugin marketplace add inchulRyu/this-is-enough
+/plugin install tie@thisisenough
+/reload-plugins
+```
+
+**방법 B: 로컬 클론에서** (레포가 이미 디스크에 있다면):
 
 ```bash
 git clone https://github.com/inchulRyu/this-is-enough.git
@@ -64,14 +72,6 @@ git clone https://github.com/inchulRyu/this-is-enough.git
 
 ```text
 /plugin marketplace add /absolute/path/to/this-is-enough
-/plugin install tie@thisisenough
-/reload-plugins
-```
-
-**방법 B: GitHub에서 바로** (클론 불필요):
-
-```text
-/plugin marketplace add inchulRyu/this-is-enough
 /plugin install tie@thisisenough
 /reload-plugins
 ```
@@ -109,9 +109,7 @@ curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/insta
 
 스크립트는 `~/.codex/thisisenough`에 클론하고
 `~/.agents/skills/tie -> ~/.codex/thisisenough/skills` 심링크를 만듭니다.
-멱등하므로 언제든 같은 명령을 다시 실행하면 관리 클론이 업데이트되고 심링크가
-갱신됩니다. 관리 클론에 로컬 수정이나 갈라진 커밋이 있으면 덮어쓰지 않고
-거부합니다.
+관리 클론에 로컬 수정이나 갈라진 커밋이 있으면 덮어쓰지 않고 거부합니다.
 
 Codex를 재시작한 뒤 입력:
 
@@ -123,14 +121,15 @@ $tie:
 `tie:verifier`, `tie:map`, `tie:resume`, `tie:status`, `tie:doctor`가
 보여야 합니다.
 
-제거는:
+업데이트는 같은 한 줄을 다시 실행하면 됩니다 — 멱등하며 관리 클론을 최신
+커밋으로 갱신합니다:
 
 ```bash
-rm ~/.agents/skills/tie
-rm -rf ~/.codex/thisisenough
+curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/install-codex.sh | bash
 ```
 
-전체 레퍼런스: [`.codex/INSTALL.md`](./.codex/INSTALL.md).
+전체 레퍼런스: [`.codex/INSTALL.md`](./.codex/INSTALL.md). 두 플랫폼의 제거
+방법은 아래 [제거](#제거) 섹션에 있습니다.
 
 > Codex 팁: 서브에이전트 디스패치에는 `~/.codex/config.toml`의
 > `multi_agent = true`가 필요합니다. 없으면 Planner/Implementer/Verifier가

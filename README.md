@@ -58,7 +58,15 @@ The repo doubles as its own plugin marketplace (`.claude-plugin/marketplace.json
 You add it once and Claude Code remembers it across all sessions and projects —
 no `--plugin-dir` flag, no per-session setup.
 
-**Option A: from a local clone** (fastest if you already have the repo on disk):
+**Option A: directly from GitHub** (no clone needed — recommended):
+
+```text
+/plugin marketplace add inchulRyu/this-is-enough
+/plugin install tie@thisisenough
+/reload-plugins
+```
+
+**Option B: from a local clone** (if you already have the repo on disk):
 
 ```bash
 git clone https://github.com/inchulRyu/this-is-enough.git
@@ -68,14 +76,6 @@ Then inside Claude Code:
 
 ```text
 /plugin marketplace add /absolute/path/to/this-is-enough
-/plugin install tie@thisisenough
-/reload-plugins
-```
-
-**Option B: directly from GitHub** (no clone needed):
-
-```text
-/plugin marketplace add inchulRyu/this-is-enough
 /plugin install tie@thisisenough
 /reload-plugins
 ```
@@ -112,10 +112,8 @@ curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/insta
 ```
 
 The script clones to `~/.codex/thisisenough` and creates
-`~/.agents/skills/tie -> ~/.codex/thisisenough/skills`. It is idempotent: re-run
-the same command any time to update the managed clone and refresh the symlink.
-If the managed clone has local edits or diverged commits, the installer refuses
-to overwrite them.
+`~/.agents/skills/tie -> ~/.codex/thisisenough/skills`. If the managed clone
+has local edits or diverged commits, the installer refuses to overwrite them.
 
 Restart Codex, then type:
 
@@ -127,14 +125,15 @@ You should see `tie:requirements`, `tie:start`, `tie:planner`,
 `tie:implementer`, `tie:verifier`, `tie:map`, `tie:resume`, `tie:status`, and
 `tie:doctor`.
 
-To uninstall:
+To update, re-run the same one-liner — it is idempotent and refreshes the
+managed clone to the latest commit:
 
 ```bash
-rm ~/.agents/skills/tie
-rm -rf ~/.codex/thisisenough
+curl -fsSL https://github.com/inchulRyu/this-is-enough/raw/refs/heads/main/install-codex.sh | bash
 ```
 
-Full reference in [`.codex/INSTALL.md`](./.codex/INSTALL.md).
+Full reference in [`.codex/INSTALL.md`](./.codex/INSTALL.md). Uninstall
+instructions for both platforms are in [Uninstalling](#uninstalling) below.
 
 > Codex tip: subagent dispatch requires `multi_agent = true` in
 > `~/.codex/config.toml`. Without it, Planner/Implementer/Verifier run inline
