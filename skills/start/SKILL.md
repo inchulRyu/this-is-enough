@@ -191,10 +191,24 @@ its list must log why. Your entries: `[진행]` at step transitions (brief),
    W-n in `plan.md` here is a red flag — remaining work, not bookkeeping:
    route it back through the state machine instead of ticking a
    Implementer-owned box.
-3. Report briefly: run-id, verdict summary, commits or no-commit reason,
-   map updates made, and one or two verification steps the user can run.
+3. Report as a short explainer — this is the run's closing sync back into
+   the user's head, not a status dump:
+   - run-id, verdict summary, commits or no-commit reason;
+   - the before → after flow in the user's own language (what changed, not
+     how);
+   - the decisions made ON THE USER'S BEHALF — a short digest of the run's
+     `[결정]` entries plus any `[제안]` recorded during the run but not acted
+     on, so nothing the user would want a say in stays buried in `log.md`;
+   - one or two verification steps the user can run themselves.
+4. Offer — never force — a quick comprehension check: "want a 2–3 question
+   quiz on what changed?" If the user accepts, ask 2–3 questions drawn from
+   the C-n flows and the key decisions; for a wrong answer, point at the
+   exact map section, `log.md` entry, or diff that explains it. This is a
+   sync aid, not a gate — the run is already complete and declining changes
+   nothing.
 
-Do not narrate the journey; `log.md` is for that.
+Keep it to flows and decisions, kept short; do not narrate the
+step-by-step journey — `log.md` is for that.
 
 ## Safety
 

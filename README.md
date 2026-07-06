@@ -239,8 +239,10 @@ continues.
 
 **5. Complete.** Failed approaches and newly discovered invariants are
 promoted into the `ARCHITECTURE.md` constitution, and you get a short
-report: verdict, commit, map updates, and a command or two to verify with
-your own hands.
+explainer that syncs the change back into your head: the before → after
+flow in your own language, the decisions made on your behalf, the commit,
+and a command or two to verify with your own hands — plus an optional
+2–3 question quiz on what changed, if you want it.
 
 ## Skills
 

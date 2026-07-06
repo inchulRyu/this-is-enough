@@ -122,6 +122,15 @@ Ask only load-bearing questions — ones whose answer:
 - involves safety, data deletion, deployment, auth, permissions, cost,
   secrets, or irreversible side effects.
 
+Order the questions you do ask by architectural blast radius — the one whose
+answer reshapes the most downstream decisions goes first, so an early answer
+never invalidates agreements you already recorded.
+
+For a vague request ("make it nicer", "clean this up"), don't volley an open
+question back. Offer 2–3 concrete interpretations grounded in the map, each
+phrased in precise terms, and let the user pick or correct — one exchange
+that both resolves the ambiguity and teaches the vocabulary.
+
 Everything else gets a recorded assumption in `## 합의 사항` or an exclusion
 in `## 제외 범위` instead of an interview. Do not ask about implementation
 details, copy text, or choices Planner/Implementer can reasonably make.
