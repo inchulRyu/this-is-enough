@@ -101,10 +101,12 @@ detail on failed, surprising, or high-risk checks only.
 
 ## recheck
 
-After an Implementer fix: re-verify only the failed C-ns plus anything the fix
-touched. If the fix breaks a previously passing C-n or a mapped flow, that is
-a new failure — record it with full 실패 상세. Overwrite `verification.md` with
-the fresh verdict.
+After an Implementer fix: re-verify the failed C-ns, plus the blast radius the
+Implementer declared in log.md before fixing (flows, callers, state), plus
+anything else you observe the fix touched. The declared list is your starting
+scope, not your ceiling. If the fix breaks a previously passing C-n or a
+mapped flow, that is a new failure — record it with full 실패 상세. Overwrite
+`verification.md` with the fresh verdict.
 
 ## Verdict rules
 

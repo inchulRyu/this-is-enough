@@ -217,7 +217,14 @@ anything else happens.
 - **Verifier** actually exercises every checklist flow (reading is not
   verification), plus adjacent flows from the map as a regression list,
   and writes the verdict to `verification.md`. On `fail`, the Implementer gets
-  a fix round with concrete next actions — bounded, never endless.
+  a fix round with concrete next actions — it confirms the cause with evidence
+  before touching code, declares the fix's blast radius up front, and the
+  recheck starts from that radius. When the fix budget runs dry, the run
+  doesn't call you yet: it steps back and **reframes** — fresh-context lens
+  agents (redefine the problem, suspect the environment, deep-search prior
+  art) re-derive the problem from facts only, with none of the stuck run's
+  assumptions. A confirmed new cause renews the fix budget; only genuinely
+  user-shaped decisions become blockers. Bounded, never endless.
 - On `pass` the orchestrator ticks the C-n boxes, updates the map
   incrementally if behavior or structure changed, and makes a checkpoint
   commit (`tie: <run-id> …`, never staging `.tie/`).

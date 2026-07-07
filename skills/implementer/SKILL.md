@@ -64,13 +64,21 @@ risky/destructive operation, or a blocker you cannot resolve.
 
 1. Read `verification.md` — its `실패 상세` and `다음 조치` are the source of
    truth — plus the failed C-ns passed by the Orchestrator.
-2. Make one focused fix per failed flow; verify with a check that exercises
+2. **Diagnose before touching code.** List the candidate causes, then check
+   them cheapest-to-verify and most-likely first until evidence confirms one.
+   Never fix on speculation — an unconfirmed-cause fix is the main way the
+   same failure repeats and trips the loop limit.
+3. **Declare the blast radius before the fix.** Append one log.md entry
+   listing the flows, callers, and state this fix will touch. The Verifier's
+   recheck starts from this list.
+4. Make one focused fix per failed flow; verify with a check that exercises
    that flow.
-3. Log what changed, why the prior attempt failed, and what the Verifier
-   should recheck.
+5. Log what changed, the confirmed cause, why the prior attempt failed, and
+   what the Verifier should recheck.
 
-If one focused attempt cannot resolve a failure, document the obstacle in
-log.md and return — never shrink acceptance criteria to pass.
+If the cause cannot be confirmed, or one focused attempt cannot resolve a
+failure, document what was ruled out in log.md and return — never stack
+speculative changes, never shrink acceptance criteria to pass.
 
 ## Safety
 

@@ -88,7 +88,10 @@ start (approved requirement or raw request)
 → plan            (Planner; staged planning for large work)
 → implement       (Implementer, per W-n / current stage)
 → verify          (Verifier)
-    fail → fix    (Implementer) → recheck (Verifier)   [fix_loops ≤ 3, same failure ≤ 2]
+    fail → fix    (Implementer) → recheck (Verifier)   [fix_loops ≤ 3]
+    fix budget out or same failure twice → reframe     [reframe_loops ≤ 3]
+        new cause confirmed → reset fix_loops → fix
+        user-shaped problem or no new frame → blocked
     pass ↓
 → map_update      (only if behavior/invariants/structure changed; incremental)
 → checkpoint      (commit when git available & safe; else log no-commit reason)
@@ -100,24 +103,26 @@ start (approved requirement or raw request)
 
 Keep `state.json` current at every transition: `run_id`, `status`
 (`not_started | in_progress | blocked | completed | aborted`), `step`
-(`plan | implement | verify | fix | map_update | checkpoint | complete`),
-`owner`, `current_item`, `approved_at`, `fix_loops`, `blocked`,
-`next_action`. No other fields, and the enums are closed — write the
+(`plan | implement | verify | fix | reframe | map_update | checkpoint | complete`),
+`owner`, `current_item`, `approved_at`, `fix_loops`, `reframe_loops`,
+`blocked`, `next_action`. No other fields, and the enums are closed — write the
 values exactly (`complete`, never a synonym like `done`). After each
 role returns, check its
 artifact once — exists, non-empty, required headings, shallow role fit —
 and deep-read only on a red flag.
 
 - **Verify pass**: tick the passed C-n checkboxes in `requirement.md`
-  yourself — you own that file — and reset `fix_loops` to 0: the fix
-  budget is per verify cycle, not per run, so an early stage never
-  drains a later stage's budget.
+  yourself — you own that file — and reset `fix_loops` and
+  `reframe_loops` to 0: both budgets are per verify cycle, not per run,
+  so an early stage never drains a later stage's budget.
 - **Fail**: read failed C-ns and next actions from `verification.md`,
   increment `fix_loops`, dispatch Implementer `fix` then Verifier
-  `recheck`. Stop as blocked when `fix_loops` would exceed 3 or the same
-  failure repeats twice without convergence. The limit escalates, it
-  does not abandon: when the user explicitly directs continuation after
-  that blocker, reset `fix_loops` to 0 — consent renews the budget.
+  `recheck`. When `fix_loops` would exceed 3 or the same failure repeats
+  twice without convergence, do NOT block yet — enter **reframe**
+  (section below). Block only when the reframe path is also exhausted.
+  The limits escalate, they do not abandon: when the user explicitly
+  directs continuation after a blocker, reset both counters to 0 —
+  consent renews the budget.
 - **map_update** (yours, in-run, automatic): only when this run changed
   behavior, invariants, or structure — literal-only changes never touch
   the map. Update incrementally, only the flows and invariants this change
@@ -135,6 +140,62 @@ and deep-read only on a red flag.
   `plan.md` holds only a goal line, dispatch Planner in `detail-stage`
   mode to detail it with the knowledge gained so far; if the next items
   are already detailed, go straight to `implement`.
+
+## Reframe — step back before calling the user
+
+Fix-budget exhaustion or the same failure twice means the FRAME is
+probably wrong — plan direction, map understanding, a contradictory
+requirement, or a lying environment — and more fixes inside that frame
+will not converge. Before blocking, do what a person does: step back and
+re-derive the problem. Set `step = "reframe"` and increment
+`reframe_loops` (max 3 per verify cycle; resets with `fix_loops`).
+
+1. **Dispatch fresh-context lens agents in parallel.** Use generic
+   subagents — no TIE role contract; the lens brief below IS the
+   contract. Contamination rule for ALL lenses: NEVER pass the run's
+   causal hypotheses or the failed fixes' reasoning — a known-failed
+   ACTION rules that action out, but a known-failed BELIEF anchors
+   thinking to it. Disclosure is PER LENS, in priority order (drop from
+   the bottom if the platform limits agents; with no subagent tooling
+   at all, run one inline re-diagnosis from facts alone and log the
+   degraded independence):
+   - **redefine — fully blind**: gets the symptom plus absolute paths
+     to `requirement.md` and `ARCHITECTURE.md` ONLY — not the attempt
+     history, which leaks the old frame through the actions taken.
+     Re-derives the problem from scratch; questions whether the failing
+     C-n is even testable and the requirements mutually consistent.
+     This lens guarantees the ensemble one uncontaminated eye.
+   - **environment-skeptic — history included**: additionally gets what
+     was tried and what happened (events, not interpretations; expected
+     vs actual from `verification.md`) and the relevant code paths.
+     Assumes the code is right and the world is lying: flaky tests,
+     stale builds, caches, sandbox limits. Repeated-failure patterns
+     are this lens's raw material — it cannot work blind.
+   - **external — history included**: same facts; deep-searches known
+     bugs, version quirks, and prior art — the exact error and the
+     changes that did NOT help aim the search (skip and log if web
+     access is unavailable).
+2. **Synthesize** the lens reports, log `[재정의]` (lenses consulted,
+   frames proposed, evidence, routing). Final dedup is yours, not the
+   lenses': you hold the full history, so discard a blind lens's
+   re-proposal of a frame already tried or ruled out — one wasted lens,
+   not a failure. Then route on the outcome:
+   - **New cause confirmed by evidence** → reset `fix_loops` to 0 and
+     dispatch Implementer `fix` citing the confirmed cause. Renewal
+     comes from independent evidence, never from the stuck context's
+     self-assessment.
+   - **User-shaped problem** (contradictory requirement, a trade-off
+     only the user can choose) → block immediately; more agents cannot
+     discover what the user wants.
+   - **No new frame** (lenses only reproduce frames already tried or
+     ruled out) → block immediately regardless of remaining reframe
+     budget — repeating a non-converging reframe just relocates the
+     endless loop somewhere more expensive.
+
+A blocker reached through reframe must carry the distilled analysis:
+frames tried, hypotheses ruled out, remaining options, recommendation.
+Blockers should be rare, and every one that reaches the user should be a
+genuinely user-shaped decision.
 
 ## Stop conditions
 
@@ -168,6 +229,9 @@ Pass every subagent (absolute paths only):
 - current stage / W-n scope; failed C-ns for fix/recheck.
 
 Subagents use only these paths; they never infer state from root `.tie/`.
+Reframe lens agents are the one exception to role dispatch: they are
+generic subagents briefed per the Reframe section (facts only), not TIE
+roles.
 
 Ownership:
 
@@ -180,7 +244,8 @@ Ownership:
 
 `log.md` is the shared append-only journal; a role writing a file outside
 its list must log why. Your entries: `[진행]` at step transitions (brief),
-`[커밋]` hash or no-commit reason, `[블로커]`, `[복구]`.
+`[커밋]` hash or no-commit reason, `[재정의]` reframe synthesis,
+`[블로커]`, `[복구]`.
 
 ## Complete
 

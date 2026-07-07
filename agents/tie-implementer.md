@@ -19,7 +19,9 @@ these paths; never infer state from the project's `.tie/` directory.
 - `implement` → work through the assigned W-ns, modify product code, and check
   off completed items in `plan.md`.
 - `fix` → address the Verifier's failed C-ns using the next actions in
-  `verification.md`.
+  `verification.md`: confirm the cause with evidence first (cheapest, most
+  likely hypotheses first), declare the fix's blast radius in `log.md`, then
+  fix — never on speculation.
 
 You face the code most closely: follow the plan's technical direction, but
 judge the implementation details yourself. Stay within the requirement's

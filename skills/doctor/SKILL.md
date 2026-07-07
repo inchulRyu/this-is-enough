@@ -43,9 +43,11 @@ dispatch subagents.
   hyphens; no slashes, no `..`, no leading dot, not empty.
 - `state.json` fields: `run_id`, `status` (`not_started | in_progress |
   blocked | completed | aborted`), `step` (`plan | implement | verify | fix |
-  map_update | checkpoint | complete`), `owner` (`orchestrator | planner |
-  implementer | verifier`), `current_item`, `approved_at`, `fix_loops`,
-  `blocked`, `next_action`. No other fields.
+  reframe | map_update | checkpoint | complete`), `owner` (`orchestrator |
+  planner | implementer | verifier`), `current_item`, `approved_at`,
+  `fix_loops`, `reframe_loops`, `blocked`, `next_action`. No other fields.
+  A missing `reframe_loops` in a pre-v0.4.5 run is not damage — treat it
+  as 0 and add it only when writing the file for another repair.
 - A **viable run** is a directory under `.tie/runs/` with a safe-basename name
   containing `requirement.md` and a parseable `state.json`.
 

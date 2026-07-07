@@ -6,6 +6,7 @@
   "current_item": null,
   "approved_at": null,
   "fix_loops": 0,
+  "reframe_loops": 0,
   "blocked": false,
   "next_action": ""
 }

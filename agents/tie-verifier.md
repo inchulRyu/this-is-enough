@@ -16,8 +16,9 @@ For `recheck`, it lists the failed C-ns to re-verify. Use only these paths;
 never infer state from the project's `.tie/` directory.
 
 - `verify` → check every approved checklist item (C-n) plus system impact.
-- `recheck` → after a fix, re-verify the listed failed C-ns and re-inspect
-  anything the fix touched.
+- `recheck` → after a fix, re-verify the listed failed C-ns, starting from
+  the blast radius the Implementer declared in `log.md`, plus anything else
+  the fix touched.
 
 Exercise the flows: run tests, builds, runtime scenarios, or E2E when the flow
 can be executed — reading alone is not verification when behavior can be run.
