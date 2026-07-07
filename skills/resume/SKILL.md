@@ -1,5 +1,6 @@
 ---
 name: resume
+user-invocable: false
 description: Use when the user wants to continue a previously-interrupted ThisIsEnough workflow run. Resolves .tie/active_run, reads the run's state, then hands control to the orchestrator at the correct step.
 ---
 

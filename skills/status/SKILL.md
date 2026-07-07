@@ -1,5 +1,6 @@
 ---
 name: status
+user-invocable: false
 description: Use when the user asks where the active ThisIsEnough workflow run currently stands, without taking any action. Resolves .tie/active_run and summarizes the run's state and any open blocker. Read-only.
 ---
 

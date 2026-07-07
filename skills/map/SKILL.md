@@ -1,5 +1,6 @@
 ---
 name: map
+user-invocable: false
 description: "Create, resync, or restructure the repo's ARCHITECTURE.md (constitution + map). Out-of-run entry point — during runs the orchestrator updates the map automatically and incrementally; use this for first creation, resync after changes made outside TIE, or restructuring."
 ---
 

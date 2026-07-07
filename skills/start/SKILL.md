@@ -1,5 +1,6 @@
 ---
 name: start
+user-invocable: false
 description: "Entry point that drives an approved-checklist run end-to-end (plan -> implement -> verify -> map update -> checkpoint) and stops only on a real blocker or completion."
 ---
 

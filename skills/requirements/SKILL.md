@@ -1,5 +1,6 @@
 ---
 name: requirements
+user-invocable: false
 description: The top-of-workflow conversation mode — sync the user's mental model with the codebase and draft an approvable requirement spec (요구사항 명세) under .tie/drafts/.
 ---
 

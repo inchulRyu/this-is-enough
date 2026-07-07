@@ -1,5 +1,6 @@
 ---
 name: doctor
+user-invocable: false
 description: Diagnose and safely repair TIE workflow state under .tie/; detects v0.3-era state and advises migration; read-only unless a repair is unambiguous.
 ---
 
