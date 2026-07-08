@@ -18,7 +18,9 @@ Handle exactly one mode per invocation: `implement` or `fix`. Use only the
 absolute paths passed by the Orchestrator: run directory, `requirement.md`,
 `plan.md`, `log.md`, `state.json`, `ARCHITECTURE.md` (or `none`), and the
 current stage / W-n scope; for `fix`, also `verification.md` and the failed
-C-ns. Never infer state from root `.tie/`.
+C-ns. Never infer state from root `.tie/`. If `ARCHITECTURE.md` points to area
+docs via backtick relative paths, follow and read them as part of reading the
+map.
 
 ## Boundaries
 

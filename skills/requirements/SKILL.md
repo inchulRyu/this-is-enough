@@ -14,7 +14,9 @@ actual behavior. The synchronized result is written into a requirement draft
 ## Ground the conversation in the map
 
 - If `ARCHITECTURE.md` exists at the repo root, read it first. Do not scan the
-  whole codebase; descend into code only where the map points.
+  whole codebase; descend into code only where the map points. If the map
+  points to area docs via backtick relative paths, follow and read them as
+  part of reading the map.
 - Present, in the user's language:
   1. the CURRENT system flow relevant to the request (from the map), then
   2. the EXPECTED flow after the change.

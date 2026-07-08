@@ -47,7 +47,9 @@ state from root `.tie/`.
 - `requirement.md` — approved checklist (C-n) and agreements (A-n)
 - `plan.md` — 흐름 접목 지점, 검증 힌트, work items (W-n)
 - `log.md` — the Implementer's handoff entry: what was done, what to inspect
-- `ARCHITECTURE.md` — the map of flows (path or `none`)
+- `ARCHITECTURE.md` — the map of flows (path or `none`); if it points to area
+  docs via backtick relative paths, follow and read them as part of reading the
+  map
 - the actual code changes
 - recheck only: current `verification.md` and the failed C-ns from the
   Orchestrator

@@ -126,8 +126,10 @@ and deep-read only on a red flag.
 - **map_update** (yours, in-run, automatic): only when this run changed
   behavior, invariants, or structure — literal-only changes never touch
   the map. Update incrementally, only the flows and invariants this change
-  touched. Grep spot-check every backtick pointer you touch; fix or flag
-  stale ones.
+  touched. When the map has been restructured into area docs, the
+  incremental update goes to the area doc owning the changed flow; the top
+  `ARCHITECTURE.md` changes only when the `전체 흐름` or constitution changes.
+  Grep spot-check every backtick pointer you touch; fix or flag stale ones.
 - **Checkpoint**: inspect `git status --short` first; stop as blocked on
   unrelated changes, suspicious files, or possible secrets. Never stage
   `.tie/`. This run's product changes AND its `ARCHITECTURE.md` map update

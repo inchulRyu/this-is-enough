@@ -28,7 +28,9 @@ state from root `.tie/`:
 - `ARCHITECTURE.md` — read the map INSTEAD of scanning the whole repo; descend
   into code only at the points its backtick `symbol` pointers name (or `none` —
   then do light, targeted repo reading scoped to the requirement, not a full
-  scan)
+  scan). When the top map points to area docs via backtick relative paths,
+  reading those docs is the same sanctioned descent as following a `symbol`
+  pointer into code.
 - `log.md` — decisions and failed approaches so far
 - `plan.md` — detail-stage mode only
 

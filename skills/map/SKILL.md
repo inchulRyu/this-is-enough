@@ -107,6 +107,12 @@ Only when a file is genuinely bloated — restructure is not routine tidying.
 - Keep the altitude rules across the split: the top `ARCHITECTURE.md` keeps
   the constitution and the whole-system `전체 흐름` and points one level down
   to area docs; each area doc speaks its own area's flow and points to symbols.
+- **Point to area docs by path.** The top `ARCHITECTURE.md` names each area
+  doc with a backtick relative path from the repo root
+  (`docs/architecture/auth.md`) — no hyperlinks, no anchors, no line numbers.
+  This is the file-level extension of **Name, don't link**; these path
+  pointers join the cheap pointer checks, verified by an existence check
+  instead of a grep.
 - Merging area docs back, or adopting an existing differently-shaped doc,
   follows the same contract: converge the content into the skeleton above.
 - Present the restructuring plan and apply only after the user confirms.
