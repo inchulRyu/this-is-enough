@@ -80,11 +80,22 @@ present, read the map FIRST and pass its absolute path to every subagent
 so no role re-scans the codebase; roles descend into code only where the
 map points.
 
+When present, also run one cheap staleness probe before proceeding. The
+map doc set is `ARCHITECTURE.md` plus every area doc it names by backtick
+relative path. Find the most recent commit touching any doc in that set;
+if later commits touch product code — ignoring TIE checkpoint commits,
+which already carried their own map update — the map is suspected stale.
+On suspicion, tell the user which docs look stale and offer a `tie:map`
+resync before proceeding; the user may decline and proceed, in which case
+record the choice in `log.md`. Non-blocking: one probe, no deep scanning;
+if git history is unavailable, skip silently.
+
 ## State machine
 
 ```text
 start (approved requirement or raw request)
-→ ensure run + ARCHITECTURE.md check (missing → offer creation via map flow)
+→ ensure run + ARCHITECTURE.md check (missing → offer creation via map flow;
+  present → stale probe)
 → plan            (Planner; staged planning for large work)
 → implement       (Implementer, per W-n / current stage)
 → verify          (Verifier)
@@ -267,6 +278,11 @@ its list must log why. Your entries: `[진행]` at step transitions (brief),
    - the decisions made ON THE USER'S BEHALF — a short digest of the run's
      `[결정]` entries plus any `[제안]` recorded during the run but not acted
      on, so nothing the user would want a say in stays buried in `log.md`;
+   - any out-of-scope stale-map flags — collect the stale-pointer flags
+     roles left in `verification.md`, `plan.md`, and `log.md`; flags inside
+     this run's touched flows are already fixed by `map_update`, but any
+     flag pointing OUTSIDE this run's scope is never fixed in-run — surface
+     it here as a `tie:map` resync suggestion;
    - one or two verification steps the user can run themselves.
 4. Offer — never force — a quick comprehension check: "want a 2–3 question
    quiz on what changed?" If the user accepts, ask 2–3 questions drawn from

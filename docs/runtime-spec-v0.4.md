@@ -1,6 +1,6 @@
 # ThisIsEnough Workflow Spec v0.4
 
-Status: 구현 반영 완료 — skills/agents/templates가 이 문서에서 파생된다(v0.4.5).
+Status: 구현 반영 완료 — skills/agents/templates가 이 문서에서 파생된다(v0.4.7).
 v0.3(`runtime-spec-v0.3.md`)을 대체한다.
 
 ---
@@ -129,6 +129,16 @@ v0.3(`runtime-spec-v0.3.md`)을 대체한다.
   수동 진입점이다: 최초 생성, TIE 밖에서 코드가 바뀌었을 때의 재동기화,
   비대해진 지도의 재구성. 일상적으로 `tie:map`을 부를 일은 거의 없어야 정상이며,
   자주 부른다면 TIE 밖에서 작업이 많이 일어난다는 신호다.
+- **run 시작에서 stale을 탐지한다.** 지도가 있으면 진행 전에 싼 probe를 한 번
+  돈다: 지도 문서 집합(`ARCHITECTURE.md` + 그것이 백틱 상대경로로 가리키는 영역
+  문서들)을 건드린 최신 커밋 이후에 제품 코드를 건드린 커밋이 있으면(자기 지도
+  갱신을 이미 담은 TIE 체크포인트 커밋은 제외) 지도를 stale로 의심하고, `tie:map`
+  재동기화를 제안한다. 비차단이다 — 사용자가 거절하고 진행하면 log에 남긴다.
+  git 이력이 없으면 조용히 건너뛴다.
+- **범위 밖 stale 플래그는 in-run에서 고치지 않는다.** run 중 역할들이 남긴
+  stale 포인터 플래그(verification.md·plan.md·log.md) 중 이번 run이 건드린 흐름
+  안의 것은 위 자동 갱신이 이미 고치지만, run 범위 밖을 가리키는 것은 in-run에서
+  고치지 않고 종료 보고에서 `tie:map` 재동기화로 에스컬레이션한다.
 - **검사는 싸게.** 지도를 읽거나 갱신하는 에이전트는 사용하는 백틱 포인터가
   실재하는지 grep으로 확인한다(rename으로 stale해진 포인터를 잡는다).
   테스트 하니스가 있는 레포는 헌법 불변식을 실제 테스트로 승격해도 좋다 — 선택 사항이다.
@@ -362,7 +372,7 @@ Verdict: pass | fail | blocked
 
 ```text
 [대화]  동기화 → 명세 작성 → 핵심 체크리스트 승인          (tie:requirements)
-[실행]  run 생성 → 지도 확인(없으면 생성 제안)              (tie:start)
+[실행]  run 생성 → 지도 확인(없으면 생성 제안, 있으면 stale probe) (tie:start)
         → plan (Planner)
         → implement (Implementer, W-n 단위)
         → verify (Verifier)

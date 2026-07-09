@@ -89,6 +89,9 @@ Rules that always apply:
 
 ## resync
 
+Resync is also the designated follow-up when a run's start staleness probe
+or a run's out-of-scope stale flags pointed here.
+
 1. **Verify the doc against the code.** For each mapped flow, check the steps
    still match; grep every backtick pointer to confirm the symbol still
    exists. When git history is available, use `git log` on changed areas to
